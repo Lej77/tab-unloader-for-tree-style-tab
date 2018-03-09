@@ -74,24 +74,21 @@ class MouseClickCombo {
                 return false;
             }
 
-            let any = ctrl || shift || alt || meta;
-            if (!props.ctrl && !props.shift && !props.alt && !props.meta) {
-                if (any) {
-                    return false;
-                } else {
-                    return true;
-                }
-            }
-
-            if (ctrl && !props.ctrl ||
-                shift && !props.shift ||
-                alt && !props.alt ||
-                meta && !props.meta) {
-                return false;
-            } else if (any) {
-                return true;
+            if (props.anyKeyMode) {
+                return (
+                    ctrl && props.ctrl ||
+                    shift && props.shift ||
+                    alt && props.alt ||
+                    meta && props.meta ||
+                    (!props.ctrl && !props.shift && !props.alt && !props.meta)
+                );
             } else {
-                return false;
+                return (
+                    ctrl == props.ctrl &&
+                    shift == props.shift &&
+                    alt == props.alt &&
+                    meta == props.meta
+                );
             }
         }
     }
@@ -106,12 +103,18 @@ class MouseClickCombo {
         return {
             enabled: false,
 
+            anyKeyMode: true,          // If true then at least one of the selected keys must be pressed (but not all). If there are no selected keys then allways unload tabs on click.
             ctrl: false,
             shift: false,
             alt: false,
             meta: false,
 
-            timeout: 500,
+            maxTimeout: 500,            // Maximum time between mouse-down and mouse-up events to trigger tab unload. Prevents unload operation if tab is long pressed or being dragged.
+            minTimeout: 0,              // Minium time between mouse-down and mouse-up events to trigger tab unload. Allows for long pressing tabs to unload them.
+
+            doubleClickEnabled: false,  // If true then special behavior will be implemented for double clicks.
+            doubleClickOnly: true,      // If true then only double clicks will unload tabs; otherwise double clicks will cancel the unload operation from the first click.
+            doubleClickTimeout: 500,    // Maximum time between mouse-down events to be recognized as a double click.
         };
     }
 }
@@ -126,9 +129,10 @@ class Settings {
     static getDefaultValues() {
         return {
             unloadOnLeftClick: Object.assign(MouseClickCombo.getDefaultValues(), { enabled: true, alt: true, meta: true }),
-            unloadOnMiddleClick: Object.assign(MouseClickCombo.getDefaultValues(), { enabled: true }),
-            unloadOnRightClick: Object.assign(MouseClickCombo.getDefaultValues(), { ctrl: true, shift: true, alt: true, meta: true }),
+            unloadOnMiddleClick: Object.assign(MouseClickCombo.getDefaultValues(), { enabled: true, maxTimeout: 0, minTimeout: 150 }),
+            unloadOnRightClick: Object.assign(MouseClickCombo.getDefaultValues(), { enabled: true, ctrl: true, shift: true, alt: true, meta: true }),
             unloadInTSTContextMenu: true,
+            dimUnloadedTabs: true,
         }
     }
 

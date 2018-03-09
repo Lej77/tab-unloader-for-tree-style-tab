@@ -1,13 +1,24 @@
-input {
-    margin-top: 9px;
-}
 
 .mouseClickArea, 
-.modifierKeysArea  {
+.modifierKeysArea,
+.clickDurationArea,
+.doubleClickArea {
     border: 1px solid black;
     margin: 3px;
     padding: 5px;
     border-radius: 5px;
+}
+.mouseClickArea {
+  margin-bottom: 25px;
+}
+
+.mouseClickArea:not(.enabled) > *:not(:first-child),
+.mouseClickArea.enabled .doubleClickArea:not(.enabled) > *:not(:first-child) {
+    opacity: 0.6;
+}
+
+.modifierKeysArea input {
+    margin-top: 9px;
 }
 
 .modifierKeysArea {
@@ -16,10 +27,9 @@ input {
 .modifierKeysArea > label {
     margin-right: 10px;
 }
-.mouseClickArea:not(.enabled) .modifierKeysArea,
-.mouseClickArea:not(.enabled) .timeout {
-    opacity: 0.6;
-}
 .timeout {
-    margin: 5px;
+    margin: 2px;
+}
+.timeout:not(:first-child) {
+    padding-top: 8px;
 }

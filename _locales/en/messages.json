@@ -1,15 +1,18 @@
 {
     "options_unloadOnLeftClick": {
-        "message": "Left click tabs to unload them"
+        "message": "Left click tabs to unload them."
     },
     "options_unloadOnMiddleClick": {
-        "message": "Middle click tabs to unload them"
+        "message": "Middle click tabs to unload them. (If the mouse button is released on the tab it was pressed on then that tab will be closed, there is currently no way to prevent this. To use this you need to press and hold the button and drag the mouse to another tab before releasing it.)"
     },
     "options_unloadOnRightClick": {
         "message": "Right click tabs to unload them. (Currently there is no way to stop the context menu from opening.)"
     },
     "options_modifierKeysInfo": {
-        "message": "If none of the following modifier keys are selected then a click will always unload a tab. If there are selected modifier keys then one of them must be pressed and all the unselected keys must not be pressed."
+        "message": "The click will only register if the selected modifier keys are pressed and the unselected modifier keys are released."
+    },
+    "options_modifierKeysAnyMode": {
+        "message": "Any Key Mode: If checked then at least one of the selected modifier keys must be pressed for a click to register. It is not necessary to press all of the selected modifier keys. The state of the unselected modifier keys are ignored. If there are no selected modifier keys then a click will allways register."
     },
     "options_modifierKey_Ctrl": {
         "message": "Ctrl"
@@ -23,13 +26,32 @@
     "options_modifierKey_Meta": {
         "message": "Meta (Command on macOS)"
     },
-    "options_clickTimeout": {
-        "message": "Time between mouse down and mouse up must be less than this time in milliseconds (set to 0 to disable): "
+    "options_clickTimeoutInfo": {
+        "message": "Measure the click duration. That is the time between a mouse down and a mouse up event. Ensure that it is within a certain intervall. Set a minimum time to only register long presses or set a maximum time to prevent unloading dragged or long-pressed tabs."
+    },
+    "options_clickTimeoutMin": {
+        "message": "Minimum click duration in milliseconds (set to 0 to disable): "
+    },
+    "options_clickTimeoutMax": {
+        "message": "Maximum click duration in milliseconds (set to 0 to disable): "
+    },
+    "options_doubleClick_enabled": {
+        "message": "Wait for double click."
+    },
+    "options_doubleClick_only": {
+        "message": "If checked only double clicks will register; otherwise double clicks will prevent unloading."
+    },
+    "options_doubleClick_timeout": {
+        "message": "Time in milliseconds between mouse down events to count as a double click: "
     },
     "options_unloadInTSTContextMenu": {
         "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab"
     },
+    "options_dimUnloadedTabs": {
+        "message": "Dim unloaded tabs"
+    },
     "contextMenu_unloadTab": {
-        "message": "Suspend Tab"
+        "message": "&Suspend Tab",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
     }
 }

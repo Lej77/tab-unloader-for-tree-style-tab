@@ -57,11 +57,39 @@ class TSTState {
     Object.assign(this, {
       listeningTypes: [],
       contextMenuItems: [],
+      style: null,
     });
   }
 
   static isEqual(a, b) {
     if (a === b) {
+      return true;
+    }
+    if (!a && !b) {
+      return true;
+    }
+    if (!a || !b) {
+      return false;
+    }
+
+    if (a.style !== b.style) {
+      return false;
+    }
+
+    if (!TSTState.isListeningTypesEqual(a, b)) {
+      return false;
+    }
+
+    if (!TSTState.isContextMenuItemsEqual(a, b)) {
+      return false;
+    }
+    return true;
+  }
+  static isListeningTypesEqual(a, b) {
+    if (a === b) {
+      return true;
+    }
+    if (!a && !b) {
       return true;
     }
     if (!a || !b) {
@@ -76,17 +104,37 @@ class TSTState {
         return false;
       }
     }
+    return true;
+  }
+  static isContextMenuItemsEqual(a, b) {
+    if (a === b) {
+      return true;
+    }
+    if (!a && !b) {
+      return true;
+    }
+    if (!a || !b) {
+      return false;
+    }
 
     if (a.contextMenuItems.length !== b.contextMenuItems.length) {
       return false;
     }
-    for (let aItem of a.contextMenuItems) {
-      let bItem = b.getContextMenuItem(aItem.id);
+    for (let iii = 0; iii < a.contextMenuItems.length; iii++) {
+      let aItem = a.contextMenuItems[iii];
+      let bItem = b.contextMenuItems[iii];
       if (aItem === bItem) {
         continue;
       }
+      if (aItem.context || bItem.context) {
+        if (
+          !aItem.context || !bItem.context ||
+          aItem.context.includes('tabs') !== bItem.context.includes('tabs')
+        ) {
+          return false;
+        }
+      }
       if (
-        aItem.contexts.length !== bItem.contexts.length ||
         aItem.documentUrlPatterns !== bItem.documentUrlPatterns ||
         aItem.id !== bItem.id ||
         aItem.parentId !== bItem.parentId ||
@@ -139,7 +187,7 @@ class TSTState {
 
   static getClickListeningTypes() {
     return [
-      // 'tab-clicked',
+      // 'tab-clicked',   // Same as 'tab-mousedown'?
       'tab-mousedown',
       'tab-mouseup',
     ];
@@ -149,8 +197,15 @@ class TSTState {
       id: 'unload-tab',
       title: browser.i18n.getMessage('contextMenu_unloadTab'),
       type: 'normal',
-      contexts: ['tab']
+      contexts: ['tab'],
     };
+  }
+  static getDimUnloadedTabsStyle() {
+    return [
+      '.tab.discarded {',
+      '  opacity: 0.75;',
+      '}'
+    ].join('\n');
   }
 }
 
@@ -165,7 +220,7 @@ class TSTManager {
       try {
         if (sender.id === kTST_ID) {
           if (message.type === 'ready') {
-            invalidateTST(); // passive registration for secondary (or after) startup
+            invalidateTST(true); // passive registration for secondary (or after) startup
           } else {
             let returned = messageEventManager.fire(message);
             let value;
@@ -212,7 +267,10 @@ class TSTManager {
     }
 
 
-    var invalidateTST = async () => {
+    var invalidateTST = async (stateReset = false) => {
+      if (stateReset) {
+        currentState = new TSTState();
+      }
       if (blockTimeoutId !== null) {
         invalidated = true;
         return;
@@ -223,9 +281,17 @@ class TSTManager {
       if (!TSTState.isEqual(currentState, this.state)) {
         let newState = Object.assign(new TSTState(), this.state);
 
-        if (newState.listeningTypes.length > 0 || newState.contextMenuItems.length > 0) {
-          // Update listening types:
-          let success = await TSTManager.registerToTST(newState.listeningTypes);
+        if (newState.style || newState.listeningTypes.length > 0 || newState.contextMenuItems.length > 0) {
+          let styleChange = currentState.style !== newState.style;
+          // Remove old style:
+          if (currentState.style && styleChange) {
+            await TSTManager.unregisterFromTST();
+          }
+          // Update listening types and/or register new style:
+          let success = true;
+          if (styleChange || !TSTState.isListeningTypesEqual(currentState, newState)) {
+            success = await TSTManager.registerToTST(newState.listeningTypes, newState.style);
+          }
           if (!success) {
             newState = new TSTState();
           } else {
@@ -327,7 +393,7 @@ async function start() {
     if (changes.unloadOnLeftClick) {
       leftClick.update(settings.unloadOnLeftClick);
     }
-    if (changes.unloadOnMiddleClick && false) {
+    if (changes.unloadOnMiddleClick) {
       middleClick.update(settings.unloadOnMiddleClick);
     }
     if (changes.unloadOnRightClick) {
@@ -356,16 +422,21 @@ async function start() {
   let handleTabUnload = null;
   var onMouseUp = (message) => {
     if (handleTabUnload) {
-      handleTabUnload();
+      handleTabUnload('up');
     }
   };
   var onMouseDown = (message) => {
     if (handleTabUnload) {
-      handleTabUnload();
+      let doubleClick = handleTabUnload('down');
+      if (doubleClick) {
+        return true;
+      }
     }
     if (message.tab.discarded) {
       return false;
     }
+
+    // Get button handler:
     let combo;
     switch (message.button) {
       case 0:
@@ -381,25 +452,151 @@ async function start() {
     if (!combo) {
       return false;
     }
-    let shouldDiscard = combo.test(message.ctrlKey, message.shiftKey, message.altKey, message.metaKey);
-    if (shouldDiscard) {
-      if (!combo.timeout || combo.timeout <= 0) {
-        unloadTab(message.tab);
-      } else {
-        // Unload tab only if mouse down time is less then a certain time:
-        let mouseDownTime = Date.now();
-        let timeoutTime = combo.timeout;
-        handleTabUnload = () => {
-          handleTabUnload = null;
+    if (!combo.test(message.ctrlKey, message.shiftKey, message.altKey, message.metaKey)) {
+      return false;
+    }
 
-          let timeSiceMouseDown = Date.now() - mouseDownTime;
-          if (timeSiceMouseDown < timeoutTime) {
-            unloadTab(message.tab);
-          }
-        }
+
+    let maxTime = parseInt(combo.maxTimeout);
+    let minTime = parseInt(combo.minTimeout);
+    let hasMaxTime = maxTime && maxTime > 0;
+    let hasMinTime = minTime && minTime > 0;
+
+    let doubleClickEnabled = combo.doubleClickEnabled;
+    let doubleClickOnly = combo.doubleClickOnly;
+    let doubleClickTimeout = parseInt(combo.doubleClickTimeout);
+    let hasDoubleClickTimeout = doubleClickTimeout && doubleClickTimeout > 0;
+    doubleClickEnabled = doubleClickEnabled && hasDoubleClickTimeout;
+    if (doubleClickEnabled && hasMinTime && minTime > doubleClickTimeout) {
+      // Mouse up event must fire before double click => if mouse up must be longer than time between mouse down event then it can't happen:
+      if (!doubleClickOnly) {
+        // Disable prevent on double click:
+        doubleClickEnabled = false;
+      } else {
+        // Double click can't occur that fast:
+        return false;
       }
     }
-    return shouldDiscard;
+
+    if (!hasMaxTime && !hasMinTime && !doubleClickEnabled) {
+      unloadTab(message.tab);
+      return true;
+    } else {
+      return new Promise((resolve, reject) => {
+        try {
+          // Unload tab only if mouse down time is less then a certain time:
+          let mouseDownTime = Date.now();
+          let mouseUpTime;
+          let timeoutId = null;
+
+          // Create callback to be called on timeout or mouse-up event:
+          let callback = (activationType) => {
+            try {
+              if (doubleClickEnabled && activationType === 'up') {
+                mouseUpTime = Date.now();
+                return true;
+              }
+
+              // Prevent double activation:
+              handleTabUnload = null;
+              if (timeoutId !== null) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+              }
+
+              // Check if operation should be canceled:
+              let time = Date.now();
+              if (!mouseUpTime) {
+                mouseUpTime = time;
+              }
+              let clickDuration = mouseUpTime - mouseDownTime;
+              let totalDuration = time - mouseDownTime;
+
+              let checkIfSuccess = () => {
+                if (hasMinTime && clickDuration < minTime) {
+                  return false;
+                }
+                if (hasMaxTime && clickDuration > maxTime) {
+                  return false;
+                }
+                if (doubleClickEnabled) {
+                  let checkForDoubleClick = () => {
+                    if (activationType !== 'down') {
+                      return false;
+                    }
+                    if (totalDuration > doubleClickTimeout) {
+                      return false;
+                    }
+                    return true;
+                  }
+                  let isDoubleClick = checkForDoubleClick();
+                  if (!doubleClickOnly && isDoubleClick) {
+                    return false;
+                  }
+                  if (doubleClickOnly && !isDoubleClick) {
+                    return false;
+                  }
+                }
+                return true;
+              };
+
+              // Unload tab or allow TST to execute its operation:
+              if (checkIfSuccess()) {
+                unloadTab(message.tab);
+                resolve(true);
+              } else {
+                resolve(false);
+              }
+            } catch (error) {
+              reject(error);
+            }
+            return doubleClickEnabled;
+          }
+          handleTabUnload = callback;
+
+          // Resolve Promise as quickly as possible:
+          let timeoutTime = -1;
+          if (hasMaxTime) {
+            // Max time limit passed => Reject
+            timeoutTime = maxTime + 10;
+          } else if (hasMinTime) {
+            // Over min time => Accept
+            timeoutTime = minTime + 10;
+          }
+          if (doubleClickEnabled) {
+            if (!hasMaxTime) {
+              // Over max double click time => No double click
+              timeoutTime = doubleClickTimeout;
+            }
+          }
+          if (timeoutTime > 0) {
+            let timeoutCallback = () => {
+              if (handleTabUnload === callback) {
+                callback('timeout');
+              }
+            };
+            timeoutId = setTimeout(() => {
+              timeoutId = null;
+              if (doubleClickEnabled && timeoutTime !== doubleClickTimeout && mouseUpTime) {
+                // Max mouse up wait period passed and mouseUpEvent has fired => wait for double click timeout
+                let timeLeft = doubleClickTimeout - timeoutTime;
+                if (timeLeft > 0) {
+                  timeoutId = setTimeout(() => {
+                    timeoutId = null;
+                    timeoutCallback();
+                  }, timeLeft);
+                  return;
+                }
+              }
+              timeoutCallback();
+            }, timeoutTime);
+          }
+
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }
   };
 
   var onMenuItemClick = (info, tab) => {
@@ -420,6 +617,9 @@ async function start() {
     if (settings.unloadInTSTContextMenu) {
       state.addContextMenuItems(TSTState.getUnloadTabContextMenuItem());
     }
+    if (settings.dimUnloadedTabs) {
+      state.style = TSTState.getDimUnloadedTabsStyle();
+    }
     return state;
   }
   var invalidateTST = () => {
@@ -430,19 +630,24 @@ async function start() {
 
   // Set up TST and listen for messages:
   let tstManager = new TSTManager(getTSTState());
+  let lastMouseDownValue = false;
   let tstMessageListener = new EventListener(tstManager.onMessage, (message) => {
     switch (message.type) {
       case 'tab-clicked':
-      case 'tab-mousedown':
+      case 'tab-mousedown': {
         let preventAction = onMouseDown(message);
-        return Promise.resolve(preventAction);
-        break;
-      case 'tab-mouseup':
-        return onMouseUp(message);
-        break;
-      case 'fake-contextMenu-click':
+        lastMouseDownValue = Promise.resolve(preventAction);
+        return lastMouseDownValue;
+      } break;
+
+      case 'tab-mouseup': {
+        let preventAction = onMouseUp(message);
+        return preventAction || lastMouseDownValue;
+      } break;
+
+      case 'fake-contextMenu-click': {
         onMenuItemClick(message.info, message.tab);
-        break;
+      } break;
     }
   });
 }

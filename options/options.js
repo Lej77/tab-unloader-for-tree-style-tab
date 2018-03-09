@@ -7,7 +7,7 @@ async function initiatePage() {
     // Create mouse click info:
     let mouseAreas = [
         createMouseClickArea('options_unloadOnLeftClick', 'unloadOnLeftClick'),
-        // createMouseClickArea('options_unloadOnMiddleClick', 'unloadOnMiddleClick'),
+        createMouseClickArea('options_unloadOnMiddleClick', 'unloadOnMiddleClick'),
         createMouseClickArea('options_unloadOnRightClick', 'unloadOnRightClick'),
     ];
     for (let mouseArea of mouseAreas) {
@@ -16,6 +16,7 @@ async function initiatePage() {
     // Create check boxes:
     for (let chb of [
         createCheckBox('unloadInTSTContextMenu', 'options_unloadInTSTContextMenu'),
+        createCheckBox('dimUnloadedTabs', 'options_dimUnloadedTabs'),
     ]) {
         document.body.appendChild(chb.area);
     }
@@ -77,6 +78,9 @@ function setTextMessages(elementsToText) {
 
 
 function createMouseClickArea(message, settingKey) {
+
+    // #region MouseClickCombo Object
+
     let obj = new MouseClickCombo();
     let settingsLoadedEvent = new EventManager();
 
@@ -98,24 +102,27 @@ function createMouseClickArea(message, settingKey) {
         _callback(element[property]);
     }
 
+    // #endregion MouseClickCombo Object
+
 
     let area = document.createElement('div');
     area.classList.add('mouseClickArea');
 
 
+    // #region Mouse Click
+
     let mouseButton = createCheckBox(null, message);
     bindCheckboxToObj(mouseButton.checkbox, 'enabled',
         (checked) => {
-            let enabledClass = 'enabled';
-            if (checked) {
-                area.classList.add(enabledClass);
-            } else {
-                area.classList.remove(enabledClass);
-            }
+            toggleClass(area, 'enabled', checked);
         }
     );
     area.appendChild(mouseButton.area);
 
+    // #endregion Mouse Click
+
+
+    // #region Modifier Keys
 
     let modArea = document.createElement('div');
     modArea.classList.add('modifierKeysArea');
@@ -125,6 +132,7 @@ function createMouseClickArea(message, settingKey) {
     let modifierKeysInfo = document.createElement('label');
     modifierKeysInfo.classList.add(messagePrefix + 'options_modifierKeysInfo')
     modArea.appendChild(modifierKeysInfo);
+
 
     modArea.appendChild(document.createElement('br'));
 
@@ -141,20 +149,75 @@ function createMouseClickArea(message, settingKey) {
     }
 
 
+    modArea.appendChild(document.createElement('br'));
+
+
+    let modAnyMode = createCheckBox(null, 'options_modifierKeysAnyMode');
+    bindCheckboxToObj(modAnyMode.checkbox, 'anyKeyMode')
+    modArea.appendChild(modAnyMode.area);
+
+    // #endregion Modifier Keys
+
+
+    // #region Click duration
+
     let timeoutArea = document.createElement('div');
-    timeoutArea.classList.add('timeout')
+    timeoutArea.classList.add('clickDurationArea');
     area.appendChild(timeoutArea);
 
-    let timeoutText = document.createElement('text')
-    timeoutText.classList.add(messagePrefix + 'options_clickTimeout');
-    timeoutArea.appendChild(timeoutText);
 
-    let timeoutInput = document.createElement('input');
-    timeoutInput.type = 'number';
-    timeoutInput.min = 0;
-    timeoutInput.value = 0;
-    bindElementToObj(timeoutInput, 'value', 'timeout');
-    timeoutArea.appendChild(timeoutInput);
+    let timeoutInfo = document.createElement('text');
+    timeoutInfo.classList.add(messagePrefix + 'options_clickTimeoutInfo');
+    timeoutArea.appendChild(timeoutInfo);
+
+
+    let maxTimeoutArea = createNumberInput('options_clickTimeoutMax', 0, true);
+    maxTimeoutArea.area.classList.add('timeout')
+    bindElementToObj(maxTimeoutArea.input, 'value', 'maxTimeout');
+    timeoutArea.appendChild(maxTimeoutArea.area);
+
+
+    let minTimeoutArea = createNumberInput('options_clickTimeoutMin', 0, true);
+    minTimeoutArea.area.classList.add('timeout')
+    bindElementToObj(minTimeoutArea.input, 'value', 'minTimeout');
+    timeoutArea.appendChild(minTimeoutArea.area);
+
+    // #endregion Click duration
+
+
+    // #region Double Clicks
+
+    let doubleClickArea = document.createElement('div');
+    doubleClickArea.classList.add('doubleClickArea');
+    area.appendChild(doubleClickArea);
+
+
+    let doubleClickEnabled = createCheckBox(null, 'options_doubleClick_enabled');
+    bindCheckboxToObj(doubleClickEnabled.checkbox, 'doubleClickEnabled',
+        (checked) => {
+            toggleClass(doubleClickArea, 'enabled', checked);
+        }
+    );
+    doubleClickArea.appendChild(doubleClickEnabled.area);
+
+
+    doubleClickArea.appendChild(document.createElement('br'));
+
+
+    let doubleClickOnly = createCheckBox(null, 'options_doubleClick_only');
+    bindCheckboxToObj(doubleClickOnly.checkbox, 'doubleClickOnly');
+    doubleClickArea.appendChild(doubleClickOnly.area);
+
+
+    doubleClickArea.appendChild(document.createElement('br'));
+
+    
+    let doubleClickTimeout = createNumberInput('options_doubleClick_timeout', 1, true);
+    doubleClickTimeout.area.classList.add('timeout')
+    bindElementToObj(doubleClickTimeout.input, 'value', 'doubleClickTimeout');
+    doubleClickArea.appendChild(doubleClickTimeout.area);
+
+    // #endregion Double Clicks
 
 
     return { area: area, combo: obj, settingsLoaded: settingsLoadedEvent, settingKey: settingKey };
@@ -176,6 +239,37 @@ function createCheckBox(id, message) {
     ele.appendChild(label)
 
     return { area: ele, checkbox: checkbox, label: label };
+}
+
+
+function createNumberInput(message, min = 0, newLine = false) {
+    let timeoutArea = document.createElement('div');
+
+    let timeoutText = document.createElement('text')
+    timeoutText.classList.add(messagePrefix + message);
+    timeoutArea.appendChild(timeoutText);
+
+    if (newLine) {
+        timeoutArea.appendChild(document.createElement('br'))
+    }
+
+    let timeoutInput = document.createElement('input');
+    timeoutInput.type = 'number';
+    if (min || min === 0) {
+        timeoutInput.min = min;
+    }
+    timeoutArea.appendChild(timeoutInput);
+
+    return { area: timeoutArea, input: timeoutInput, text: timeoutText };
+}
+
+
+function toggleClass(element, className, enabled) {
+    if (enabled) {
+        element.classList.add(className);
+    } else {
+        element.classList.remove(className);
+    }
 }
 
 
