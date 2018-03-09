@@ -1,0 +1,35 @@
+{
+    "options_unloadOnLeftClick": {
+        "message": "Left click tabs to unload them"
+    },
+    "options_unloadOnMiddleClick": {
+        "message": "Middle click tabs to unload them"
+    },
+    "options_unloadOnRightClick": {
+        "message": "Right click tabs to unload them. (Currently there is no way to stop the context menu from opening.)"
+    },
+    "options_modifierKeysInfo": {
+        "message": "If none of the following modifier keys are selected then a click will always unload a tab. If there are selected modifier keys then one of them must be pressed and all the unselected keys must not be pressed."
+    },
+    "options_modifierKey_Ctrl": {
+        "message": "Ctrl"
+    },
+    "options_modifierKey_Shift": {
+        "message": "Shift"
+    },
+    "options_modifierKey_Alt": {
+        "message": "Alt"
+    },
+    "options_modifierKey_Meta": {
+        "message": "Meta (Command on macOS)"
+    },
+    "options_clickTimeout": {
+        "message": "Time between mouse down and mouse up must be less than this time in milliseconds (set to 0 to disable): "
+    },
+    "options_unloadInTSTContextMenu": {
+        "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab"
+    },
+    "contextMenu_unloadTab": {
+        "message": "Suspend Tab"
+    }
+}

@@ -1,0 +1,25 @@
+input {
+    margin-top: 9px;
+}
+
+.mouseClickArea, 
+.modifierKeysArea  {
+    border: 1px solid black;
+    margin: 3px;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.modifierKeysArea {
+    margin-top: 10px;
+}
+.modifierKeysArea > label {
+    margin-right: 10px;
+}
+.mouseClickArea:not(.enabled) .modifierKeysArea,
+.mouseClickArea:not(.enabled) .timeout {
+    opacity: 0.6;
+}
+.timeout {
+    margin: 5px;
+}
