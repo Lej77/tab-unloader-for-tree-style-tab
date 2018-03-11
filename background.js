@@ -799,7 +799,7 @@ async function start() {
     let state = new TSTState();
     if (checkAny(mouseClickCombos.combos.map(combo => combo.enabled))) {
       state.addListeningTypes(TSTState.getClickListeningTypes());
-      if (checkAny(mouseClickCombos.combos.map(combo => combo.onDragEnabled && combo.info.button === 0))) {
+      if (checkAny(mouseClickCombos.combos.map(combo => combo.enabled && combo.onDragEnabled && combo.info.button === 0))) {
         state.addListeningTypes(TSTState.getDragListeningTypes());
       }
     }
