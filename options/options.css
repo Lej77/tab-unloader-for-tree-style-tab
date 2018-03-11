@@ -1,8 +1,5 @@
 
-.mouseClickArea, 
-.modifierKeysArea,
-.clickDurationArea,
-.doubleClickArea {
+.area {
     border: 1px solid black;
     margin: 3px;
     padding: 5px;
@@ -13,7 +10,7 @@
 }
 
 .mouseClickArea:not(.enabled) > *:not(:first-child),
-.mouseClickArea.enabled .doubleClickArea:not(.enabled) > *:not(:first-child) {
+.mouseClickArea.enabled .area:not(.enabled) > *:not(:first-child) {
     opacity: 0.6;
 }
 

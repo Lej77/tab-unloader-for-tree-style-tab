@@ -11,7 +11,7 @@ let createObjectFromKeys = function (
     defaultValue = null     // object.
 ) {
     if (keys && Array.isArray(keys)) {
-        data = {};
+        let data = {};
         let valueIsArray = Array.isArray(values);
         for (let i = 0; i < keys.length; i++) {
             if (typeof keys[i] === "string")
@@ -23,24 +23,135 @@ let createObjectFromKeys = function (
     }
 }
 
+let defineProperty = (obj, propertyName, get, set) => {
+    let getSet = {};
+    if (get) {
+        getSet.get = get;
+    }
+    if (set) {
+        getSet.set = set;
+    }
+    Object.defineProperty(obj, propertyName, getSet)
+}
+
+let checkAny = (array) => {
+    array = array.filter(value => value);
+    if (array.length === 0) {
+        return false;
+    }
+
+    let promiseWrapper = new PromiseWrapper();
+
+    let promises = 0;
+    let waitForValue = async (value) => {
+        try {
+            value = await value;
+            if (value) {
+                promiseWrapper.resolve(value);
+            }
+        } finally {
+            promises--;
+
+            if (promises <= 0) {
+                promiseWrapper.resolve(false);
+            }
+        }
+    };
+
+    promises++;
+    for (let value of array) {
+        promises++;
+        waitForValue(value);
+    }
+    promises--;
+
+    if (promises <= 0) {
+        promiseWrapper.resolve(false);
+    }
+    return promiseWrapper.getValue();
+}
+
 // #endregion Utilities
 
 
 
-class MouseClickCombo {
-    constructor() {
-        let defineProperty = (obj, propertyName, get, set) => {
-            let getSet = {};
-            if (get) {
-                getSet.get = get;
+class MouseClickComboCollection {
+    constructor(array) {
+        this.combos = array;
+    }
+
+    update(changes, settings) {
+        let changedKeys = Object.keys(changes);
+        for (let combo of this.combos) {
+            let key = combo.info.settingKey;
+            if (key && changedKeys.includes(key)) {
+                combo.update(settings[key]);
             }
-            if (set) {
-                getSet.set = set;
-            }
-            Object.defineProperty(obj, propertyName, getSet)
         }
+    }
+
+    static createStandard() {
+        let standardMessages = {
+
+        };
+        let getStandardMessages = () => {
+            return Object.assign({}, standardMessages);
+        }
+        let getStandardInfo = () => {
+            let obj = {
+                get allowDragDrop() {
+                    return obj.button === 0;
+                },
+            };
+            return obj;
+        }
+        let createInfo = (obj) => {
+            let info = Object.assign(getStandardInfo(), obj);
+            info.messages = Object.assign(getStandardMessages(), info.messages);
+            return info;
+        }
+        return new MouseClickComboCollection([
+            new MouseClickCombo(createInfo({
+                button: 0,
+                settingKey: 'unloadOnLeftClick',
+                messages: {
+                    enable: 'options_unloadOnLeftClick',
+                },
+            })),
+            new MouseClickCombo(createInfo({
+                button: 1,
+                settingKey: 'unloadOnMiddleClick',
+                messages: {
+                    enable: 'options_unloadOnMiddleClick',
+                },
+            })),
+            new MouseClickCombo(createInfo({
+                button: 2,
+                settingKey: 'unloadOnRightClick',
+                messages: {
+                    enable: 'options_unloadOnRightClick',
+                },
+            })),
+            new MouseClickCombo(createInfo({
+                button: 0,
+                settingKey: 'selectOnLeftClick',
+                messages: {
+                    enable: 'options_selectOnLeftClick',
+                },
+
+                dontUnload: true,
+                allwaysPreventTSTAction: true,
+                applyToUnloadedTabs: true,
+                allowForAll: true,
+            })),
+        ]);
+    }
+}
 
 
+
+class MouseClickCombo {
+    constructor(info = {}) {
         let onChangeManager = new EventManager();
         this.onChange = onChangeManager.subscriber;
 
@@ -51,9 +162,9 @@ class MouseClickCombo {
                 return Object.assign({}, props)
             }
         );
+        let propKeys = Object.keys(props);
 
-
-        for (let key of Object.keys(props)) {
+        for (let key of propKeys) {
             defineProperty(this, key,
                 function () {
                     return props[key];
@@ -66,6 +177,18 @@ class MouseClickCombo {
                     onChangeManager.fire(key, value);
                 }
             );
+        }
+
+
+        this.info = info;
+
+
+        this.update = (newData) => {
+            for (let key of Object.keys(newData)) {
+                if (propKeys.includes(key)) {
+                    this[key] = newData[key];
+                }
+            }
         }
 
 
@@ -93,12 +216,6 @@ class MouseClickCombo {
         }
     }
 
-    update(newData) {
-        for (let key of Object.keys(newData)) {
-            this[key] = newData[key];
-        }
-    }
-
     static getDefaultValues() {
         return {
             enabled: false,
@@ -115,6 +232,15 @@ class MouseClickCombo {
             doubleClickEnabled: false,  // If true then special behavior will be implemented for double clicks.
             doubleClickOnly: true,      // If true then only double clicks will unload tabs; otherwise double clicks will cancel the unload operation from the first click.
             doubleClickTimeout: 500,    // Maximum time between mouse-down events to be recognized as a double click.
+
+            onDragEnabled: false,        // Wait for drag events before discarding tab.
+            onDragCancel: false,         // If true then tab will not be unloaded if drag events occured; otherwise tab will only be unloaded if drag events occured.
+            onDragMouseUpTrigger: false, // If true then if a mouse up event is registered before the timeout it counts as a drag event.
+            onDragTimeout: 500,          // Time in milliseconds to wait for drag events before unloading tab.
+
+            dontPreventTSTAction: false,    // Don't prevent Tree Style Tab's default action while waiting to decide if the tab should be unloaded.
+            applyToAllTabs: false,          // Apply click on both loaded and unloaded tabs.
+            applyToUnloadedTabs: false,     // Apply click on unloaded tabs instead of loaded tabs.
         };
     }
 }
@@ -127,10 +253,37 @@ class Settings {
     }
 
     static getDefaultValues() {
+        let createComboData = (data) => {
+            return Object.assign(MouseClickCombo.getDefaultValues(), data);
+        }
         return {
-            unloadOnLeftClick: Object.assign(MouseClickCombo.getDefaultValues(), { enabled: true, alt: true, meta: true }),
-            unloadOnMiddleClick: Object.assign(MouseClickCombo.getDefaultValues(), { enabled: true, maxTimeout: 0, minTimeout: 150 }),
-            unloadOnRightClick: Object.assign(MouseClickCombo.getDefaultValues(), { enabled: true, ctrl: true, shift: true, alt: true, meta: true }),
+            unloadOnLeftClick: createComboData({
+                enabled: true,
+                alt: true,
+                meta: true
+            }),
+            unloadOnMiddleClick: createComboData({
+                enabled: true,
+                maxTimeout: 0,
+                minTimeout: 150
+            }),
+            unloadOnRightClick: createComboData({
+                enabled: true,
+                ctrl: true,
+                shift: true,
+                alt: true,
+                meta: true
+            }),
+            selectOnLeftClick: createComboData({
+                enabled: false,
+                maxTimeout: 0,
+                minTimeout: 500,
+                doubleClickOnly: false,
+                onDragEnabled: true,
+                onDragCancel: true,
+                onDragMouseUpTrigger: true,
+                applyToUnloadedTabs: true
+            }),
             unloadInTSTContextMenu: true,
             dimUnloadedTabs: true,
         }
@@ -196,6 +349,9 @@ class SettingsTracker {
         }
 
         this.settings = new Settings();
+        let onChangedManager = new EventManager();
+        this.onChanged = onChangedManager.subscriber;
+        this.onChanged.addListener(callback);
 
         let changedProperties = [];
         let changeListener = Settings.createChangeEventListener((changes, areaName) => {
@@ -205,17 +361,15 @@ class SettingsTracker {
                     changedProperties.push.apply(keys.filter((change) => !changedProperties.includes(change)));
                 }
                 for (let key of keys) {
-                    let newValue = changes[key].newValue;
-                    if (newValue) {
-                        this.settings[key] = newValue;
+                    let change = changes[key];
+                    if (Object.keys(change).includes('newValue')) {
+                        this.settings[key] = change.newValue;
                     } else {
                         delete this.settings[key];
                     }
                 }
                 try {
-                    if (callback && typeof callback === "function") {
-                        callback(changes, areaName);
-                    }
+                    onChangedManager.fire(changes, areaName, this.settings);
                 } catch (error) { }
             }
         });
@@ -297,5 +451,193 @@ class EventManager {
             }
             return returned;
         }
+        defineProperty(this, 'listeners', () => listeners, (value) => { listeners = value; });
+    }
+}
+
+
+
+class PromiseWrapper {
+    constructor(createPromise = true) {
+        let _resolve;
+        let _reject;
+        let _value;
+        let _isError = false;
+        let _set = false;
+        let _promise;
+        let _promiseCreated = false;
+
+        let _createPromise = () => {
+            if (_promiseCreated) {
+                return;
+            }
+            _promiseCreated = true;
+            _promise = new Promise((resolve, reject) => {
+                if (_set) {
+                    if (_isError) {
+                        reject(_value);
+                    } else {
+                        resolve(_value);
+                    }
+                } else {
+                    _resolve = resolve;
+                    _reject = reject;
+                }
+            })
+        }
+        let setInternal = (value, isError) => {
+            if (_set) {
+                return;
+            }
+            _set = true;
+            _isError = isError;
+            _value = value;
+
+            this.done = true;
+            this.isError = isError;
+            this.value = value;
+
+            if (isError) {
+                if (_reject) {
+                    _reject(value);
+                }
+            } else {
+                if (_resolve) {
+                    _resolve(value);
+                }
+            }
+        }
+        defineProperty(this, 'promise', () => {
+            if (!_promiseCreated) {
+                _createPromise();
+            }
+            return _promise;
+        });
+
+        this.resolve = (value) => setInternal(value, false);
+        this.reject = (value) => setInternal(value, true);
+        this.getValue = () => {
+            if (_promiseCreated) {
+                return _promise;
+            }
+            if (!_set || _isError) {
+                _createPromise();
+                return _promise;
+            } else {
+                return _value;
+            }
+        }
+        if (createPromise) {
+            _createPromise();
+        } else {
+            this.start = () => _createPromise();
+        }
+    }
+}
+
+
+
+class Timeout {
+    constructor(callback, timeInMilliseconds) {
+        let timeoutId = null;
+        let stop = () => {
+            if (timeoutId !== null) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+        };
+        if (callback && typeof callback === 'function') {
+            timeoutId = setTimeout(() => {
+                timeoutId = null;
+                callback();
+            }, timeInMilliseconds);
+        }
+        this.stop = () => stop();
+        defineProperty(this, 'isActive', () => timeoutId !== null);
+    }
+}
+
+
+
+class DisposableCollection {
+    constructor() {
+        var trackedDisposables = [];
+        var isDisposed = false;
+        var disposeFunctionNames = [
+            'stop',
+            'close',
+            'cancel',
+        ]
+        var callFunction = (obj, functionName) => {
+            if (obj[functionName] && typeof obj[functionName] === 'function') {
+                obj[functionName]();
+                return true;
+            }
+            return false;
+        }
+        var dispose = (obj) => {
+            for (let disposeFunctionName of disposeFunctionNames) {
+                if (callFunction(obj, disposeFunctionName)) {
+                    break;
+                }
+            }
+        }
+        var disposeAll = () => {
+            for (let disposable of trackedDisposables) {
+                dispose(disposable);
+            }
+        }
+        this.dispose = () => {
+            disposeAll();
+            isDisposed = true;
+        };
+
+        this.trackDisposables = (disposables) => {
+            if (!disposables) {
+                return;
+            }
+            if (!Array.isArray(disposables)) {
+                disposables = [disposables];
+            }
+            for (let disposable of disposables) {
+                if (isDisposed) {
+                    dispose(disposable);
+                }
+                if (!trackedDisposables.includes(disposable)) {
+                    trackedDisposables.push(disposable);
+                }
+            }
+        }
+        defineProperty(this, 'isDisposed', () => isDisposed);
+    }
+}
+
+
+
+class OperationManager {
+    constructor() {
+        var promiseWrapper = new PromiseWrapper(false);
+        let disposableCollection = new DisposableCollection();
+
+        let setValue = (value, isError = false) => {
+            if (isError) {
+                promiseWrapper.reject(value);
+            } else {
+                promiseWrapper.resolve(value);
+            }
+            disposableCollection.dispose();
+        }
+
+        this.trackDisposables = (disposables) => disposableCollection.trackDisposables(disposables);
+
+        defineProperty(this, 'done', () => promiseWrapper.done);
+
+        defineProperty(this, 'value',
+            () => promiseWrapper.getValue(),
+            (value) => setValue(value)
+        )
+
+        this.resolve = (value) => setValue(value);
+        this.reject = (value) => setValue(value, true);
     }
 }

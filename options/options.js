@@ -5,11 +5,7 @@ const messagePrefix = 'message_';
 async function initiatePage() {
     let settings = Settings.get(new Settings());
     // Create mouse click info:
-    let mouseAreas = [
-        createMouseClickArea('options_unloadOnLeftClick', 'unloadOnLeftClick'),
-        createMouseClickArea('options_unloadOnMiddleClick', 'unloadOnMiddleClick'),
-        createMouseClickArea('options_unloadOnRightClick', 'unloadOnRightClick'),
-    ];
+    let mouseAreas = MouseClickComboCollection.createStandard().combos.map(combo => createMouseClickArea(combo));
     for (let mouseArea of mouseAreas) {
         document.body.appendChild(mouseArea.area);
     }
@@ -77,11 +73,14 @@ function setTextMessages(elementsToText) {
 }
 
 
-function createMouseClickArea(message, settingKey) {
+function createMouseClickArea(combo) {
 
     // #region MouseClickCombo Object
 
-    let obj = new MouseClickCombo();
+    let obj = combo;
+    let info = combo.info;
+    let messages = info.messages;
+
     let settingsLoadedEvent = new EventManager();
 
     var bindCheckboxToObj = (checkbox, key, callback) => bindElementToObj(checkbox, 'checked', key, callback);
@@ -107,11 +106,13 @@ function createMouseClickArea(message, settingKey) {
 
     let area = document.createElement('div');
     area.classList.add('mouseClickArea');
+    area.classList.add('area');
+    area.classList.add('enabled');
 
 
     // #region Mouse Click
 
-    let mouseButton = createCheckBox(null, message);
+    let mouseButton = createCheckBox(null, messages.enable);
     bindCheckboxToObj(mouseButton.checkbox, 'enabled',
         (checked) => {
             toggleClass(area, 'enabled', checked);
@@ -126,6 +127,8 @@ function createMouseClickArea(message, settingKey) {
 
     let modArea = document.createElement('div');
     modArea.classList.add('modifierKeysArea');
+    modArea.classList.add('area');
+    modArea.classList.add('enabled');
     area.appendChild(modArea);
 
 
@@ -163,6 +166,8 @@ function createMouseClickArea(message, settingKey) {
 
     let timeoutArea = document.createElement('div');
     timeoutArea.classList.add('clickDurationArea');
+    timeoutArea.classList.add('area');
+    timeoutArea.classList.add('enabled');
     area.appendChild(timeoutArea);
 
 
@@ -189,6 +194,8 @@ function createMouseClickArea(message, settingKey) {
 
     let doubleClickArea = document.createElement('div');
     doubleClickArea.classList.add('doubleClickArea');
+    doubleClickArea.classList.add('area');
+    doubleClickArea.classList.add('enabled');
     area.appendChild(doubleClickArea);
 
 
@@ -211,7 +218,7 @@ function createMouseClickArea(message, settingKey) {
 
     doubleClickArea.appendChild(document.createElement('br'));
 
-    
+
     let doubleClickTimeout = createNumberInput('options_doubleClick_timeout', 1, true);
     doubleClickTimeout.area.classList.add('timeout')
     bindElementToObj(doubleClickTimeout.input, 'value', 'doubleClickTimeout');
@@ -220,7 +227,95 @@ function createMouseClickArea(message, settingKey) {
     // #endregion Double Clicks
 
 
-    return { area: area, combo: obj, settingsLoaded: settingsLoadedEvent, settingKey: settingKey };
+    // #region Drag and Drop
+
+    if (info.allowDragDrop) {
+        let dragDropArea = document.createElement('div');
+        dragDropArea.classList.add('dragAndDropArea');
+        dragDropArea.classList.add('area');
+        dragDropArea.classList.add('enabled');
+        area.appendChild(dragDropArea);
+
+
+        let dragDropEnabled = createCheckBox(null, 'options_onDrag_enabled');
+        bindCheckboxToObj(dragDropEnabled.checkbox, 'onDragEnabled',
+            (checked) => {
+                toggleClass(dragDropArea, 'enabled', checked);
+            }
+        );
+        dragDropArea.appendChild(dragDropEnabled.area);
+
+
+        dragDropArea.appendChild(document.createElement('br'));
+
+
+        let cancelOnDrag = createCheckBox(null, 'options_onDrag_cancel');
+        bindCheckboxToObj(cancelOnDrag.checkbox, 'onDragCancel');
+        dragDropArea.appendChild(cancelOnDrag.area);
+
+
+        dragDropArea.appendChild(document.createElement('br'));
+
+
+        let onDragMouseUpTigger = createCheckBox(null, 'options_onDrag_mouseUpTigger');
+        bindCheckboxToObj(onDragMouseUpTigger.checkbox, 'onDragMouseUpTrigger');
+        dragDropArea.appendChild(onDragMouseUpTigger.area);
+
+
+        dragDropArea.appendChild(document.createElement('br'));
+
+
+        let onDragTimeout = createNumberInput('options_onDrag_timeout', 1, true);
+        onDragTimeout.area.classList.add('timeout')
+        bindElementToObj(onDragTimeout.input, 'value', 'onDragTimeout');
+        dragDropArea.appendChild(onDragTimeout.area);
+    }
+
+    // #endregion Drag and Drop
+
+
+    // #region Prevent Tree Style Tab Default Action
+
+    if (!info.allwaysPreventTSTAction) {
+        let dontPreventTSTAction = createCheckBox(null, 'options_dontPreventTSTAction');
+        bindCheckboxToObj(dontPreventTSTAction.checkbox, 'dontPreventTSTAction');
+        area.appendChild(dontPreventTSTAction.area);
+    }
+
+    // #endregion Prevent Tree Style Tab Default Action
+
+
+    // #region Allow for all tabs
+
+    if (info.allowForAll) {
+        let allowArea = document.createElement('div');
+        allowArea.classList.add('loadedUnloadedArea');
+        allowArea.classList.add('area');
+        allowArea.classList.add('enabled');
+        area.appendChild(allowArea);
+
+
+        let applyToAllTabs = createCheckBox(null, 'options_applyToAll');
+        bindCheckboxToObj(applyToAllTabs.checkbox, 'applyToAllTabs',
+            (checked) => {
+                toggleClass(allowArea, 'enabled', !checked);
+            }
+        );
+        allowArea.appendChild(applyToAllTabs.area);
+
+
+        allowArea.appendChild(document.createElement('br'));
+
+
+        let applyToUnloadedTabs = createCheckBox(null, 'options_applyToUnloadedTabs');
+        bindCheckboxToObj(applyToUnloadedTabs.checkbox, 'applyToUnloadedTabs');
+        allowArea.appendChild(applyToUnloadedTabs.area);
+    }
+
+    // #endregion Allow for all tabs
+
+
+    return { area: area, combo: obj, settingsLoaded: settingsLoadedEvent, settingKey: combo.info.settingKey };
 }
 
 

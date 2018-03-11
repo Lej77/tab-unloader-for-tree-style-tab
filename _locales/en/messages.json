@@ -8,6 +8,9 @@
     "options_unloadOnRightClick": {
         "message": "Right click tabs to unload them. (Currently there is no way to stop the context menu from opening.)"
     },
+    "options_selectOnLeftClick": {
+        "message": "Prevent tab select with Left click. If this operation succeeds then the tab clicked will not be selected."
+    },
     "options_modifierKeysInfo": {
         "message": "The click will only register if the selected modifier keys are pressed and the unselected modifier keys are released."
     },
@@ -27,7 +30,7 @@
         "message": "Meta (Command on macOS)"
     },
     "options_clickTimeoutInfo": {
-        "message": "Measure the click duration. That is the time between a mouse down and a mouse up event. Ensure that it is within a certain intervall. Set a minimum time to only register long presses or set a maximum time to prevent unloading dragged or long-pressed tabs."
+        "message": "Measure the click duration. That is the time between a mouse down and a mouse up event. Ensure that it is within a certain intervall. Set a minimum time to only register long presses or set a maximum time to prevent triggering when dragging or long-pressing tabs."
     },
     "options_clickTimeoutMin": {
         "message": "Minimum click duration in milliseconds (set to 0 to disable): "
@@ -39,10 +42,31 @@
         "message": "Wait for double click."
     },
     "options_doubleClick_only": {
-        "message": "If checked only double clicks will register; otherwise double clicks will prevent unloading."
+        "message": "If checked only double clicks will register; otherwise double clicks will cancel the operation."
     },
     "options_doubleClick_timeout": {
         "message": "Time in milliseconds between mouse down events to count as a double click: "
+    },
+    "options_onDrag_enabled": {
+        "message": "Wait for long press without dragged tab. This is a special notification sent by Tree Style Tab when a tab is long pressed with the left mouse button. The notification is not sent if the tab is dragged. This can be used to allow the operation with long press but cancel when using drag and drop with tabs."
+    },
+    "options_onDrag_cancel": {
+        "message": "If checked then cancel if an event is registered; otherwise only allow if an event is registered."
+    },
+    "options_onDrag_mouseUpTigger": {
+        "message": "If checked then mouse up events will register as drag events."
+    },
+    "options_onDrag_timeout": {
+        "message": "Time in milliseconds to wait for long press (should be notified after 500 milliseconds if the tab isn't dragged): "
+    },
+    "options_dontPreventTSTAction": {
+        "message": "Don't prevent Tree Style Tab's default action while deciding if the click is valid."
+    },
+    "options_applyToAll": {
+        "message": "Apply to both unloaded and loaded tabs."
+    },
+    "options_applyToUnloadedTabs": {
+        "message": "Register event on unloaded tabs instead of loaded tabs."
     },
     "options_unloadInTSTContextMenu": {
         "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab"

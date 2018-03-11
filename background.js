@@ -4,14 +4,22 @@ const kTST_ID = 'treestyletab@piro.sakura.ne.jp';
 
 
 async function unloadTab(tab) {
-  if (tab.active) {
-    let closestTab = await findClosestLoadedTab(tab);
-    if (!closestTab) {
-      return;
+  try {
+    // Get latest info:
+    tab = await browser.tabs.get(tab.id);
+    // Select another tab if tab is selected:
+    if (tab.active) {
+      let closestTab = await findClosestLoadedTab(tab);
+      if (!closestTab) {
+        return;
+      }
+      await browser.tabs.update(closestTab.id, { active: true });
     }
-    await browser.tabs.update(closestTab.id, { active: true });
+    // Unload tab:
+    await browser.tabs.discard(tab.id);
+  } catch (error) {
+    console.log('Failed to unload tab!' + '\n' + error);
   }
-  await browser.tabs.discard(tab.id);
 }
 
 
@@ -52,10 +60,332 @@ async function findClosestLoadedTab(tab) {
 
 
 
+class Monitor {
+  constructor() {
+    this.operationManager = new OperationManager();
+  }
+
+  cancel() {
+    this.operationManager.value = false;
+  }
+
+  get done() {
+    return this.operationManager.done;
+  }
+  get allow() {
+    return this.operationManager.value;
+  }
+}
+
+
+
+class MonitorCollection {
+  constructor(monitors) {
+    this.monitors = monitors;
+  }
+
+  cancel() {
+    for (let monitor of this.monitors) {
+      monitor.cancel();
+    }
+  }
+
+  get done() {
+    return Boolean(this.monitors.filter(monitor => !monitor.done).length === 0);
+  }
+  get allow() {
+    let blocked = checkAny(this.monitors.map(monitor => Promise.resolve(monitor.allow).then(allowed => !allowed)));
+    return Promise.resolve(blocked).then(block => !block);
+  }
+}
+
+
+
+class DragMonitor extends Monitor {
+  constructor(data, time, events) {
+    super();
+    var op = this.operationManager;
+
+    // this.allow.then((value) => console.log('DragMonitor: ' + value));
+
+    let onDragEnabled = data.onDragEnabled;
+    let onDragCancel = data.onDragCancel;
+    let onDragOnly = !onDragCancel;
+    let onDragTimeout = data.onDragTimeout;
+    let hasOnDragTimeout = onDragTimeout && onDragTimeout > 0;
+    onDragEnabled = onDragEnabled && hasOnDragTimeout;
+
+    let setDragged = (dragged) => {
+      op.resolve(dragged ? !onDragCancel : !onDragOnly);
+    };
+
+    if (!onDragEnabled) {
+      op.resolve(true);
+      return;
+    }
+
+    op.trackDisposables([
+      new Timeout(() => {
+        setDragged(false);
+      }, onDragTimeout),
+      new EventListener(events.onDrag, (message, eventTime) => {
+        // This event is fired after 500 milliseconds if the tab is not dragged.
+        if (op.done) {
+          return;
+        }
+        if (!eventTime) {
+          eventTime = Date.now();
+        }
+        let duration = eventTime - time;
+
+        if (duration > onDragTimeout) {
+          return;
+        }
+        setDragged(true);
+      }),
+      new EventListener(events.onTabUp, (message, eventTime) => {
+        setDragged(data.onDragMouseUpTrigger);
+      })
+    ]);
+  }
+}
+
+
+
+class DoubleClickMonitor extends Monitor {
+  constructor(data, time, events) {
+    super();
+    var op = this.operationManager;
+
+    // this.allow.then((value) => console.log('DoubleClickMonitor: ' + value));
+
+    let doubleClickEnabled = data.doubleClickEnabled;
+    let doubleClickOnly = data.doubleClickOnly;
+    let doubleClickToPrevent = !doubleClickOnly;
+    let doubleClickTimeout = parseInt(data.doubleClickTimeout);
+    let hasDoubleClickTimeout = doubleClickTimeout && doubleClickTimeout > 0;
+    doubleClickEnabled = doubleClickEnabled && hasDoubleClickTimeout;
+
+
+    if (!doubleClickEnabled) {
+      op.resolve(true);
+      return;
+    }
+
+
+    let setDoubleClick = (doubleClick) => {
+      if (doubleClickToPrevent && doubleClick) {
+        op.resolve(false);
+      }
+      if (doubleClickOnly && !doubleClick) {
+        op.resolve(false);
+      }
+      op.resolve(true);
+    }
+
+
+    op.trackDisposables([
+      new EventListener(events.onTabDown, (message, eventTime) => {
+        setDoubleClick(true);
+        return true;
+      }),
+      new Timeout(() => {
+        setDoubleClick(false);
+      }, doubleClickTimeout),
+    ]);
+  }
+}
+
+
+
+class ClickDurationMonitor extends Monitor {
+  constructor(data, time, events) {
+    super();
+    var op = this.operationManager;
+
+    // this.allow.then((value) => console.log('click duration: ' + value));
+
+    let maxTime = parseInt(data.maxTimeout);
+    let minTime = parseInt(data.minTimeout);
+    let hasMaxTime = maxTime && maxTime > 0;
+    let hasMinTime = minTime && minTime > 0;
+
+
+    if (!hasMaxTime && !hasMinTime) {
+      op.resolve(true);
+      return;
+    }
+
+    let minTimeout = false;
+    let maxTimeout = false;
+    let checkIntervall = (released = false) => {
+      if (hasMaxTime && maxTimeout) {
+        // Duration is longer than max allowed:
+        op.resolve(false);
+      }
+      if (hasMinTime && minTimeout) {
+        // Min time reached:
+        if (!hasMaxTime || released) {
+          // No max time or wait stopped:
+          op.resolve(true);
+        }
+      }
+      if (released) {
+        if (hasMinTime && !minTimeout) {
+          // Min time wasn't reached:
+          op.resolve(false);
+        } else {
+          op.resolve(true);
+        }
+      }
+    }
+
+
+    op.trackDisposables([
+      new EventListener(events.onTabUp, (message, eventTime) => {
+        checkIntervall(true);
+      }),
+    ]);
+
+
+    if (hasMinTime) {
+      op.trackDisposables(new Timeout(() => {
+        minTimeout = true;
+        checkIntervall();
+      }, minTime));
+    }
+    if (hasMaxTime) {
+      op.trackDisposables(new Timeout(() => {
+        maxTimeout = true;
+        checkIntervall();
+      }, maxTime));
+    }
+  }
+}
+
+
+
+class MouseButtonManager {
+  constructor(mouseClickCombo) {
+    let combo = mouseClickCombo;
+    let info = combo.info;
+    this.combo = mouseClickCombo;
+
+    let eventManagers = {};
+    let events = {}
+    let eventNames = [
+      'onTabDown',
+      'onTabUp',
+      'onDrag',
+    ];
+    for (let eventName of eventNames) {
+      let manager = new EventManager();
+      eventManagers[eventName] = manager;
+      events[eventName] = manager.subscriber;
+    }
+
+    let createMonitors = (time) => {
+      let data = combo.data;
+      if (!time) {
+        time = Date.now();
+      }
+      let col = new MonitorCollection([
+        new ClickDurationMonitor(data, time, events),
+        new DoubleClickMonitor(data, time, events),
+      ]);
+      if (info.button === 0) {
+        col.monitors.push(new DragMonitor(data, time, events))
+      }
+      return col;
+    };
+
+    let checkRegister = (message) => {
+      return combo.test(message.ctrlKey, message.shiftKey, message.altKey, message.metaKey);
+    }
+
+    let lastMouseDownValue;
+    this.onMouseUp = (message) => {
+      if (message.button !== info.button) {
+        return;
+      }
+      let time;
+      let register = checkRegister(message);
+
+      if (register) {
+        time = Date.now();
+        let preventClick = checkAny(eventManagers.onTabUp.fire(message, time));
+
+        if (preventClick) {
+          return true;
+        }
+      }
+      return lastMouseDownValue;
+    };
+    let onMouseDown = (message) => {
+      let time;
+      let register = checkRegister(message);
+
+      if (register) {
+        time = Date.now();
+        let preventClick = checkAny(eventManagers.onTabDown.fire(message, time));
+
+        if (preventClick) {
+          return true;
+        }
+      }
+
+      if (!register) {
+        return false;
+      }
+      let applyToAll = combo.applyToAllTabs && info.allowForAll;
+      if (!applyToAll) {
+        let unloaded = message.tab.discarded;
+        let registerUnloaded = info.applyToUnloadedTabs;
+        if (info.allowForAll) {
+          registerUnloaded = combo.applyToUnloadedTabs;
+        }
+        if (Boolean(unloaded) !== Boolean(registerUnloaded)) {
+          return false;
+        }
+      }
+
+      let monitorCol = createMonitors(time);
+      let allowedPromise = Promise.resolve(monitorCol.allow);
+      allowedPromise.then((allowUnload) => {
+        monitorCol.cancel();
+        if (allowUnload) {
+          if (!info.dontUnload) {
+            unloadTab(message.tab);
+          }
+        }
+      });
+      if (!monitorCol.done && combo.dontPreventTSTAction && !info.allwaysPreventTSTAction) {
+        return false;
+      } else {
+        return allowedPromise;
+      }
+    };
+    this.onMouseDown = (message) => {
+      if (message.button !== info.button) {
+        return;
+      }
+      let value = onMouseDown(message);
+      lastMouseDownValue = value;
+      return value;
+    }
+    this.onDrag = (message) => {
+      let time = Date.now();
+      return checkAny(eventManagers.onDrag.fire(message, time));
+    };
+  }
+}
+
+
+
 class TSTState {
   constructor() {
     Object.assign(this, {
-      listeningTypes: [],
+      listeningTypes: ['ready'],
       contextMenuItems: [],
       style: null,
     });
@@ -190,6 +520,16 @@ class TSTState {
       // 'tab-clicked',   // Same as 'tab-mousedown'?
       'tab-mousedown',
       'tab-mouseup',
+    ];
+  }
+  static getDragListeningTypes() {
+    return [
+      'tab-dragready',
+      'tab-dragcancel',
+      'tab-dragstart',
+      'tab-dragenter',
+      'tab-dragexit',
+      'tab-dragend',
     ];
   }
   static getUnloadTabContextMenuItem() {
@@ -385,20 +725,12 @@ class TSTManager {
 
 
 async function start() {
-  // Settings:
-  let leftClick = new MouseClickCombo();
-  let middleClick = new MouseClickCombo();
-  let rightClick = new MouseClickCombo();
+
+  // #region Settings
+
+  let mouseClickCombos = MouseClickComboCollection.createStandard();
   let updateClickCombos = (changes) => {
-    if (changes.unloadOnLeftClick) {
-      leftClick.update(settings.unloadOnLeftClick);
-    }
-    if (changes.unloadOnMiddleClick) {
-      middleClick.update(settings.unloadOnMiddleClick);
-    }
-    if (changes.unloadOnRightClick) {
-      rightClick.update(settings.unloadOnRightClick);
-    }
+    mouseClickCombos.update(changes, settings);
   }
 
   var hasStarted = false;
@@ -417,187 +749,38 @@ async function start() {
   hasStarted = true;
   updateClickCombos(settings);
 
+  // #endregion Settings
 
-  // Handle input:
-  let handleTabUnload = null;
-  var onMouseUp = (message) => {
-    if (handleTabUnload) {
-      handleTabUnload('up');
+
+  // #region Handle input
+
+  let mouseButtonManagers = mouseClickCombos.combos.map(combo => new MouseButtonManager(combo));
+  let getButtonManager = (index) => {
+    if (index < 0 || mouseButtonManagers.length <= index) {
+      return null;
     }
-  };
-  var onMouseDown = (message) => {
-    if (handleTabUnload) {
-      let doubleClick = handleTabUnload('down');
-      if (doubleClick) {
-        return true;
+    return mouseButtonManagers[index];
+  }
+  let managerCallback = (index, callback) => {
+    if (!callback || typeof callback !== 'function') {
+      return false;
+    }
+    let all = !index && index !== 0;
+    if (all) {
+      let returned = [];
+      for (let manager of mouseButtonManagers) {
+        returned.push(callback(manager));
       }
-    }
-    if (message.tab.discarded) {
-      return false;
-    }
-
-    // Get button handler:
-    let combo;
-    switch (message.button) {
-      case 0:
-        combo = leftClick;
-        break;
-      case 1:
-        combo = middleClick;
-        break;
-      case 2:
-        combo = rightClick;
-        break;
-    }
-    if (!combo) {
-      return false;
-    }
-    if (!combo.test(message.ctrlKey, message.shiftKey, message.altKey, message.metaKey)) {
-      return false;
-    }
-
-
-    let maxTime = parseInt(combo.maxTimeout);
-    let minTime = parseInt(combo.minTimeout);
-    let hasMaxTime = maxTime && maxTime > 0;
-    let hasMinTime = minTime && minTime > 0;
-
-    let doubleClickEnabled = combo.doubleClickEnabled;
-    let doubleClickOnly = combo.doubleClickOnly;
-    let doubleClickTimeout = parseInt(combo.doubleClickTimeout);
-    let hasDoubleClickTimeout = doubleClickTimeout && doubleClickTimeout > 0;
-    doubleClickEnabled = doubleClickEnabled && hasDoubleClickTimeout;
-    if (doubleClickEnabled && hasMinTime && minTime > doubleClickTimeout) {
-      // Mouse up event must fire before double click => if mouse up must be longer than time between mouse down event then it can't happen:
-      if (!doubleClickOnly) {
-        // Disable prevent on double click:
-        doubleClickEnabled = false;
-      } else {
-        // Double click can't occur that fast:
-        return false;
-      }
-    }
-
-    if (!hasMaxTime && !hasMinTime && !doubleClickEnabled) {
-      unloadTab(message.tab);
-      return true;
+      return returned;
     } else {
-      return new Promise((resolve, reject) => {
-        try {
-          // Unload tab only if mouse down time is less then a certain time:
-          let mouseDownTime = Date.now();
-          let mouseUpTime;
-          let timeoutId = null;
-
-          // Create callback to be called on timeout or mouse-up event:
-          let callback = (activationType) => {
-            try {
-              if (doubleClickEnabled && activationType === 'up') {
-                mouseUpTime = Date.now();
-                return true;
-              }
-
-              // Prevent double activation:
-              handleTabUnload = null;
-              if (timeoutId !== null) {
-                clearTimeout(timeoutId);
-                timeoutId = null;
-              }
-
-              // Check if operation should be canceled:
-              let time = Date.now();
-              if (!mouseUpTime) {
-                mouseUpTime = time;
-              }
-              let clickDuration = mouseUpTime - mouseDownTime;
-              let totalDuration = time - mouseDownTime;
-
-              let checkIfSuccess = () => {
-                if (hasMinTime && clickDuration < minTime) {
-                  return false;
-                }
-                if (hasMaxTime && clickDuration > maxTime) {
-                  return false;
-                }
-                if (doubleClickEnabled) {
-                  let checkForDoubleClick = () => {
-                    if (activationType !== 'down') {
-                      return false;
-                    }
-                    if (totalDuration > doubleClickTimeout) {
-                      return false;
-                    }
-                    return true;
-                  }
-                  let isDoubleClick = checkForDoubleClick();
-                  if (!doubleClickOnly && isDoubleClick) {
-                    return false;
-                  }
-                  if (doubleClickOnly && !isDoubleClick) {
-                    return false;
-                  }
-                }
-                return true;
-              };
-
-              // Unload tab or allow TST to execute its operation:
-              if (checkIfSuccess()) {
-                unloadTab(message.tab);
-                resolve(true);
-              } else {
-                resolve(false);
-              }
-            } catch (error) {
-              reject(error);
-            }
-            return doubleClickEnabled;
-          }
-          handleTabUnload = callback;
-
-          // Resolve Promise as quickly as possible:
-          let timeoutTime = -1;
-          if (hasMaxTime) {
-            // Max time limit passed => Reject
-            timeoutTime = maxTime + 10;
-          } else if (hasMinTime) {
-            // Over min time => Accept
-            timeoutTime = minTime + 10;
-          }
-          if (doubleClickEnabled) {
-            if (!hasMaxTime) {
-              // Over max double click time => No double click
-              timeoutTime = doubleClickTimeout;
-            }
-          }
-          if (timeoutTime > 0) {
-            let timeoutCallback = () => {
-              if (handleTabUnload === callback) {
-                callback('timeout');
-              }
-            };
-            timeoutId = setTimeout(() => {
-              timeoutId = null;
-              if (doubleClickEnabled && timeoutTime !== doubleClickTimeout && mouseUpTime) {
-                // Max mouse up wait period passed and mouseUpEvent has fired => wait for double click timeout
-                let timeLeft = doubleClickTimeout - timeoutTime;
-                if (timeLeft > 0) {
-                  timeoutId = setTimeout(() => {
-                    timeoutId = null;
-                    timeoutCallback();
-                  }, timeLeft);
-                  return;
-                }
-              }
-              timeoutCallback();
-            }, timeoutTime);
-          }
-
-        } catch (error) {
-          reject(error);
-        }
-      });
+      let manager = getButtonManager(index);
+      if (!manager) {
+        return false;
+      } else {
+        return callback(manager);
+      }
     }
-  };
+  }
 
   var onMenuItemClick = (info, tab) => {
     switch (info.menuItemId) {
@@ -607,12 +790,18 @@ async function start() {
     }
   };
 
+  // #endregion Handle input
 
-  // Handle TST configuration:
+
+  // #region Handle TST configuration
+
   var getTSTState = () => {
     let state = new TSTState();
-    if (leftClick.enabled || middleClick.enabled || rightClick.enabled) {
+    if (checkAny(mouseClickCombos.combos.map(combo => combo.enabled))) {
       state.addListeningTypes(TSTState.getClickListeningTypes());
+      if (checkAny(mouseClickCombos.combos.map(combo => combo.onDragEnabled && combo.info.button === 0))) {
+        state.addListeningTypes(TSTState.getDragListeningTypes());
+      }
     }
     if (settings.unloadInTSTContextMenu) {
       state.addContextMenuItems(TSTState.getUnloadTabContextMenuItem());
@@ -630,19 +819,24 @@ async function start() {
 
   // Set up TST and listen for messages:
   let tstManager = new TSTManager(getTSTState());
-  let lastMouseDownValue = false;
   let tstMessageListener = new EventListener(tstManager.onMessage, (message) => {
     switch (message.type) {
       case 'tab-clicked':
       case 'tab-mousedown': {
-        let preventAction = onMouseDown(message);
-        lastMouseDownValue = Promise.resolve(preventAction);
-        return lastMouseDownValue;
+        return checkAny(managerCallback(null, (manager) => manager.onMouseDown(message)));
       } break;
 
       case 'tab-mouseup': {
-        let preventAction = onMouseUp(message);
-        return preventAction || lastMouseDownValue;
+        return checkAny(managerCallback(null, (manager) => manager.onMouseUp(message)));
+      } break;
+
+      case 'tab-dragready':
+      case 'tab-dragcancel':
+      case 'tab-dragstart':
+      case 'tab-dragenter':
+      case 'tab-dragexit':
+      case 'tab-dragend': {
+        return checkAny(managerCallback(null, (manager) => manager.onDrag(message)));
       } break;
 
       case 'fake-contextMenu-click': {
@@ -650,6 +844,8 @@ async function start() {
       } break;
     }
   });
+
+  // #endregion Handle TST configuration
 }
 
 
