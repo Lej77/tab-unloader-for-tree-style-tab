@@ -1,15 +1,48 @@
 {
+    "options_extensionToggle_DisableButton": {
+        "message": "Disable extension"
+    },
+    "options_extensionToggle_EnableButton": {
+        "message": "Enable extension"
+    },
+    "options_extensionToggle_Status_Header": {
+        "message": "Extension Status:"
+    },
+    "options_extensionToggle_Status_Enabled": {
+        "message": "Enabled"
+    },
+    "options_extensionToggle_Status_Disabled": {
+        "message": "Disabled"
+    },
     "options_unloadOnLeftClick": {
         "message": "Left click tabs to unload them."
     },
     "options_unloadOnMiddleClick": {
-        "message": "Middle click tabs to unload them. (If the mouse button is released on the tab it was pressed on then that tab will be closed, there is currently no way to prevent this. To use this you need to press and hold the button and drag the mouse to another tab before releasing it.)"
+        "message": "Middle click tabs to unload them. (Note that in Tree Style Tab v2.4.18 and earlier there is no way to prevent Tree Style Tab's default action. This means that If the mouse button is released on the tab it was pressed on then that tab will be closed. To use middle click to unload tabs in those versions of Tree Stlye Tab you need to press and hold the button and drag the mouse to another tab before releasing it.)"
     },
     "options_unloadOnRightClick": {
         "message": "Right click tabs to unload them. (Currently there is no way to stop the context menu from opening.)"
     },
+    "options_unloadOnLeftClick_Title": {
+        "message": "Left click to unload tabs"
+    },
+    "options_unloadOnMiddleClick_Title": {
+        "message": "Middle click to unload tabs"
+    },
+    "options_unloadOnRightClick_Title": {
+        "message": "Right click to unload tabs"
+    },
     "options_selectOnLeftClick": {
-        "message": "Prevent tab select with Left click. If this operation succeeds then the tab clicked will not be selected."
+        "message": "Prevent tab select on left click. If this operation succeeds then the tab clicked will not be selected."
+    },
+    "options_selectOnLeftClick_Title": {
+        "message": "Prevent tab select on left click"
+    },
+    "options_closeOnMiddleClick": {
+        "message": "Prevent tab close on middle click. If this operation succeeds then the tab clicked will not be closed. (Note that in Tree Style Tab v2.4.18 and earlier this is not possible.)"
+    },
+    "options_closeOnMiddleClick_Title": {
+        "message": "Prevent tab close on middle click"
     },
     "options_modifierKeysInfo": {
         "message": "The click will only register if the selected modifier keys are pressed and the unselected modifier keys are released."
@@ -48,19 +81,19 @@
         "message": "Time in milliseconds between mouse down events to count as a double click: "
     },
     "options_onDrag_enabled": {
-        "message": "Wait for long press without dragged tab. This is a special notification sent by Tree Style Tab when a tab is long pressed with the left mouse button. The notification is not sent if the tab is dragged. This can be used to allow the operation with long press but cancel when using drag and drop with tabs."
+        "message": "Wait for long press without drag and drop. This is a special notification sent by Tree Style Tab when a tab is long pressed with the left mouse button. The notification is not sent if the tab is dragged. This can be used to allow the operation with long press but cancel when using drag and drop with tabs."
     },
     "options_onDrag_cancel": {
         "message": "If checked then cancel if an event is registered; otherwise only allow if an event is registered."
     },
     "options_onDrag_mouseUpTigger": {
-        "message": "If checked then mouse up events will register as drag events."
+        "message": "If checked then mouse up events will also register as long-press events. Currently Tree Style Tab doesn't send mouse up events after drag and drop operations so if a mouse up event is sent then drag and drop wasn't used. This means that if this is checked then an event will be register if drag and drop is NOT used."
     },
     "options_onDrag_timeout": {
-        "message": "Time in milliseconds to wait for long press (should be notified after 500 milliseconds if the tab isn't dragged): "
+        "message": "Time in milliseconds to wait for long press (should be notified after 400 milliseconds if the tab isn't dragged): "
     },
     "options_dontPreventTSTAction": {
-        "message": "Don't prevent Tree Style Tab's default action while deciding if the click is valid."
+        "message": "Don't prevent Tree Style Tab's default action."
     },
     "options_applyToAll": {
         "message": "Apply to both unloaded and loaded tabs."
@@ -68,14 +101,115 @@
     "options_applyToUnloadedTabs": {
         "message": "Register click on unloaded tabs instead of loaded tabs."
     },
+    "options_fallbackToLastSelected": {
+        "message": "Select last focused: If tab is active then select the last focused tab. If this is not checked then the closest tab is selected."
+    },
+    "options_ignoreHiddenTabs": {
+        "message": "Ignore hidden tabs: if tab is active then the tab that is selected instead must not be hidden."
+    },
+    "options_unloadInTSTContextMenu_Title": {
+        "message": "Context menu item to unload tabs"
+    },
     "options_unloadInTSTContextMenu": {
-        "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab"
+        "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab."
+    },
+    "options_unloadInTSTContextMenu_DelayedRegistration": {
+        "message": "Re-register context menu items to Tree Style Tab after a delay to ensure that they are placed at the end of the context menu. Delay in milliseconds (0 to disable): "
     },
     "options_dimUnloadedTabs": {
-        "message": "Dim unloaded tabs"
+        "message": "Dim unloaded tabs in Tree Style Tab's sidebar."
+    },
+    "options_disableOptionsPageAnimations": {
+        "message": "Disable animations on options page."
+    },
+    "options_TabHide_Header": {
+        "message": "Tab Hiding"
+    },
+    "options_TabHide_HideUnloadedTabs": {
+        "message": "Hide unloaded tabs with the tab hiding API. Hidden tabs will not be shown in the toolbar and can't be selected with keyboard shortcuts. When the current tab is closed hidden tabs will not be selected as long as there are other visible tabs. Pinned tabs can't be hidden."
+    },
+    "options_TabHide_ShowHiddenTabsInTST": {
+        "message": "Show hidden tabs in Tree Style Tab's sidebar."
+    },
+    "options_TabHide_Info": {
+        "message": "If this options is enabled then it makes sense to uncheck all the \"$ignoreHiddenTabsOption$\" checkboxes.\n\nTo still be able to select unloaded tabs you can use the \"$showHiddenTabsInTSTOption$\" option.\n\nNote: requires the \"tabHide\" permission.",        
+        "placeholders": {
+            "ignoreHiddenTabsOption": {
+                "content": "$1"
+            },
+            "showHiddenTabsInTSTOption": {
+                "content": "$2"
+            }
+        }
+    },
+    "options_TreeStyleTabStyle_Header": {
+        "message": "Custom Tree Style Tab Style"
+    },
+    "options_TreeStyleTabStyle_Info": {
+        "message": "This is the style changes made to Tree Style Tab's sidebar by this extension:"
+    },
+    "options_OptionalPermissions_Header": {
+        "message": "Optional Permissions"
+    },
+    "options_ResetSettings_Button": {
+        "message": "Reset Settings"
+    },
+    "options_ResetSettings_Prompt": {
+        "message": "Do you want to reset all settings to default values?"
     },
     "contextMenu_unloadTab": {
         "message": "&Suspend Tab",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
+    },
+    "optionalPermissions_Request": {
+        "message": "Request"
+    },
+    "optionalPermissions_Remove": {
+        "message": "Remove"
+    },
+    "optionalPermissions_Available": {
+        "message": "Granted:"
+    },
+    "optionalPermissions_Granted": {
+        "message": "True"
+    },
+    "optionalPermissions_NotGranted": {
+        "message": "False"
+    },
+    "optionalPermissions_TabHide_Title": {
+        "message": "\"tabHide\""
+    },
+    "optionalPermissions_TabHide_Explanation": {
+        "message": "The \"tabHide\" permission is needed to hide tabs with the tab hiding API.\n\nThis is currently an experimental API and it is disabled by default. To enable it, visit the \"about:config\" URL and set \"extensions.webextensions.tabhide.enabled\" to true.\n\nIf the API is not enabled then it can't be used even if the permission is granted."
+    },
+    "optionalPermissions_TabHide_APIEnabled_Header": {
+        "message": "API Status:"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Enabled": {
+        "message": "Available"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Disabled": {
+        "message": "Unavailable"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Error": {
+        "message": "Permission denied"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Check": {
+        "message": "Check API Status"
+    },
+    "permissionsPage_Title": {
+        "message": "Permissions"
+    },
+    "permissionsPage_Info_Start": {
+        "message": "Due to a "
+    },
+    "permissionsPage_Info_Bug": {
+        "message": "Firefox bug"
+    },
+    "permissionsPage_Info_End": {
+        "message": " it is currently not possible to request optional permission from the options page. As a workaround request permissions from this page instead."
+    },
+    "contextMenu_rootItemTitle": {
+        "message": "Tab Unloader"
     }
 }

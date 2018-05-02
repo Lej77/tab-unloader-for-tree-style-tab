@@ -1,64 +1,178 @@
 
-const kTST_ID = 'treestyletab@piro.sakura.ne.jp';
+// #region Tab Operations
 
-
-
-async function unloadTab(tab) {
+async function unloadTabs(tabs, fallbackOptions = {}) {
   try {
-    // Get latest info:
-    tab = await browser.tabs.get(tab.id);
-    // Select another tab if tab is selected:
-    if (tab.active) {
-      let closestTab = await findClosestLoadedTab(tab);
-      if (!closestTab) {
-        return;
-      }
-      await browser.tabs.update(closestTab.id, { active: true });
+    if (!tabs) {
+      return;
     }
-    // Unload tab:
-    await browser.tabs.discard(tab.id);
+    if (!Array.isArray(tabs)) {
+      tabs = [tabs];
+    }
+    // Get latest info:
+    tabs = await getLatestTabs(tabs);
+    if (tabs.length === 0) {
+      return;
+    }
+
+    // Select another tab if a tab is selected:
+    await ensureTabsArentActive(tabs, fallbackOptions);
+
+    // Unload tabs:
+    await browser.tabs.discard(tabs.map(tab => tab.id));
   } catch (error) {
-    console.log('Failed to unload tab!' + '\n' + error);
+    console.log('Failed to unload tab' + (tabs && Array.isArray(tabs) && tabs.length > 1 ? '(s)' : '') + '!\n', error);
   }
 }
 
 
+/**
+ * Update tab object(s) information.
+ * 
+ * @param {Object|Array} tabs Tab(s) to update.
+ * @returns {Array} Updated tab(s).
+ */
+async function getLatestTabs(tabs) {
+  if (!tabs) {
+    return;
+  }
+  if (!Array.isArray(tabs)) {
+    tabs = [tabs];
+  }
+  if (tabs.length === 0) {
+    return tabs;
+  }
+  // Get latest info:
+  tabs = tabs.map(tab => browser.tabs.get(tab.id));
+  for (let iii = 0; iii < tabs.length; iii++) {
+    try {
+      tabs[iii] = await tabs[iii];
+    } catch (error) {
+      // Tab might have been closed.
+      tabs[iii] = null;
+    }
+  }
+  tabs = tabs.filter(tab => tab);
+  return tabs;
+}
 
-async function findClosestLoadedTab(tab) {
+
+/**
+ * Ensure that some tabs aren't active.
+ * 
+ * @param {Object|Array} tabs The tabs that shouldn't be active.
+ * @param {boolean} fallbackToLastSelectedTab If a tab is active then this determines the preference to use when selecting anohter tab. If true then the tab with highest lastAccessed value will be selected. If false the closest tab to the active tab will be selected.
+ * @param {boolean} ignoreHiddenTabs If a tab is active then this determines the preference to use when selecting anohter tab. If true then all hidden tabs will be ignored when searching for another tab.
+ * @returns {boolean} Indicates if the operations was successful. If true then none of the provided tabs are selected.
+ */
+async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, ignoreHiddenTabs = false } = {}) {
+  if (!tabs) {
+    return true;
+  }
+  if (!Array.isArray(tabs)) {
+    tabs = [tabs];
+  }
+  let activeTabs = tabs.filter(tab => tab.active);
+  if (activeTabs.length === 0) {
+    return true;
+  }
+
+  let closestTab;
+  let queryDetails = { windowId: activeTabs[0].windowId };
+  if (ignoreHiddenTabs) {
+    queryDetails.hidden = false;
+  }
+  let allTabs = await browser.tabs.query(queryDetails);
+  if (fallbackToLastSelectedTab) {
+    closestTab = await findLastFocusedLoadedTab(allTabs, tabs);
+  } else {
+    closestTab = await findClosestLoadedTab(activeTabs[0], allTabs, tabs);
+  }
+  if (closestTab) {
+    await browser.tabs.update(closestTab.id, { active: true });
+    return true;
+  }
+  return false;
+}
+
+
+async function findClosestLoadedTab(tab, searchTabs, ignoredTabs = []) {
   // (prioritize higher indexes)
-  let tabs = await browser.tabs.query({ windowId: tab.windowId });
+  let tabs = searchTabs;
   if (tabs.length <= 1) {
     return null;
   }
-  let indexActive = tabs.indexOf(tabs.filter(tab => tab.active)[0]);
+  let indexActive = tabs.map(t => t.id).indexOf(tab.id);
+  if (indexActive < 0) {
+    indexActive = tab.index;
+  }
+  let ignoredTabIds = ignoredTabs.map(t => t.id);
 
   for (let iii = 1; iii < tabs.length; iii++) {
     let before = indexActive - iii;
     let after = indexActive + iii;
-    let beforeInRange = before >= 0;
-    let afterInRange = after < tabs.length;
+    let checkRange = (index) => {
+      return 0 <= index && index < tabs.length;
+    };
+    let beforeInRange = checkRange(before);
+    let afterInRange = checkRange(after);
     if (!beforeInRange && !afterInRange) {
       break;
     }
-    if (afterInRange && !tabs[after].discarded) {
+    let checkTab = (t) => {
+      return !t.discarded && !ignoredTabIds.includes(t.id);
+    };
+    if (afterInRange && checkTab(tabs[after])) {
       return tabs[after];
     }
-    if (beforeInRange && !tabs[before].discarded) {
+    if (beforeInRange && checkTab(tabs[before])) {
       return tabs[before];
     }
   }
 
   if (indexActive + 1 < tabs.length) {
-    return tabs[indexActive + 1];
+    let t = tabs[indexActive + 1];
+    if (!ignoredTabIds.includes(t.id)) {
+      return t;
+    }
   }
   if (indexActive - 1 >= 0) {
-    return tabs[indexActive - 1];
+    let t = tabs[indexActive - 1];
+    if (!ignoredTabIds.includes(t.id)) {
+      return t;
+    }
   }
 
   return null;
 }
 
 
+async function findLastFocusedLoadedTab(searchTabs, ignoredTabs = []) {
+  let tabs = searchTabs;
+  if (tabs.length <= 1) {
+    return null;
+  }
+  let ignoredTabIds = ignoredTabs.map(t => t.id);
+
+  tabs.sort((a, b) => b.lastAccessed - a.lastAccessed);
+  let lastFocusedNotLoaded = null;
+  for (let focusedTab of tabs) {
+    if (!ignoredTabIds.includes(focusedTab.id)) {
+      if (!focusedTab.discarded) {
+        return focusedTab;
+      }
+      if (!lastFocusedNotLoaded) {
+        lastFocusedNotLoaded = focusedTab;
+      }
+    }
+  }
+  return lastFocusedNotLoaded;
+}
+
+// #endregion Tab Operations
+
+
+// #region Event Conditions
 
 class Monitor {
   constructor() {
@@ -102,7 +216,7 @@ class MonitorCollection {
 
 
 class DragMonitor extends Monitor {
-  constructor(data, time, events) {
+  constructor({ data, time, events }) {
     super();
     var op = this.operationManager;
 
@@ -122,30 +236,25 @@ class DragMonitor extends Monitor {
     if (!onDragEnabled) {
       op.resolve(true);
       return;
+    } else if (!hasOnDragTimeout) {
+      op.resolve(false);
+      return;
     }
 
     op.trackDisposables([
       new Timeout(() => {
         setDragged(false);
       }, onDragTimeout),
-      new EventListener(events.onDrag, (message, eventTime) => {
-        // This event is fired after 500 milliseconds if the tab is not dragged.
-        if (op.done) {
-          return;
-        }
-        if (!eventTime) {
-          eventTime = Date.now();
-        }
-        let duration = eventTime - time;
-
-        if (duration > onDragTimeout) {
-          return;
-        }
+      new EventListener(events.onDrag, (eventMessage, eventTime) => {
+        // This event is fired after 400 milliseconds if the tab is not dragged.
         setDragged(true);
       }),
-      new EventListener(events.onTabUp, (message, eventTime) => {
+      new EventListener(events.onTabUp, (eventMessage, eventTime) => {
         setDragged(data.onDragMouseUpTrigger);
-      })
+      }),
+      new EventListener(events.onTabDown, (eventMessage, eventTime) => {
+        setDragged(false);
+      }),
     ]);
   }
 }
@@ -153,7 +262,7 @@ class DragMonitor extends Monitor {
 
 
 class DoubleClickMonitor extends Monitor {
-  constructor(data, time, events) {
+  constructor({ data, time, events, message }) {
     super();
     var op = this.operationManager;
 
@@ -181,12 +290,12 @@ class DoubleClickMonitor extends Monitor {
         op.resolve(false);
       }
       op.resolve(true);
-    }
+    };
 
 
     op.trackDisposables([
-      new EventListener(events.onTabDown, (message, eventTime) => {
-        setDoubleClick(true);
+      new EventListener(events.onTabDown, (eventMessage, eventTime) => {
+        setDoubleClick(eventMessage.tab.id === message.tab.id);
         return true;
       }),
       new Timeout(() => {
@@ -199,7 +308,7 @@ class DoubleClickMonitor extends Monitor {
 
 
 class ClickDurationMonitor extends Monitor {
-  constructor(data, time, events) {
+  constructor({ data, time, events }) {
     super();
     var op = this.operationManager;
 
@@ -238,7 +347,7 @@ class ClickDurationMonitor extends Monitor {
           op.resolve(true);
         }
       }
-    }
+    };
 
 
     op.trackDisposables([
@@ -263,6 +372,7 @@ class ClickDurationMonitor extends Monitor {
   }
 }
 
+// #endregion Event Conditions
 
 
 class MouseButtonManager {
@@ -272,7 +382,7 @@ class MouseButtonManager {
     this.combo = mouseClickCombo;
 
     let eventManagers = {};
-    let events = {}
+    let events = {};
     let eventNames = [
       'onTabDown',
       'onTabUp',
@@ -284,24 +394,25 @@ class MouseButtonManager {
       events[eventName] = manager.subscriber;
     }
 
-    let createMonitors = (time) => {
+    let createMonitors = (time, message) => {
       let data = combo.data;
       if (!time) {
         time = Date.now();
       }
+      let monitorData = { data, time, events, message };
       let col = new MonitorCollection([
-        new ClickDurationMonitor(data, time, events),
-        new DoubleClickMonitor(data, time, events),
+        new ClickDurationMonitor(monitorData),
+        new DoubleClickMonitor(monitorData),
       ]);
       if (info.button === 0) {
-        col.monitors.push(new DragMonitor(data, time, events))
+        col.monitors.push(new DragMonitor(monitorData));
       }
       return col;
     };
 
     let checkRegister = (message) => {
       return combo.test(message.ctrlKey, message.shiftKey, message.altKey, message.metaKey);
-    }
+    };
 
     let lastMouseDownValue;
     this.onMouseUp = (message) => {
@@ -321,7 +432,7 @@ class MouseButtonManager {
       }
       return lastMouseDownValue;
     };
-    let onMouseDown = (message) => {
+    let onMouseDown = async (message) => {
       let time;
       let register = checkRegister(message);
 
@@ -339,7 +450,7 @@ class MouseButtonManager {
       }
       let applyToAll = combo.applyToAllTabs && info.allowForAll;
       if (!applyToAll) {
-        let unloaded = message.tab.discarded;
+        let unloaded = await message.tab.discarded;
         let registerUnloaded = info.applyToUnloadedTabs;
         if (info.allowForAll) {
           registerUnloaded = combo.applyToUnloadedTabs;
@@ -349,17 +460,17 @@ class MouseButtonManager {
         }
       }
 
-      let monitorCol = createMonitors(time);
+      let monitorCol = createMonitors(time, message);
       let allowedPromise = Promise.resolve(monitorCol.allow);
       allowedPromise.then((allowUnload) => {
         monitorCol.cancel();
         if (allowUnload) {
           if (!info.dontUnload) {
-            unloadTab(message.tab);
+            unloadTabs(message.tab, { fallbackToLastSelectedTab: combo.fallbackToLastSelected, ignoreHiddenTabs: combo.ignoreHiddenTabs });
           }
         }
       });
-      if (!monitorCol.done && combo.dontPreventTSTAction && !info.allwaysPreventTSTAction) {
+      if ((info.button !== 0 || !monitorCol.done) && combo.dontPreventTSTAction && !info.allwaysPreventTSTAction) {
         return false;
       } else {
         return allowedPromise;
@@ -372,7 +483,7 @@ class MouseButtonManager {
       let value = onMouseDown(message);
       lastMouseDownValue = value;
       return value;
-    }
+    };
     this.onDrag = (message) => {
       let time = Date.now();
       return checkAny(eventManagers.onDrag.fire(message, time));
@@ -381,372 +492,31 @@ class MouseButtonManager {
 }
 
 
-
-class TSTState {
-  constructor() {
-    Object.assign(this, {
-      listeningTypes: ['ready'],
-      contextMenuItems: [],
-      style: null,
-    });
-  }
-
-  static isEqual(a, b) {
-    if (a === b) {
-      return true;
-    }
-    if (!a && !b) {
-      return true;
-    }
-    if (!a || !b) {
-      return false;
-    }
-
-    if (a.style !== b.style) {
-      return false;
-    }
-
-    if (!TSTState.isListeningTypesEqual(a, b)) {
-      return false;
-    }
-
-    if (!TSTState.isContextMenuItemsEqual(a, b)) {
-      return false;
-    }
-    return true;
-  }
-  static isListeningTypesEqual(a, b) {
-    if (a === b) {
-      return true;
-    }
-    if (!a && !b) {
-      return true;
-    }
-    if (!a || !b) {
-      return false;
-    }
-
-    if (a.listeningTypes.length !== b.listeningTypes.length) {
-      return false;
-    }
-    for (let aLisType of a.listeningTypes) {
-      if (!b.listeningTypes.includes(aLisType)) {
-        return false;
-      }
-    }
-    return true;
-  }
-  static isContextMenuItemsEqual(a, b) {
-    if (a === b) {
-      return true;
-    }
-    if (!a && !b) {
-      return true;
-    }
-    if (!a || !b) {
-      return false;
-    }
-
-    if (a.contextMenuItems.length !== b.contextMenuItems.length) {
-      return false;
-    }
-    for (let iii = 0; iii < a.contextMenuItems.length; iii++) {
-      let aItem = a.contextMenuItems[iii];
-      let bItem = b.contextMenuItems[iii];
-      if (aItem === bItem) {
-        continue;
-      }
-      if (aItem.context || bItem.context) {
-        if (
-          !aItem.context || !bItem.context ||
-          aItem.context.includes('tabs') !== bItem.context.includes('tabs')
-        ) {
-          return false;
-        }
-      }
-      if (
-        aItem.documentUrlPatterns !== bItem.documentUrlPatterns ||
-        aItem.id !== bItem.id ||
-        aItem.parentId !== bItem.parentId ||
-        aItem.title !== bItem.title ||
-        aItem.type !== bItem.type
-      ) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  addListeningTypes(listeningTypes) {
-    if (!Array.isArray(listeningTypes)) {
-      listeningTypes = [listeningTypes];
-    }
-    for (let type of listeningTypes) {
-      if (!this.listeningTypes.includes(type)) {
-        this.listeningTypes.push(type);
-      }
-    }
-  }
-
-  getContextMenuItem(menuItemId) {
-    let applicable = this.contextMenuItems.filter(item => item.id === menuItemId);
-    if (applicable.length > 0) {
-      return applicable[0];
-    } else {
-      return null;
-    }
-  }
-  addContextMenuItems(items) {
-    if (!Array.isArray(items)) {
-      items = [items];
-    }
-    this.removeContextMenuItems(items.map(item => item.id));
-    for (let item of items) {
-      this.contextMenuItems.push(item);
-    }
-  }
-  removeContextMenuItems(menuItemIds) {
-    if (!Array.isArray(menuItemIds)) {
-      menuItemIds = [menuItemIds];
-    }
-    this.contextMenuItems = this.contextMenuItems.filter((item) => !menuItemIds.includes(item.id));
-  }
-  removeAllContextMenuItems() {
-    this.contextMenuItems = [];
-  }
-
-  static getClickListeningTypes() {
-    return [
-      // 'tab-clicked',   // Same as 'tab-mousedown'?
-      'tab-mousedown',
-      'tab-mouseup',
-    ];
-  }
-  static getDragListeningTypes() {
-    return [
-      'tab-dragready',
-      'tab-dragcancel',
-      'tab-dragstart',
-      'tab-dragenter',
-      'tab-dragexit',
-      'tab-dragend',
-    ];
-  }
-  static getUnloadTabContextMenuItem() {
-    return {
-      id: 'unload-tab',
-      title: browser.i18n.getMessage('contextMenu_unloadTab'),
-      type: 'normal',
-      contexts: ['tab'],
-    };
-  }
-  static getDimUnloadedTabsStyle() {
-    return [
-      '.tab.discarded {',
-      '  opacity: 0.75;',
-      '}'
-    ].join('\n');
-  }
-}
-
-
-
-class TSTManager {
-  constructor(state) {
-    let messageEventManager = new EventManager();
-    this.onMessage = messageEventManager.subscriber;
-
-    let messageExternalListener = new EventListener(browser.runtime.onMessageExternal, (message, sender) => {
-      try {
-        if (sender.id === kTST_ID) {
-          if (message.type === 'ready') {
-            invalidateTST(true); // passive registration for secondary (or after) startup
-          } else {
-            let returned = messageEventManager.fire(message);
-            let value;
-            for (let ret of returned) {
-              if (ret !== undefined) {
-                value = ret;
-                break;
-              }
-            }
-            return value;
-          }
-        }
-      } catch (error) {
-        console.log('Error on message handling!' + '\n' + error);
-      }
-    });
-
-
-    if (!state) {
-      state = new TSTState();
-    }
-    this.state = state;
-    let currentState = new TSTState();
-
-
-    let blockTimeoutId = null;
-    let blockTimeInMilliseconds = 1000;
-    let invalidated = false;
-
-    var block = () => {
-      clearBlock();
-      blockTimeoutId = setTimeout(function () {
-        blockTimeoutId = null;
-        if (invalidated) {
-          invalidateTST();
-        }
-      }, blockTimeInMilliseconds);
-    }
-    var clearBlock = () => {
-      if (blockTimeoutId) {
-        clearTimeout(blockTimeoutId);
-        blockTimeoutId = null;
-      }
-    }
-
-
-    var invalidateTST = async (stateReset = false) => {
-      if (stateReset) {
-        currentState = new TSTState();
-      }
-      if (blockTimeoutId !== null) {
-        invalidated = true;
-        return;
-      }
-      block();
-      invalidated = false;
-
-      if (!TSTState.isEqual(currentState, this.state)) {
-        let newState = Object.assign(new TSTState(), this.state);
-
-        if (newState.style || newState.listeningTypes.length > 0 || newState.contextMenuItems.length > 0) {
-          let styleChange = currentState.style !== newState.style;
-          // Remove old style:
-          if (currentState.style && styleChange) {
-            await TSTManager.unregisterFromTST();
-          }
-          // Update listening types and/or register new style:
-          let success = true;
-          if (styleChange || !TSTState.isListeningTypesEqual(currentState, newState)) {
-            success = await TSTManager.registerToTST(newState.listeningTypes, newState.style);
-          }
-          if (!success) {
-            newState = new TSTState();
-          } else {
-            // Update context menu items:
-            await TSTManager.removeAllTSTContextMenuItems();
-            if (newState.contextMenuItems.length > 0) {
-              for (let item of newState.contextMenuItems) {
-                await TSTManager.createTSTContextMenuItem(item);
-              }
-            }
-          }
-        } else {
-          // Unregister:
-          await TSTManager.removeAllTSTContextMenuItems();
-          await TSTManager.unregisterFromTST();
-        }
-
-        currentState = newState;
-      } else {
-        clearBlock();
-        if (invalidated) {
-          invalidateTST();
-        }
-      }
-    }
-    this.invalidateTST = invalidateTST;
-
-
-    // Attempt to register to TST:
-    invalidateTST();
-  }
-
-
-  static async registerToTST(listeningTypes = [], style = null) {
-    try {
-      let message = {
-        type: 'register-self',
-        name: browser.runtime.id,
-        listeningTypes: listeningTypes,
-      };
-      if (style && typeof style === "string") {
-        message.style = style;
-      }
-      await browser.runtime.sendMessage(kTST_ID, message);
-    }
-    catch (e) {
-      // TST is not available
-      return false;
-    }
-    return true;
-  }
-
-  static async unregisterFromTST() {
-    try {
-      await browser.runtime.sendMessage(kTST_ID, {
-        type: 'unregister-self'
-      });
-    }
-    catch (e) {
-      // TST is not available
-      return false;
-    }
-    return true;
-  }
-
-
-  static async createTSTContextMenuItem(item) {
-    try {
-      await browser.runtime.sendMessage(kTST_ID, {
-        type: 'fake-contextMenu-create',
-        params: item,
-      });
-    } catch (error) {
-      return false;
-    }
-    return true;
-  }
-
-  static async removeAllTSTContextMenuItems() {
-    try {
-      await browser.runtime.sendMessage(kTST_ID, {
-        type: 'fake-contextMenu-remove-all'
-      });
-    } catch (error) {
-      return false;
-    }
-    return true;
-  }
-}
-
-
-
 async function start() {
 
   // #region Settings
 
+  var timeDisposables = new DisposableCollection();
+
   let mouseClickCombos = MouseClickComboCollection.createStandard();
   let updateClickCombos = (changes) => {
     mouseClickCombos.update(changes, settings);
-  }
+  };
 
-  var hasStarted = false;
-  var settingsTracker = new SettingsTracker(null, (changes, storageArea) => {
-    if (!hasStarted) {
-      return;
-    }
+  var settingsTracker = new SettingsTracker();
+  var settings = settingsTracker.settings;
+  await settingsTracker.start;
+  settingsTracker.onChange.addListener((changes, storageArea) => {
     updateClickCombos(changes);
+
+    if (changes.delayedTSTRegistrationTimeInMilliseconds || changes.isEnabled) {
+      timeDisposables.disposeOfAllObjects();
+    }
 
     if (invalidateTST) {
       invalidateTST();
     }
   });
-  var settings = settingsTracker.settings;
-  await settingsTracker.start;
-  hasStarted = true;
   updateClickCombos(settings);
 
   // #endregion Settings
@@ -760,7 +530,7 @@ async function start() {
       return null;
     }
     return mouseButtonManagers[index];
-  }
+  };
   let managerCallback = (index, callback) => {
     if (!callback || typeof callback !== 'function') {
       return false;
@@ -780,12 +550,12 @@ async function start() {
         return callback(manager);
       }
     }
-  }
+  };
 
   var onMenuItemClick = (info, tab) => {
     switch (info.menuItemId) {
       case 'unload-tab':
-        unloadTab(tab);
+        unloadTabs(tab, { fallbackToLastSelectedTab: settings.unloadInTSTContextMenu_fallbackToLastSelected, ignoreHiddenTabs: settings.unloadInTSTContextMenu_ignoreHiddenTabs });
         break;
     }
   };
@@ -795,32 +565,112 @@ async function start() {
 
   // #region Handle TST configuration
 
+  var wantedTSTStyle = '';
+  var onTSTStyleChanged = new EventManager();
+  var getTSTStyle = () => {
+    let style = '';
+
+    // #region Style
+
+    if (settings.dimUnloadedTabs) {
+      style += `
+/* Dim unloaded tabs */
+.tab.discarded {
+  opacity: 0.75;
+}
+
+`;
+    }
+    if (settings.tabHide_ShowHiddenTabsInTST) {
+      style += `
+/* Show hidden tabs */
+.tab.hidden {
+  pointer-events: auto !important;
+  position: relative !important;
+  visibility: visible !important;
+}
+
+`;
+    }
+
+    // #endregion Style
+
+    return style;
+  };
+
   var getTSTState = () => {
+    let style = getTSTStyle();
+    if (style !== wantedTSTStyle) {
+      let oldStyle = wantedTSTStyle;
+      wantedTSTStyle = style;
+      onTSTStyleChanged.fire(oldStyle, style);
+    }
+
     let state = new TSTState();
-    if (checkAny(mouseClickCombos.combos.map(combo => combo.enabled))) {
+    if (!settings.isEnabled) {
+      return state;
+    }
+
+    if (mouseClickCombos.combos.some(combo => combo.enabled)) {
       state.addListeningTypes(TSTState.getClickListeningTypes());
-      if (checkAny(mouseClickCombos.combos.map(combo => combo.enabled && combo.onDragEnabled && combo.info.button === 0))) {
-        state.addListeningTypes(TSTState.getDragListeningTypes());
+      if (mouseClickCombos.combos.some(combo => combo.enabled && combo.onDragEnabled && combo.info.button === 0)) {
+        state.addListeningTypes([tstAPI.NOTIFY_TAB_DRAGREADY, tstAPI.NOTIFY_TAB_DRAGSTART]);
       }
     }
     if (settings.unloadInTSTContextMenu) {
-      state.addContextMenuItems(TSTState.getUnloadTabContextMenuItem());
+      state.addContextMenuItems(new ContextMenuItem('unload-tab', browser.i18n.getMessage('contextMenu_unloadTab')));
     }
-    if (settings.dimUnloadedTabs) {
-      state.style = TSTState.getDimUnloadedTabsStyle();
-    }
+
+    state.style = style;
+
     return state;
-  }
-  var invalidateTST = () => {
-    tstManager.state = getTSTState();
-    tstManager.invalidateTST();
-  }
+  };
+  var invalidateTST = async () => {
+    await tstManager.setState(getTSTState());
+  };
 
 
   // Set up TST and listen for messages:
+
   let tstManager = new TSTManager(getTSTState());
+
+
+  let isFirstTSTRegistration = true;
+  let delayedRegistration = () => {
+    isFirstTSTRegistration = false;
+    let time = settings.delayedTSTRegistrationTimeInMilliseconds;
+    time = parseInt(time);
+    if (!time || time <= 0) {
+      return;
+    }
+
+    timeDisposables.trackDisposables(
+      new Timeout(() => tstManager.invalidateTST([TSTManager.resetTypes.listeningTypes, TSTManager.resetTypes.contextMenu]), time)
+    );
+  };
+  let tstRegistrationListener = new EventListener(tstManager.onRegistrationChange, (oldState, newState) => {
+    if (isFirstTSTRegistration) {
+      delayedRegistration();
+    }
+  });
+  delayedRegistration();
+
+
   let tstMessageListener = new EventListener(tstManager.onMessage, (message) => {
+    if (!settings.isEnabled) {
+      return;
+    }
+    if (message.tab) {
+      let tstDiscarded = message.tab.discarded;
+      defineProperty(message.tab, 'discarded', () => {
+        return tstDiscarded && !message.tab.active;
+      });
+    }
     switch (message.type) {
+      case 'ready': {
+        isFirstTSTRegistration = true;
+      } break;
+
       case 'tab-clicked':
       case 'tab-mousedown': {
         return checkAny(managerCallback(null, (manager) => manager.onMouseDown(message)));
@@ -846,8 +696,112 @@ async function start() {
   });
 
   // #endregion Handle TST configuration
-}
 
+
+  // #region Tab Hiding
+
+  var tabHideManager = null;
+
+  let lastCheck = null;
+  let checkTabHiding = async () => {
+    while (lastCheck) {
+      let check = lastCheck;
+      await check;
+      if (lastCheck === check) {
+        lastCheck = null;
+      }
+    }
+    let check = async () => {
+      let wanted = settings.tabHide_HideUnloadedTabs && settings.isEnabled;
+      let allowed = wanted ? await TabHideManager.checkPermission() : false;
+      let apiAccess = allowed ? await TabHideManager.checkAPIEnabled() : false;
+
+      if (tabHideManager) {
+        tabHideManager.isAPIEnabled = apiAccess;
+      }
+      if (allowed) {
+        if (!tabHideManager) {
+          if (settings.tabHide_ShowHiddenTabsInTST) {
+            // Ensure that hidden tabs are visible in TST before hiding tabs:
+            await invalidateTST();
+            await delay(250);
+          }
+
+          if (!tabHideManager) {
+            tabHideManager = new TabHideManager();
+            tabHideManager.onAPIStatusChanged.addListener(() => {
+              if (portManager) {
+                portManager.fireEvent(messageTypes.tabHideAPIChanged, [tabHideManager.isAPIEnabled]);
+              }
+            });
+          }
+        }
+      } else {
+        if (tabHideManager) {
+          tabHideManager.dispose();
+          tabHideManager = null;
+          await TabHideManager.showAllTabs();
+          await delay(250);
+        }
+      }
+    };
+    let checking = check();
+    lastCheck = checking;
+    await checking;
+    if (checking === lastCheck) {
+      lastCheck = null;
+    }
+  };
+  settingsTracker.onChange.addListener((changes, storageArea) => {
+    if (changes.tabHide_HideUnloadedTabs || changes.isEnabled) {
+      checkTabHiding();
+    }
+  });
+  checkTabHiding();
+
+  // #endregion Tab Hiding
+
+
+  // #region Messaging
+
+  var portManager = new PortManager();
+  portManager.onMessage.addListener(async (message, sender, disposables) => {
+    if (!message.type) {
+      return;
+    }
+    switch (message.type) {
+      case messageTypes.permissionsChanged: {
+        portManager.fireEvent(messageTypes.permissionsChanged, [message.permission, message.value]);
+        checkTabHiding();
+      } break;
+      case messageTypes.tabHideAPIChanged: {
+        portManager.fireEvent(messageTypes.tabHideAPIChanged, [message.value, sender.tab ? sender.tab.id : null]);
+        if (tabHideManager) {
+          tabHideManager.isAPIEnabled = message.value;
+        }
+      } break;
+      case messageTypes.updateTabHide: {
+        await checkTabHiding();
+        if (tabHideManager && !tabHideManager.isDisposed) {
+          await tabHideManager.updateAllHideStates();
+        } else {
+          await TabHideManager.showAllTabs();
+        }
+      } break;
+      case messageTypes.getActiveStyle: {
+        return wantedTSTStyle;
+      } break;
+    }
+  });
+  let notifyStyle = (oldStyle, newStyle) => {
+    portManager.fireEvent(messageTypes.styleChanged, [oldStyle, newStyle]);
+  };
+  onTSTStyleChanged.addListener(notifyStyle);
+  notifyStyle('', wantedTSTStyle);
+
+  // #endregion Messaging
+
+}
 
 
 start();

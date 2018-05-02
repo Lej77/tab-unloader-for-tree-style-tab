@@ -1,16 +1,28 @@
-
-.area {
-    border: 1px solid black;
-    margin: 3px;
-    padding: 5px;
-    border-radius: 5px;
+body {
+    overflow-y: hidden;
 }
-.mouseClickArea {
-  margin-bottom: 25px;
+
+.extensionToggleArea {    
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 35px;
+}
+.extensionToggleArea > *:not(button) {
+    flex: 1 0 auto;
+}
+.extensionToggleArea button {
+    text-align: center;
+    min-height: 3em;
+    font-size: 1.2em;
+    width: 40%;
+    margin: 50px;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 
 .mouseClickArea:not(.enabled) > *:not(:first-child),
-.mouseClickArea.enabled .area:not(.enabled) > *:not(:first-child) {
+.mouseClickArea.enabled .area:not(.enabled) > *:not(:first-child),
+.contextMenuItemArea:not(.enabled) > *:not(:first-child) {
     opacity: 0.6;
 }
 
@@ -29,4 +41,28 @@
 }
 .timeout:not(:first-child) {
     padding-top: 8px;
+}
+
+
+.tabHideAPIStatusArea {
+    margin-top: 5px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.checkTabHideAPIStatusButton {
+    position: relative;
+    padding: 5px;
+    height: 80%;
+
+    margin: 10px;
+}
+
+.styleTextarea {
+    width: 100%;
+}
+
+.resetSettingsButton {
+    padding: 10px;
 }

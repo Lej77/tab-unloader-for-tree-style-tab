@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Tab Unloader for Tree Style Tab",
-  "version": "3.1",
+  "version": "4.0",
   "default_locale": "en",
   "applications": {
     "gecko": {
@@ -14,10 +14,16 @@
   "permissions": [
     "storage"
   ],
+  "optional_permissions": [
+    "tabHide"
+  ],
   "background": {
     "scripts": [
-      "common.js",
+      "common/common.js",
       "background.js"
     ]
-  }
+  },
+  "web_accessible_resources": [
+    "resources/permissions.html*"
+  ]
 }
