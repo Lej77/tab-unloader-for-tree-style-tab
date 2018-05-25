@@ -1,7 +1,7 @@
 
 // #region Tab Operations
 
-async function unloadTabs(tabs, fallbackOptions = {}) {
+async function unloadTabs({ tabs, fallbackOptions = {}, discardAgainAfterDelay = -1, disposables = null, useAutoTabDiscard = false } = {}) {
   try {
     if (!tabs) {
       return;
@@ -19,7 +19,27 @@ async function unloadTabs(tabs, fallbackOptions = {}) {
     await ensureTabsArentActive(tabs, fallbackOptions);
 
     // Unload tabs:
-    await browser.tabs.discard(tabs.map(tab => tab.id));
+    let discard = async () => {
+      if (useAutoTabDiscard) {
+        await Promise.all(tabs.map(async (tab) => {
+          await browser.runtime.sendMessage(kATD_ID, {
+            method: 'discard',
+            query: {
+              windowId: tab.windowId,
+              index: tab.index
+            } // a query object that is passed to chrome.tabs.query
+          });
+        }));
+      } else {
+        await browser.tabs.discard(tabs.map(tab => tab.id));
+      }
+    };
+    await discard();
+
+    if (discardAgainAfterDelay >= 0) {
+      await boundDelay(discardAgainAfterDelay, disposables);
+      await discard();
+    }
   } catch (error) {
     console.log('Failed to unload tab' + (tabs && Array.isArray(tabs) && tabs.length > 1 ? '(s)' : '') + '!\n', error);
   }
@@ -376,10 +396,12 @@ class ClickDurationMonitor extends Monitor {
 
 
 class MouseButtonManager {
-  constructor(mouseClickCombo) {
+  constructor({ mouseClickCombo, getUnloadInfo = null }) {
     let combo = mouseClickCombo;
     let info = combo.info;
     this.combo = mouseClickCombo;
+
+    defineProperty(this, 'getUnloadInfo', () => getUnloadInfo, (value) => { getUnloadInfo = value; });
 
     let eventManagers = {};
     let events = {};
@@ -466,7 +488,16 @@ class MouseButtonManager {
         monitorCol.cancel();
         if (allowUnload) {
           if (!info.dontUnload) {
-            unloadTabs(message.tab, { fallbackToLastSelectedTab: combo.fallbackToLastSelected, ignoreHiddenTabs: combo.ignoreHiddenTabs });
+            unloadTabs(Object.assign(
+              getUnloadInfo ? getUnloadInfo() || {} : {},
+              {
+                tabs: message.tab,
+                fallbackOptions: {
+                  fallbackToLastSelectedTab: combo.fallbackToLastSelected,
+                  ignoreHiddenTabs: combo.ignoreHiddenTabs
+                }
+              }
+            ));
           }
         }
       });
@@ -509,7 +540,11 @@ async function start() {
   settingsTracker.onChange.addListener((changes, storageArea) => {
     updateClickCombos(changes);
 
-    if (changes.delayedTSTRegistrationTimeInMilliseconds || changes.isEnabled) {
+    if (
+      changes.isEnabled ||
+      changes.delayedTSTRegistrationTimeInMilliseconds ||
+      changes.unloadAgainAfterDelay
+    ) {
       timeDisposables.disposeOfAllObjects();
     }
 
@@ -519,12 +554,24 @@ async function start() {
   });
   updateClickCombos(settings);
 
+  let getUnloadInfo = () => {
+    let info = {
+      discardAgainAfterDelay: settings.unloadAgainAfterDelay,
+      disposables: settings.unloadAgainAfterDelay > 1000 ? timeDisposables : null,
+      useAutoTabDiscard: settings.unloadViaAutoTabDiscard,
+    };
+    return info;
+  };
+
   // #endregion Settings
 
 
   // #region Handle input
 
-  let mouseButtonManagers = mouseClickCombos.combos.map(combo => new MouseButtonManager(combo));
+  let mouseButtonManagers = mouseClickCombos.combos.map(combo => new MouseButtonManager({ mouseClickCombo: combo }));
+  for (let manager of mouseButtonManagers) {
+    manager.getUnloadInfo = getUnloadInfo;
+  }
   let getButtonManager = (index) => {
     if (index < 0 || mouseButtonManagers.length <= index) {
       return null;
@@ -552,13 +599,67 @@ async function start() {
     }
   };
 
-  var onMenuItemClick = (info, tab) => {
+  var onMenuItemClick = async (info, tab) => {
     switch (info.menuItemId) {
-      case 'unload-tab':
-        unloadTabs(tab, { fallbackToLastSelectedTab: settings.unloadInTSTContextMenu_fallbackToLastSelected, ignoreHiddenTabs: settings.unloadInTSTContextMenu_ignoreHiddenTabs });
-        break;
+      case tstContextMenuItemIds.unloadTab: {
+        await unloadTabs(Object.assign(
+          getUnloadInfo(),
+          {
+            tabs: tab,
+            fallbackOptions: {
+              fallbackToLastSelectedTab: settings.unloadInTSTContextMenu_fallbackToLastSelected,
+              ignoreHiddenTabs: settings.unloadInTSTContextMenu_ignoreHiddenTabs
+            }
+          }
+        ));
+      } break;
+      case tstContextMenuItemIds.unloadTree: {
+        let treeTabs = await TSTManager.getTreeTabs(tab.id);
+        await unloadTabs(Object.assign(
+          getUnloadInfo(),
+          {
+            tabs: treeTabs,
+            fallbackOptions: {
+              fallbackToLastSelectedTab: settings.unloadTreeInTSTContextMenu_fallbackToLastSelected,
+              ignoreHiddenTabs: settings.unloadTreeInTSTContextMenu_ignoreHiddenTabs
+            }
+          }
+        ));
+      } break;
     }
   };
+
+  browser.commands.onCommand.addListener(async function (command) {
+    let [activeTab,] = await browser.tabs.query({ active: true, currentWindow: true });
+    switch (command) {
+      case 'unload-tab': {
+        await unloadTabs(Object.assign(
+          getUnloadInfo(),
+          {
+            tabs: activeTab,
+            fallbackOptions: {
+              fallbackToLastSelectedTab: settings.command_unloadTab_fallbackToLastSelected,
+              ignoreHiddenTabs: settings.command_unloadTab_ignoreHiddenTabs
+            }
+          }
+        ));
+      } break;
+
+      case 'unload-tree': {
+        let treeTabs = await TSTManager.getTreeTabs(activeTab.id);
+        await unloadTabs(Object.assign(
+          getUnloadInfo(),
+          {
+            tabs: treeTabs,
+            fallbackOptions: {
+              fallbackToLastSelectedTab: settings.command_unloadTree_fallbackToLastSelected,
+              ignoreHiddenTabs: settings.command_unloadTree_ignoreHiddenTabs
+            }
+          }
+        ));
+      } break;
+    }
+  });
 
   // #endregion Handle input
 
@@ -606,10 +707,12 @@ async function start() {
       onTSTStyleChanged.fire(oldStyle, style);
     }
 
+
     let state = new TSTState();
     if (!settings.isEnabled) {
       return state;
     }
+
 
     if (mouseClickCombos.combos.some(combo => combo.enabled)) {
       state.addListeningTypes(TSTState.getClickListeningTypes());
@@ -617,9 +720,39 @@ async function start() {
         state.addListeningTypes([tstAPI.NOTIFY_TAB_DRAGREADY, tstAPI.NOTIFY_TAB_DRAGSTART]);
       }
     }
+
+
+    try {
+      state.rootContextMenuItemTitle = settings.tstContextMenu_CustomRootLabel || browser.i18n.getMessage('contextMenu_rootItemTitle');
+    } catch (error) { }
+
     if (settings.unloadInTSTContextMenu) {
-      state.addContextMenuItems(new ContextMenuItem('unload-tab', browser.i18n.getMessage('contextMenu_unloadTab')));
+      state.contextMenuItems.addContextMenuItems(new ContextMenuItem({
+        id: tstContextMenuItemIds.unloadTab,
+        contexts: ['tab'],
+        title: settings.unloadInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadTab')
+      }));
     }
+
+    if (settings.unloadTreeInTSTContextMenu) {
+      state.contextMenuItems.addContextMenuItems(new ContextMenuItem({
+        id: tstContextMenuItemIds.unloadTree,
+        contexts: ['tab'],
+        title: settings.unloadTreeInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadTree')
+      }));
+    }
+
+    let contextMenuItems = settings.tstContextMenuOrder;
+    if (!contextMenuItems || !Array.isArray(contextMenuItems)) {
+      contextMenuItems = [];
+    }
+    for (let itemId of contextMenuItems) {
+      let item = state.contextMenuItems.getContextMenuItem(itemId);
+      if (item) {
+        state.contextMenuItems.addContextMenuItems(item);
+      }
+    }
+
 
     state.style = style;
 

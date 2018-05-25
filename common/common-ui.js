@@ -294,6 +294,7 @@ function createListArea() {
     let dragInfo = null;
     let stopDrag = (canceled = true) => {
       document.documentElement.classList.remove('dragging');
+      toggleScreenBlocker(false);
       if (trackingEventCollection) {
         trackingEventCollection.dispose();
       }
@@ -351,6 +352,7 @@ function createListArea() {
         dropList: dragListObj,
       };
       document.documentElement.classList.add('dragging');
+      toggleScreenBlocker(true);
 
       dragItemObj.section.isCollapsed = true;
 
@@ -686,6 +688,15 @@ function createListArea() {
     if (!itemObj) {
       return;
     }
+    if (index < 0) {
+      index = itemObjs.length + (itemObjs.includes(itemObj) ? -1 : 0);
+    }
+    if (index < 0 || index > itemObjs.length) {
+      index = itemObjs.length;
+    }
+    if (itemObjs.indexOf(itemObj) === index) {
+      return;
+    }
 
     getAllItems();  // Update itemObjs array.
     let previousList = itemObj.list;
@@ -711,25 +722,24 @@ function createListArea() {
     onItemArrayChange.fire(obj, itemObj, index);
   };
   var addItem = (itemObj) => {
-    if (itemObjs.includes(itemObj)) {
-      return;
-    }
     insertItem(itemObj);
   };
   var removeItem = (itemObj) => {
+    let wasInList = false;
     if (Array.from(area.children).includes(itemObj.area)) {
       area.removeChild(itemObj.area);
+      wasInList = true;
     }
 
     if (itemObj.list) {
       itemObjs = itemObjs.filter(item => item !== itemObj);
-    } else {
-      itemObj.remove();
     }
-    onItemArrayChange.fire(obj, itemObj, false);
+    if (wasInList) {
+      onItemArrayChange.fire(obj, itemObj, false);
+    }
   };
 
-  var createItem = () => {
+  var createItem = (animationInfo) => {
     let itemObj = {};
     let onListChange = new EventManager();
     let onRemoved = new EventManager();
@@ -743,7 +753,7 @@ function createListArea() {
     itemSectionWrapper.classList.add('sectionWrapper');
     item.appendChild(itemSectionWrapper);
 
-    let itemSection = createCollapsableArea();
+    let itemSection = createCollapsableArea(animationInfo);
     itemSectionWrapper.appendChild(itemSection.area);
 
     let dropMarkerAfter = document.createElement('div');
@@ -752,13 +762,13 @@ function createListArea() {
 
     let dragWrapper = document.createElement('div');
     dragWrapper.classList.add('listItemDragWrapper');
+    dragWrapper.classList.add('preventOpen');
     itemSection.title.appendChild(dragWrapper);
 
     let draggableArea = document.createElement('div');
     draggableArea.classList.add('dragIcon');
     draggableArea.classList.add('listItemDrag');
     draggableArea.classList.add('draggable');
-    draggableArea.classList.add('preventOpen');
     dragWrapper.appendChild(draggableArea);
 
     for (let iii = 0; iii < 3; iii++) {
@@ -881,7 +891,7 @@ function createListArea() {
 
     onArrayChanged: onItemArrayChange.subscriber,   // Args: listObj, itemObj, newIndexOrFalseIfRemoved
     onRemoved: onRemoved.subscriber,                // Fired when this list is removed from the document. Args: listObj
-    onCheckDrop: onCheckListDrop.subscriber,
+    onCheckDrop: onCheckListDrop.subscriber,        // Return true to allow drop. Args: dropItemObj
   });
   defineProperty(obj, 'items', getAllItems);
   return obj;
@@ -985,7 +995,7 @@ function createCollapsableArea(animationInfo = {}) {
             Object.assign(animationInfo, standardAnimationInfo);
           }
           delete changes.standard;
-          
+
           Object.assign(animationInfo, changes);
           applyStandardModifiers(animationInfo);
         };
@@ -1086,15 +1096,18 @@ function createCollapsableArea(animationInfo = {}) {
     contentWrapper.style.transition = transition;
     contentWrapper.style.maxHeight = wantedHeight + 'px';
     if (bodyImmediately) {
-      if (value || document.body.style.minHeight) {
+      if (value) {
         document.body.style.minHeight = document.body.scrollHeight + 'px';
       } else {
-        document.body.style.minHeight = document.body.scrollHeight + wantedHeight + 'px';
+        let minBodyHeight = document.body.scrollHeight - contentWrapper.clientHeight + wantedHeight;
+        if (minBodyHeight > document.body.style.minHeight) {
+          document.body.style.minHeight = minBodyHeight + 'px';
+        }
       }
     }
 
 
-    startTimeout = (callback, timeInMilliseconds) => {
+    let startTimeout = (callback, timeInMilliseconds) => {
       if (collapseTimeoutId !== null) {
         clearTimeout(collapseTimeoutId);
       }

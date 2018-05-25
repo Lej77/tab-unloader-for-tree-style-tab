@@ -107,11 +107,26 @@
     "options_ignoreHiddenTabs": {
         "message": "Ignore hidden tabs: if tab is active then the tab that is selected instead must not be hidden."
     },
+    "options_contextMenuItems_Title": {
+        "message": "Context menu items"
+    },
+    "options_tstContextMenu_CustomRootLabel": {
+        "message": "If there are more than one context menu item they will be gathered under an item with this name (place a \"&\" symbol before the letter that should be used as the keyboard shortcut) (empty to use default label):"
+    },
     "options_unloadInTSTContextMenu_Title": {
-        "message": "Context menu item to unload tabs"
+        "message": "Unload tab"
+    },
+    "options_unloadTreeInTSTContextMenu_Title": {
+        "message": "Unload tree"
     },
     "options_unloadInTSTContextMenu": {
         "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab."
+    },
+    "options_unloadTreeInTSTContextMenu": {
+        "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab tree."
+    },
+    "options_contextMenu_customLabel": {
+        "message": "Custom context menu item label (place a \"&\" symbol before the letter that should be used as the keyboard shortcut) (empty to use default label):"
     },
     "options_unloadInTSTContextMenu_DelayedRegistration": {
         "message": "Re-register context menu items to Tree Style Tab after a delay to ensure that they are placed at the end of the context menu. Delay in milliseconds (0 to disable): "
@@ -148,8 +163,26 @@
     "options_TreeStyleTabStyle_Info": {
         "message": "This is the style changes made to Tree Style Tab's sidebar by this extension:"
     },
+    "options_unloadAgainAfterDelay": {
+        "message": "When unloading tabs use the unload method again after a slight delay (time in milliseconds) (-1 to disable):"
+    },
+    "options_unloadViaAutoTabDiscard_Prefix": {
+        "message": "Unload tabs via the "
+    },
+    "options_unloadViaAutoTabDiscard_Name": {
+        "message": "Auto Tab Discard"
+    },
+    "options_unloadViaAutoTabDiscard_URL": {
+        "message": "https://addons.mozilla.org/firefox/addon/auto-tab-discard/"
+    },
+    "options_unloadViaAutoTabDiscard_Suffix": {
+        "message": " extension."
+    },
     "options_OptionalPermissions_Header": {
         "message": "Optional Permissions"
+    },
+    "options_OtherSettings_Header": {
+        "message": "Other Settings"
     },
     "options_ResetSettings_Button": {
         "message": "Reset Settings"
@@ -157,9 +190,26 @@
     "options_ResetSettings_Prompt": {
         "message": "Do you want to reset all settings to default values?"
     },
-    "contextMenu_unloadTab": {
-        "message": "&Suspend Tab",
-        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
+    "options_Commands_Title": {
+        "message": "Keyboard shortcuts"
+    },
+    "options_Commands_Info": {
+        "message": "Select one of the text inputs bellow and then make a keyboard combination such as \"Alt+X\" to bind the keyboard shortcut to the selected text box. You can also press the \"Prompt\" button and manually write down a keyboard shortcut if you prefer."
+    },
+    "options_Commands_ResetButton": {
+        "message": "Reset"
+    },
+    "options_Commands_PromptButton": {
+        "message": "Prompt"
+    },
+    "options_Commands_PromptButton_Description": {
+        "message": "Write text representing a keyboard shortcut. For example \"Alt+X\""
+    },
+    "options_Commands_UnloadTab": {
+        "message": "Unload tab"
+    },
+    "options_Commands_UnloadTree": {
+        "message": "Unload tree"
     },
     "optionalPermissions_Request": {
         "message": "Request"
@@ -208,6 +258,14 @@
     },
     "permissionsPage_Info_End": {
         "message": " it is currently not possible to request optional permission from the options page. As a workaround request permissions from this page instead."
+    },
+    "contextMenu_unloadTab": {
+        "message": "&Suspend Tab",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
+    },
+    "contextMenu_unloadTree": {
+        "message": "Susp&end Tree",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
     },
     "contextMenu_rootItemTitle": {
         "message": "Tab Unloader"

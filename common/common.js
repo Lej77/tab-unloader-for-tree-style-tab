@@ -52,8 +52,15 @@ const tstAPI = Object.freeze({
 // #endregion Tree Style Tab
 
 
+const kATD_ID = '{c2c003ee-bd69-42a2-b0e9-6f34222cb046}';
+
+
 const messagePrefix = 'message_';
 
+const tstContextMenuItemIds = Object.freeze({
+  unloadTab: 'unload-tab',
+  unloadTree: 'unload-tree',
+});
 const messageTypes = Object.freeze({
   updateTabHide: 'updateTabHide',
   tabHideAPIChanged: 'tabHideAPIChanged',
@@ -126,13 +133,37 @@ const defaultValues = Object.freeze({
       tabHide_HideUnloadedTabs: false,
       tabHide_ShowHiddenTabsInTST: false,
 
+
+      command_unloadTab_fallbackToLastSelected: false,
+      command_unloadTab_ignoreHiddenTabs: false,
+
+      command_unloadTree_fallbackToLastSelected: false,
+      command_unloadTree_ignoreHiddenTabs: false,
+
+
       unloadInTSTContextMenu: true,
+      unloadInTSTContextMenu_CustomLabel: '',
       unloadInTSTContextMenu_fallbackToLastSelected: false,
       unloadInTSTContextMenu_ignoreHiddenTabs: false,
 
+      unloadTreeInTSTContextMenu: false,
+      unloadTreeInTSTContextMenu_CustomLabel: '',
+      unloadTreeInTSTContextMenu_fallbackToLastSelected: false,
+      unloadTreeInTSTContextMenu_ignoreHiddenTabs: false,
+
+      tstContextMenu_CustomRootLabel: '',
+      tstContextMenuOrder: [
+        tstContextMenuItemIds.unloadTab,
+        tstContextMenuItemIds.unloadTree
+      ],
+
       delayedTSTRegistrationTimeInMilliseconds: 4000,
 
+
       dimUnloadedTabs: true,
+
+      unloadAgainAfterDelay: -1,
+      unloadViaAutoTabDiscard: false,
 
       disableOptionsPageAnimations: false,
     };
@@ -244,6 +275,35 @@ const defaultValues = Object.freeze({
 
 async function delay(timeInMilliseconds) {
   return await new Promise((resolve, reject) => timeInMilliseconds < 0 ? resolve() : setTimeout(resolve, timeInMilliseconds));
+}
+
+/**
+ * A delay that will be canceled if a disposable collection is disposed.
+ * 
+ * @param {number} timeInMilliseconds Time in milliseconds to wait.
+ * @param {DisposableCollection} [disposables=null] Disposables collection to bind delay to.
+ * @returns {boolean} True if successful. False if canceled.
+ */
+async function boundDelay(timeInMilliseconds, disposables = null) {
+  if (!disposables) {
+    await delay(timeInMilliseconds);
+    return true;
+  }
+  return new Promise((resolve, reject) => {
+    try {
+      let timeout = new Timeout(() => {
+        resolve(true);
+      }, timeInMilliseconds);
+      timeout.onDisposed.addListener(() => {
+        resolve(false);
+      });
+      if (disposables) {
+        disposables.trackDisposables(timeout);
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
 }
 
 let createObjectFromKeys = function (
@@ -641,7 +701,7 @@ class EventManager extends EventSubscriber {
         try {
           returned.push(listener.apply(null, args));
         } catch (error) {
-          console.log('Error during event handling!\n', error);
+          console.log('Error during event handling!\n', error, '\nStack Trace:\n', error.stack);
         }
       }
     }
@@ -1014,6 +1074,16 @@ class Timeout {
   }
 
   // #endregion Dispose
+
+  get promise() {
+    return new Promise((resolve, reject) => {
+      if (this.isDisposed) {
+        resolve();
+      } else {
+        this.onDisposed.addListener(resolve);
+      }
+    });
+  }
 
 }
 
@@ -1869,12 +1939,12 @@ Object.assign(PortConnection, {
 // #region Tree Style Tab Management
 
 class ContextMenuItem {
-  constructor(id, title, parentId = null, documentUrlPatterns = null, isSeparator = false) {
+  constructor({ id = null, title = '', parentId = null, contexts = [], documentUrlPatterns = null, isSeparator = false }) {
     let data = {
       id: id,
-      title: title,
+      title: title || '',
       type: isSeparator ? 'separator' : 'normal',
-      contexts: ['tab'],
+      contexts: contexts || [],
       parentId: parentId,
       documentUrlPatterns: documentUrlPatterns,
     };
@@ -1888,11 +1958,154 @@ class ContextMenuItem {
       return copy;
     });
     this.onChange = accessDataObjectWithProperties(this, data);
-    defineProperty(this, 'isSeparator', () => this.type === 'separator');
   }
 
   clone() {
-    return new ContextMenuItem(this.id, this.title, this.parentId, this.documentUrlPatterns, this.isSeparator);
+    return new ContextMenuItem(this.data);
+  }
+
+  get isSeparator() {
+    return this.type === 'separator';
+  }
+
+
+  static isEqual(a, b) {
+    if (a === b) {
+      return true;
+    }
+    if (!a && !b) {
+      return true;
+    }
+    if (!a || !b) {
+      return false;
+    }
+
+
+    for (let context of a.contexts) {
+      if (!b.contexts.includes(context)) {
+        return false;
+      }
+    }
+    for (let context of b.contexts) {
+      if (!a.contexts.includes(context)) {
+        return false;
+      }
+    }
+
+
+    if (
+      a.id !== b.id ||
+      a.title !== b.title ||
+      a.type !== b.type ||
+      a.parentId !== b.parentId ||
+      a.documentUrlPatterns !== b.documentUrlPatterns
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+}
+
+
+class ContextMenuItemCollection {
+
+  constructor({ items } = {}) {
+    Object.assign(this, {
+      _items: [],
+    });
+    this.addContextMenuItems(items);
+  }
+
+  clone() {
+    return new ContextMenuItemCollection({ items: this._items.map(item => item.clone()) });
+  }
+
+
+  getContextMenuItem(menuItemId) {
+    let applicable = this._items.filter(item => item.id === menuItemId);
+    if (applicable.length > 0) {
+      return applicable[0];
+    } else {
+      return null;
+    }
+  }
+  getRootContextMenuItems() {
+    return this._items.filter((item) => !item.parentId && item.parentId !== 0);
+  }
+
+
+  addContextMenuItems(items) {
+    if (!items) {
+      return;
+    }
+    if (!Array.isArray(items)) {
+      items = [items];
+    }
+    this.removeContextMenuItems(items.map(item => item.id));
+    for (let item of items) {
+      this._items.push(item);
+    }
+  }
+  insertContextMenuItems(index, items) {
+    if (!items) {
+      return;
+    }
+    if (!Array.isArray(items)) {
+      items = [items];
+    }
+    if (index < 0) {
+      index = 0;
+    }
+
+    if (index >= this._items.length) {
+      this.addContextMenuItems(items);
+    } else {
+      this.removeContextMenuItems(items);
+      this._items.splice(index, 0, items);
+    }
+  }
+
+  removeContextMenuItems(menuItemIds) {
+    if (!Array.isArray(menuItemIds)) {
+      menuItemIds = [menuItemIds];
+    }
+    this._items = this._items.filter((item) => !menuItemIds.includes(item.id));
+  }
+  removeAllContextMenuItems() {
+    this._items = [];
+  }
+
+
+  get items() {
+    return this._items;
+  }
+
+
+  static isEqual(a, b) {
+    if (a === b) {
+      return true;
+    }
+    if (!a && !b) {
+      return true;
+    }
+    if (!a || !b) {
+      return false;
+    }
+
+    if (a._items.length !== b._items.length) {
+      return false;
+    }
+    for (let iii = 0; iii < a._items.length; iii++) {
+      let aItem = a._items[iii];
+      let bItem = b._items[iii];
+      if (!ContextMenuItem.isEqual(aItem, bItem)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 
@@ -1901,13 +2114,10 @@ class TSTState {
   constructor() {
     Object.assign(this, {
       listeningTypes: [tstAPI.NOTIFY_READY],
-      contextMenuItems: [],
+      contextMenuItems: new ContextMenuItemCollection(),
       rootContextMenuItemTitle: '',
       style: '',
     });
-    try {
-      this.rootContextMenuItemTitle = browser.i18n.getMessage('contextMenu_rootItemTitle');
-    } catch (error) { }
   }
 
   static isEqual(a, b) {
@@ -1966,40 +2176,16 @@ class TSTState {
       return false;
     }
 
-    if (a.contextMenuItems.length !== b.contextMenuItems.length) {
+    if (!ContextMenuItemCollection.isEqual(a.contextMenuItems, b.contextMenuItems)) {
       return false;
     }
-    for (let iii = 0; iii < a.contextMenuItems.length; iii++) {
-      let aItem = a.contextMenuItems[iii];
-      let bItem = b.contextMenuItems[iii];
-      if (aItem === bItem) {
-        continue;
-      }
-      if (aItem.context || bItem.context) {
-        if (
-          !aItem.context || !bItem.context ||
-          aItem.context.includes('tabs') !== bItem.context.includes('tabs')
-        ) {
-          return false;
-        }
-      }
-      if (
-        aItem.documentUrlPatterns !== bItem.documentUrlPatterns ||
-        aItem.id !== bItem.id ||
-        aItem.parentId !== bItem.parentId ||
-        aItem.title !== bItem.title ||
-        aItem.type !== bItem.type
-      ) {
-        return false;
-      }
-    }
+
     if (a.contextMenuItems.length > 1) {
       let rootItems = a.getRootContextMenuItems();
       if (rootItems.length > 1 && a.rootContextMenuItemTitle !== b.rootContextMenuItemTitle) {
         return false;
       }
     }
-    return true;
   }
   static isStyleEqual(a, b) {
     if (a === b) {
@@ -2021,7 +2207,7 @@ class TSTState {
   clone() {
     let clone = new TSTState();
     clone.addListeningTypes(this.listeningTypes);
-    clone.addContextMenuItems(this.contextMenuItems.map((item) => item.clone()));
+    clone.contextMenuItems = this.contextMenuItems.clone();
     clone.rootContextMenuItemTitle = this.rootContextMenuItemTitle;
     clone.style = this.style;
     return clone;
@@ -2038,35 +2224,6 @@ class TSTState {
     }
   }
 
-  getContextMenuItem(menuItemId) {
-    let applicable = this.contextMenuItems.filter(item => item.id === menuItemId);
-    if (applicable.length > 0) {
-      return applicable[0];
-    } else {
-      return null;
-    }
-  }
-  getRootContextMenuItems() {
-    return this.contextMenuItems.filter((item) => !item.parentId && item.parentId !== 0);
-  }
-  addContextMenuItems(items) {
-    if (!Array.isArray(items)) {
-      items = [items];
-    }
-    this.removeContextMenuItems(items.map(item => item.id));
-    for (let item of items) {
-      this.contextMenuItems.push(item);
-    }
-  }
-  removeContextMenuItems(menuItemIds) {
-    if (!Array.isArray(menuItemIds)) {
-      menuItemIds = [menuItemIds];
-    }
-    this.contextMenuItems = this.contextMenuItems.filter((item) => !menuItemIds.includes(item.id));
-  }
-  removeAllContextMenuItems() {
-    this.contextMenuItems = [];
-  }
 
   get hasStyle() {
     return this.style && this.style.trim() !== '';
@@ -2194,21 +2351,26 @@ class TSTManager {
         if (!success) {
           newState = new TSTState();
         } else if (!TSTState.isContextMenuItemsEqual(currentState, targetState) || reset[TSTManager.resetTypes.contextMenu]) {
-          if ((currentState.contextMenuItems.length > 0) || reset[TSTManager.resetTypes.contextMenu]) {
+          if ((currentState.contextMenuItems.items.length > 0) || reset[TSTManager.resetTypes.contextMenu]) {
             // Update context menu items:
             await TSTManager.removeAllTSTContextMenuItems();
           }
-          if (targetState.contextMenuItems.length > 0) {
-            let items = targetState.contextMenuItems;
+          if (targetState.contextMenuItems.items.length > 0) {
+            let itemCollection = targetState.contextMenuItems;
+            let items = itemCollection.items;
             // Create root item if more than 1 root item:
-            let rootItems = targetState.getRootContextMenuItems();
-            if (rootItems.length > 1) {
+            let rootItems = itemCollection.getRootContextMenuItems();
+            if (rootItems.length > 1 && targetState.rootContextMenuItemTitle) {
               let uniqueId = 1; // Can't be 0 since that is false and doesn't count as a id.
               let ids = items.map(item => item.id);
               while (ids.includes(uniqueId)) {
                 uniqueId++;
               }
-              let root = new ContextMenuItem(uniqueId, targetState.rootContextMenuItemTitle);
+              let root = new ContextMenuItem({
+                id: uniqueId,
+                contexts: ['tab'],
+                title: targetState.rootContextMenuItemTitle
+              });
               items.unshift(root);
               for (let item of rootItems) {
                 item.parentId = root.id;
@@ -2470,11 +2632,22 @@ class TSTManager {
 
   // #region Get Tabs
 
+  /**
+   * Get tabs from Tree Style Tab. These tabs will include tree information.
+   * 
+   * @param {number|Array} tabIds Can be a single intiger id or multiple ids in an array.
+   * @returns {Object|Array} A tab or an array of tabs.
+   */
   static async getTabs(tabIds) {
-    return await browser.runtime.sendMessage(kTST_ID, {
+    let details = {
       type: 'get-tree',
-      tab: tabIds   // Can be a single intiger id or multiple ids in an array.
-    });
+    };
+    if (Array.isArray(tabIds)) {
+      details.tabs = tabIds;
+    } else {
+      details.tab = tabIds;
+    }
+    return browser.runtime.sendMessage(kTST_ID, details);
   }
   static async getWindowTabs(windowId, flatArray = false) {
     // Flat array: each tab is in the original array. If the array isn't flat then only root tabs occur in the array and the other tabs are only accessible through the tabs children property.
@@ -2497,23 +2670,19 @@ class TSTManager {
     for (let tab of tstTabs) {
       let descendants = TSTManager.getDescendantsFromTSTTab(tab);
       treeTabs.push(tab);
-      treeTabs.push.apply(null, descendants);
+      treeTabs.push(...descendants);
     }
     return treeTabs;
   }
 
   static getDescendantsFromTSTTab(tstTab) {
-    let all = [];
-    let processChildren = (children) => {
-      if (!children) {
-        return;
+    let all = [tstTab];
+    for (let iii = 0; iii < all.length; iii++) {
+      let tab = all[iii];
+      if (tab.children) {
+        all.push(...tab.children);
       }
-      for (let tab of children) {
-        all.push(tab);
-        processChildren(tab.children);
-      }
-    };
-    processChildren(tstTab.children);
+    }
     return all;
   }
 

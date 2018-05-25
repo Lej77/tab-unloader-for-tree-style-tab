@@ -17,7 +17,7 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    z-index: 1000;
+    z-index: 10000000;
 }
 :root.dontBlockScreen .screenBlocker {
     display: none;
@@ -183,7 +183,7 @@
 }
 
 .listItem.dragged > .sectionWrapper {
-    opacity: 0.5;
+    opacity: 0.6;
 }
 
 .listItem > .sectionWrapper {
@@ -210,6 +210,8 @@
     flex-flow: column;
     justify-content: center;
     align-items: center;
+    
+    align-self: stretch;
 }
 .listItemDragWrapper * {
     flex: 0 0 auto;
@@ -244,6 +246,7 @@
 
 
 /* #region Collapsable Section */
+
 :root {
     --collapsable-border: 1px solid hsl(0, 0%, 50%);
     --collapsable-header-border: 1px solid hsl(0, 0%, 60%);
