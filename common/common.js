@@ -135,6 +135,7 @@ const defaultValues = Object.freeze({
 
 
       fixTabRestore_waitForUrlInMilliseconds: -1,
+      fixTabRestore_waitForIncorrectLoad: 500,
 
 
       command_unloadTab_fallbackToLastSelected: false,
@@ -1745,7 +1746,7 @@ class PortManager {
     try {
       await firstDefined;
     } catch (error) {
-      console.log('Error on async runtime message handling\n', error);
+      console.log('Error on async runtime message handling\n', error, '\nStack Trace:\n', error.stack);
     }
     disposables.dispose();
     return firstDefined;
@@ -2316,7 +2317,7 @@ class TSTManager {
         }
       }
     } catch (error) {
-      console.log('Error on Tree Style Tab message handling!\n', error);
+      console.log('Error on Tree Style Tab message handling!\n', error, '\nStack Trace:\n', error.stack);
     }
   }
 
@@ -3034,7 +3035,7 @@ class TSTDragDropListener {
         return true;
       }
     } catch (error) {
-      console.log('Failed to check for drag and drop operation in Tree Style Tab Sidebar\n', error);
+      console.log('Failed to check for drag and drop operation in Tree Style Tab Sidebar\n', error, '\nStack Trace:\n', error.stack);
       return false;
     }
     return false;
@@ -3728,18 +3729,23 @@ class TabMonitor {
  */
 class TabRestoreFixer {
 
-  constructor({ waitForUrlInMilliseconds = null } = {}) {
+  constructor({ waitForUrlInMilliseconds = null, waitForIncorrectLoad = null } = {}) {
     Object.assign(this, {
       _isDisposed: false,
       _onDisposed: new EventManager(),
 
       _disposables: new DisposableCollection(),
+      _onActivatedListener: null,
 
-      _tabInfoLookup: {},   // Key: tabId, Value: {tab, timeoutId}
+      _tabInfoLookup: {},   // Key: tabId, Value: {tab, timeoutId, discardTime}
+
       _waitForUrlInMilliseconds: 500,
+      _waitForIncorrectLoad: 500,
     });
 
+
     this.waitForUrlInMilliseconds = waitForUrlInMilliseconds;
+    this.waitForIncorrectLoad = waitForIncorrectLoad;
 
 
     this._disposables.trackDisposables([
@@ -3753,10 +3759,13 @@ class TabRestoreFixer {
   // #region Private Functions
 
   async _addAllDiscarded() {
-    let tabs = await browser.tabs.query({ discarded: true });
+    let tabs = await browser.tabs.query({});
+    let time = Date.now();
     for (let tab of tabs) {
       this._removeTabInfo({ tabId: tab.id });
-      this._tabInfoLookup[tab.id] = { tab };
+      if (tab.url !== undefined) {
+        this._tabInfoLookup[tab.id] = { tab, discardTime: time };
+      }
     }
   }
 
@@ -3777,8 +3786,55 @@ class TabRestoreFixer {
     }
   }
 
+  _clearAllTimeouts() {
+    for (let tabInfo of Object.values(this._tabInfoLookup)) {
+      this._clearTimeout(tabInfo.timeoutId);
+      tabInfo.timeoutId = null;
+    }
+  }
 
-  _onUpdate(tabId, changeInfo, tab) {
+  async _fixAfterDelay(tabInfo, { checkUrl = false, dontCancel = true } = {}) {
+    if (!tabInfo || !tabInfo.tab) {
+      return;
+    }
+
+    if (dontCancel) {
+      if (tabInfo.timeoutId || tabInfo.timeoutId === 0) {
+        return;
+      }
+    }
+
+    let url = tabInfo.tab.url;
+    let tabId = tabInfo.tab.id;
+
+    if (!url || url === 'about:blank') {
+      return;
+    }
+
+    this._clearTimeout(tabInfo.timeoutId);
+    tabInfo.timeoutId = setTimeout(async () => {
+      tabInfo.timeoutId = null;
+      this._removeTabInfo({ tabId });
+
+
+      if (checkUrl) {
+        let tab = await browser.tabs.get(tabId);
+        if (tab.url !== 'about:blank') {
+          return;
+        }
+      }
+      browser.tabs.update(tabId, { url: url });
+    }, this._waitForUrlInMilliseconds);
+  }
+
+
+  _onActivated({ tabId, windowId }) {
+    if (this.fixActivatedTabs) {
+      this._fixAfterDelay(this._tabInfoLookup[tabId], { checkUrl: true });
+    }
+  }
+
+  async _onUpdate(tabId, changeInfo, tab) {
     /* Update events on successful restore:
     
 			# Discarded = true
@@ -3804,22 +3860,30 @@ class TabRestoreFixer {
     if (changeInfo.discarded !== undefined) {
       if (changeInfo.discarded) {
         if (tabInfo) {
+          this._clearTimeout(tabInfo.timeoutId);
+          if (!tab.url || tab.url === 'about:blank') {
+            return;
+          }
           this._removeTabInfo({ tabInfo });
         }
-        this._tabInfoLookup[tabId] = { tab };
+        tab.discarded = true;
+        if (tab.url) {
+          this._tabInfoLookup[tabId] = { tab, discardTime: Date.now() };
+        }
       } else if (tabInfo) {
-        let url = tabInfo.tab.url;
-
-        this._clearTimeout(tabInfo.timeoutId);
-        tabInfo.timeoutId = setTimeout(() => {
-          tabInfo.timeoutId = null;
-          browser.tabs.update(tabId, { url: url });
-          this._removeTabInfo({ tabId });
-        }, this._waitForUrlInMilliseconds);
+        if (this.fixActivatedTabs && tabInfo.discardTime) {
+          let timeSinceUnload = Date.now() - tabInfo.discardTime;
+          if (timeSinceUnload < this.waitForIncorrectLoad) {
+            return;
+          }
+        }
+        this._fixAfterDelay(tabInfo);
       }
     }
-    if (changeInfo.url !== undefined && tabInfo) {
-      this._removeTabInfo({ tabInfo });
+    if (changeInfo.url !== undefined) {
+      if (tabInfo) {
+        this._removeTabInfo({ tabInfo });
+      }
     }
   }
 
@@ -3830,10 +3894,37 @@ class TabRestoreFixer {
   // #endregion Private Functions
 
 
+  get _hasOnActivatedListener() {
+    return Boolean(this._onActivatedListener);
+  }
+  set _hasOnActivatedListener(value) {
+    value = Boolean(value);
+    if (value === this._hasOnActivatedListener) {
+      return;
+    }
+    if (value) {
+      if (!this._onActivatedListener) {
+        this._onActivatedListener = new EventListener(browser.tabs.onActivated, this._onActivated.bind(this));
+        this._disposables.trackDisposables(this._onActivatedListener);
+      }
+    } else {
+      if (this._onActivatedListener) {
+        this._onActivatedListener.close();
+        this._disposables.untrackDisposables(this._onActivatedListener);
+        this._onActivatedListener = null;
+      }
+    }
+    this._clearAllTimeouts();
+  }
+
+
   get waitForUrlInMilliseconds() {
     return this._waitForUrlInMilliseconds;
   }
   set waitForUrlInMilliseconds(value) {
+    if (!value && value !== 0) {
+      return;
+    }
     if (value < 0) {
       value = 0;
     }
@@ -3841,10 +3932,28 @@ class TabRestoreFixer {
       return;
     }
     this._waitForUrlInMilliseconds = value;
-    for (let tabInfo of Object.values(this._tabInfoLookup)) {
-      this._clearTimeout(tabInfo.timeoutId);
-      tabInfo.timeoutId = null;
+    this._clearAllTimeouts();
+  }
+
+
+  get fixActivatedTabs() {
+    return this.waitForIncorrectLoad >= 0;
+  }
+
+
+  get waitForIncorrectLoad() {
+    return this._waitForIncorrectLoad;
+  }
+  set waitForIncorrectLoad(value) {
+    if (!value && value !== 0) {
+      return;
     }
+    if (value === this.waitForIncorrectLoad) {
+      return;
+    }
+    this._waitForIncorrectLoad = value;
+
+    this._hasOnActivatedListener = this.fixActivatedTabs;
   }
 
 

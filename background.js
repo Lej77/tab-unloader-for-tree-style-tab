@@ -898,12 +898,17 @@ async function start() {
     if (waiting === lastTabFixCheck || !lastTabFixCheck) {
       lastTabFixCheck = (async () => {
         let checkSettings = () => settings.fixTabRestore_waitForUrlInMilliseconds >= 0 && settings.isEnabled;
-        let wanted = checkSettings() && (await TabRestoreFixer.checkPermission()) && checkSettings();
+        let checkPermission = async () => TabRestoreFixer.checkPermission();
+        let wanted = checkSettings() && (await checkPermission()) && checkSettings();
         if (wanted) {
           if (!tabRestoreFixer) {
-            tabRestoreFixer = new TabRestoreFixer({ waitForUrlInMilliseconds: settings.fixTabRestore_waitForUrlInMilliseconds });
+            tabRestoreFixer = new TabRestoreFixer({ 
+              waitForUrlInMilliseconds: settings.fixTabRestore_waitForUrlInMilliseconds,
+              waitForIncorrectLoad: settings.fixTabRestore_waitForIncorrectLoad,
+            });
           } else {
             tabRestoreFixer.waitForUrlInMilliseconds = settings.fixTabRestore_waitForUrlInMilliseconds;
+            tabRestoreFixer.waitForIncorrectLoad = settings.fixTabRestore_waitForIncorrectLoad;
           }
         } else if (tabRestoreFixer) {
           tabRestoreFixer.dispose();
@@ -914,7 +919,11 @@ async function start() {
     return lastTabFixCheck;
   };
   settingsTracker.onChange.addListener((changes, storageArea) => {
-    if (changes.fixTabRestore_waitForUrlInMilliseconds || changes.isEnabled) {
+    if (
+      changes.fixTabRestore_waitForUrlInMilliseconds || 
+      changes.fixTabRestore_waitForIncorrectLoad ||
+      changes.isEnabled
+    ) {
       checkTabFixing();
     }
   });

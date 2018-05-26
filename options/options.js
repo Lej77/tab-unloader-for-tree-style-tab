@@ -593,6 +593,16 @@ async function initiatePage() {
 
 
     section.content.appendChild(document.createElement('br'));
+    section.content.appendChild(document.createElement('br'));
+
+
+    let waitForIncorrectLoad = createNumberInput('options_TabRestoreFix_waitForIncorrectLoad', -1, true);
+    waitForIncorrectLoad.input.id = 'fixTabRestore_waitForIncorrectLoad';
+    section.content.appendChild(waitForIncorrectLoad.area);
+
+
+    section.content.appendChild(document.createElement('br'));
+    section.content.appendChild(document.createElement('br'));
 
 
     let permissionWarning = document.createElement('div');
@@ -603,7 +613,7 @@ async function initiatePage() {
     let check = () => {
       let enabled = waitForUrl.input.value >= 0;
       toggleClass(section.title, 'enabled', enabled);
-      toggleClass(section.title, 'error', enabled && !permissionsArea.checkControllerAvailable(permissionsArea.tabsPermissionController));      
+      toggleClass(section.title, 'error', enabled && !permissionsArea.checkControllerAvailable(permissionsArea.tabsPermissionController));
     };
     starters.createDisposable(() => {
       check();
