@@ -157,6 +157,15 @@
             }
         }
     },
+    "options_TabRestoreFix_Header": {
+        "message": "Fix for failed tab restore"
+    },
+    "options_TabRestoreFix_waitForUrlInMilliseconds": {
+        "message": "Time to wait for tab to navigate to correct URL before fixing it (time in milliseconds) (suggested value: 500) (-1 to disable):"
+    },
+    "options_TabRestoreFix_permissionWarning": {
+        "message": "Note: this feature requires the \"tabs\" permission."
+    },
     "options_TreeStyleTabStyle_Header": {
         "message": "Custom Tree Style Tab Style"
     },
@@ -246,6 +255,12 @@
     },
     "optionalPermissions_TabHide_APIEnabled_Check": {
         "message": "Check API Status"
+    },
+    "optionalPermissions_Tabs_Title": {
+        "message": "\"tabs\""
+    },
+    "optionalPermissions_Tabs_Explanation": {
+        "message": "The \"tabs\" permission is needed to access a tab's title or URL. \n\nThis is needed to fix tabs that don't restore correctly since they need to have their URL set again."
     },
     "permissionsPage_Title": {
         "message": "Permissions"

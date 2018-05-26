@@ -1771,7 +1771,8 @@ function createPermissionsArea({ portConnection, requestFailedCallback, sectionA
   };
 
   let hidePermission = createPermissionButtonArea({ permissions: ['tabHide'] }, 'optionalPermissions_TabHide_Title', 'optionalPermissions_TabHide_Explanation');
-
+  
+  let tabsPermission = createPermissionButtonArea({ permissions: ['tabs'] }, 'optionalPermissions_Tabs_Title', 'optionalPermissions_Tabs_Explanation');
 
   // #region Tab Hide API Enabled
 
@@ -1827,8 +1828,10 @@ function createPermissionsArea({ portConnection, requestFailedCallback, sectionA
     area: area,
 
     tabHidePermissionController: hidePermission,
+    tabsPermissionController: tabsPermission,
 
     checkControllerError: (controller) => Boolean(contollerErrorLookup.get(controller)),
+    checkControllerAvailable: (controller) => Boolean(controller && controller.hasPermission && !obj.checkControllerError(controller)),
 
     onHasAnyValueChanged: onHasAnyChanged.subscriber,
     onControllerValueChanged: onControllerChanged.subscriber,

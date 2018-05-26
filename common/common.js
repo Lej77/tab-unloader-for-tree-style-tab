@@ -134,6 +134,9 @@ const defaultValues = Object.freeze({
       tabHide_ShowHiddenTabsInTST: false,
 
 
+      fixTabRestore_waitForUrlInMilliseconds: -1,
+
+
       command_unloadTab_fallbackToLastSelected: false,
       command_unloadTab_ignoreHiddenTabs: false,
 
@@ -1083,6 +1086,10 @@ class Timeout {
         this.onDisposed.addListener(resolve);
       }
     });
+  }
+
+  get callback() {
+    return this._callback;
   }
 
 }
@@ -3711,4 +3718,169 @@ class TabMonitor {
 
     this.start = start();
   }
+}
+
+
+/**
+ * Sometimes a tab fails to be restored. This class will fix this.
+ * 
+ * @class TabRestoreFixer
+ */
+class TabRestoreFixer {
+
+  constructor({ waitForUrlInMilliseconds = null } = {}) {
+    Object.assign(this, {
+      _isDisposed: false,
+      _onDisposed: new EventManager(),
+
+      _disposables: new DisposableCollection(),
+
+      _tabInfoLookup: {},   // Key: tabId, Value: {tab, timeoutId}
+      _waitForUrlInMilliseconds: 500,
+    });
+
+    this.waitForUrlInMilliseconds = waitForUrlInMilliseconds;
+
+
+    this._disposables.trackDisposables([
+      new EventListener(browser.tabs.onUpdated, this._onUpdate.bind(this)),
+      new EventListener(browser.tabs.onRemoved, this._onRemoved.bind(this)),
+    ]);
+    this._addAllDiscarded();
+  }
+
+
+  // #region Private Functions
+
+  async _addAllDiscarded() {
+    let tabs = await browser.tabs.query({ discarded: true });
+    for (let tab of tabs) {
+      this._removeTabInfo({ tabId: tab.id });
+      this._tabInfoLookup[tab.id] = { tab };
+    }
+  }
+
+
+  _removeTabInfo({ tabId = null, tabInfo = null }) {
+    if (!tabInfo && (tabId || tabId === 0)) {
+      tabInfo = this._tabInfoLookup[tabId];
+    }
+    if (tabInfo) {
+      this._clearTimeout(tabInfo.timeoutId);
+      delete this._tabInfoLookup[tabInfo.tab.id];
+    }
+  }
+
+  _clearTimeout(timeoutId) {
+    if (timeoutId || timeoutId === 0) {
+      clearTimeout(timeoutId);
+    }
+  }
+
+
+  _onUpdate(tabId, changeInfo, tab) {
+    /* Update events on successful restore:
+    
+			# Discarded = true
+				
+				# After this point: URL = real value.
+
+			# Discarded = false
+
+				# After this point: URL = 'about:blank'
+
+			# URL = real value.
+
+			# URL = 'about:blank'
+
+			# URL = real value.
+
+      When restore fails no events after "Discarded = false" will be sent.
+    */
+    let tabInfo = null;
+    if (changeInfo.discarded !== undefined || changeInfo.url !== undefined) {
+      tabInfo = this._tabInfoLookup[tabId];
+    }
+    if (changeInfo.discarded !== undefined) {
+      if (changeInfo.discarded) {
+        if (tabInfo) {
+          this._removeTabInfo({ tabInfo });
+        }
+        this._tabInfoLookup[tabId] = { tab };
+      } else if (tabInfo) {
+        let url = tabInfo.tab.url;
+
+        this._clearTimeout(tabInfo.timeoutId);
+        tabInfo.timeoutId = setTimeout(() => {
+          tabInfo.timeoutId = null;
+          browser.tabs.update(tabId, { url: url });
+          this._removeTabInfo({ tabId });
+        }, this._waitForUrlInMilliseconds);
+      }
+    }
+    if (changeInfo.url !== undefined && tabInfo) {
+      this._removeTabInfo({ tabInfo });
+    }
+  }
+
+  _onRemoved(tabId, { windowId, isWindowClosing }) {
+    this._removeTabInfo({ tabId });
+  }
+
+  // #endregion Private Functions
+
+
+  get waitForUrlInMilliseconds() {
+    return this._waitForUrlInMilliseconds;
+  }
+  set waitForUrlInMilliseconds(value) {
+    if (value < 0) {
+      value = 0;
+    }
+    if (value === this._waitForUrlInMilliseconds) {
+      return;
+    }
+    this._waitForUrlInMilliseconds = value;
+    for (let tabInfo of Object.values(this._tabInfoLookup)) {
+      this._clearTimeout(tabInfo.timeoutId);
+      tabInfo.timeoutId = null;
+    }
+  }
+
+
+  // #region Dispose
+
+  dispose() {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+
+    this._disposables.dispose();
+
+    this._onDisposed.fire(this);
+  }
+
+  get isDisposed() {
+    return this._isDisposed;
+  }
+  get onDisposed() {
+    return this._onDisposed.subscriber;
+  }
+
+  // #endregion Dispose
+
+
+  // #region Static Functions
+
+  static async checkPermission() {
+    try {
+      return await browser.permissions.contains({ permissions: ['tabs'] });
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // #endregion Static Functions
+
 }

@@ -5,6 +5,8 @@ async function initiatePage() {
 
   let starters = new DisposableCreators();
   let pagePort = new PortConnection();
+  let permissionsArea;
+  let onPermissionControllerChange = new EventManager();
 
 
   let isBound = false;
@@ -509,8 +511,6 @@ async function initiatePage() {
 
   // #region Tab Hiding
 
-  let onTabHidePermissionChange = new EventManager();
-  let isTabHideAvailable = false;
   {
     let section = createCollapsableArea(sectionAnimationInfo);
     section.area.classList.add('standardFormat');
@@ -550,7 +550,7 @@ async function initiatePage() {
     starters.createDisposable(() => {
       let check = () => {
         let enabled = enableCheckbox.checkbox.checked || showHiddenInTSTCheckbox.checkbox.checked;
-        let needAPI = enableCheckbox.checkbox.checked && !isTabHideAvailable;
+        let needAPI = enableCheckbox.checkbox.checked && !permissionsArea.checkControllerAvailable(permissionsArea.tabHidePermissionController);
         toggleClass(section.title, 'enabled', enabled);
         toggleClass(section.title, 'error', needAPI);
         toggleClass(section.content, 'enabled', enabled);
@@ -558,7 +558,11 @@ async function initiatePage() {
       let disposables = [
         new EventListener(enableCheckbox.checkbox, 'input', (e) => check()),
         new EventListener(showHiddenInTSTCheckbox.checkbox, 'input', (e) => check()),
-        new EventListener(onTabHidePermissionChange, () => check()),
+        new EventListener(permissionsArea.onControllerValueChanged, (controller) => {
+          if (permissionsArea.tabHidePermissionController === controller) {
+            check();
+          }
+        }),
       ];
       check();
       return disposables;
@@ -566,6 +570,55 @@ async function initiatePage() {
   }
 
   // #endregion Tab Hiding
+
+
+  // #region Tab Restore Fix
+
+  {
+    let section = createCollapsableArea(sectionAnimationInfo);
+    section.area.classList.add('standardFormat');
+    section.title.classList.add('center');
+    section.title.classList.add('enablable');
+    document.body.appendChild(section.area);
+
+
+    let header = document.createElement('div');
+    header.classList.add(messagePrefix + 'options_TabRestoreFix_Header');
+    section.title.appendChild(header);
+
+
+    let waitForUrl = createNumberInput('options_TabRestoreFix_waitForUrlInMilliseconds', -1, true);
+    waitForUrl.input.id = 'fixTabRestore_waitForUrlInMilliseconds';
+    section.content.appendChild(waitForUrl.area);
+
+
+    section.content.appendChild(document.createElement('br'));
+
+
+    let permissionWarning = document.createElement('div');
+    permissionWarning.classList.add(messagePrefix + 'options_TabRestoreFix_permissionWarning');
+    section.content.appendChild(permissionWarning);
+
+
+    let check = () => {
+      let enabled = waitForUrl.input.value >= 0;
+      toggleClass(section.title, 'enabled', enabled);
+      toggleClass(section.title, 'error', enabled && !permissionsArea.checkControllerAvailable(permissionsArea.tabsPermissionController));      
+    };
+    starters.createDisposable(() => {
+      check();
+      return [
+        new EventListener(waitForUrl.input, 'input', check),
+        new EventListener(permissionsArea.onControllerValueChanged, (controller) => {
+          if (permissionsArea.tabsPermissionController === controller) {
+            check();
+          }
+        }),
+      ];
+    });
+  }
+
+  // #endregion Tab Restore Fix
 
 
   // #region Tree Style Tab Style
@@ -644,7 +697,7 @@ async function initiatePage() {
     header.classList.add(messagePrefix + 'options_OptionalPermissions_Header');
     optionalPermissionsArea.title.appendChild(header);
 
-    let permissionsArea = createPermissionsArea({
+    permissionsArea = createPermissionsArea({
       requestFailedCallback: async (permission) => {
         let currentTab = await browser.tabs.getCurrent();
         browser.tabs.create({
@@ -661,12 +714,6 @@ async function initiatePage() {
     permissionsArea.onHasAnyValueChanged.addListener(() => {
       toggleClass(optionalPermissionsArea.title, 'enabled', permissionsArea.hasAnyPermissions);
       toggleClass(optionalPermissionsArea.title, 'error', permissionsArea.hasAnyError);
-    });
-    permissionsArea.onControllerValueChanged.addListener((controller) => {
-      if (permissionsArea.tabHidePermissionController === controller) {
-        isTabHideAvailable = controller.hasPermission && !permissionsArea.checkControllerError(controller);
-        onTabHidePermissionChange.fire();
-      }
     });
   }
 

@@ -835,55 +835,47 @@ async function start() {
 
   var tabHideManager = null;
 
-  let lastCheck = null;
+  let lastTabHideCheck = null;
   let checkTabHiding = async () => {
-    while (lastCheck) {
-      let check = lastCheck;
-      await check;
-      if (lastCheck === check) {
-        lastCheck = null;
-      }
-    }
-    let check = async () => {
-      let wanted = settings.tabHide_HideUnloadedTabs && settings.isEnabled;
-      let allowed = wanted ? await TabHideManager.checkPermission() : false;
-      let apiAccess = allowed ? await TabHideManager.checkAPIEnabled() : false;
+    let check = lastTabHideCheck;
+    await check;
+    if (lastTabHideCheck === check || !lastTabHideCheck) {
+      lastTabHideCheck = (async () => {
+        let wanted = settings.tabHide_HideUnloadedTabs && settings.isEnabled;
+        let allowed = wanted ? await TabHideManager.checkPermission() : false;
+        let apiAccess = allowed ? await TabHideManager.checkAPIEnabled() : false;
 
-      if (tabHideManager) {
-        tabHideManager.isAPIEnabled = apiAccess;
-      }
-      if (allowed) {
-        if (!tabHideManager) {
-          if (settings.tabHide_ShowHiddenTabsInTST) {
-            // Ensure that hidden tabs are visible in TST before hiding tabs:
-            await invalidateTST();
+        if (tabHideManager) {
+          tabHideManager.isAPIEnabled = apiAccess;
+        }
+        if (allowed) {
+          if (!tabHideManager) {
+            if (settings.tabHide_ShowHiddenTabsInTST) {
+              // Ensure that hidden tabs are visible in TST before hiding tabs:
+              await invalidateTST();
+              await delay(250);
+            }
+
+            if (!tabHideManager) {
+              tabHideManager = new TabHideManager();
+              tabHideManager.onAPIStatusChanged.addListener(() => {
+                if (portManager) {
+                  portManager.fireEvent(messageTypes.tabHideAPIChanged, [tabHideManager.isAPIEnabled]);
+                }
+              });
+            }
+          }
+        } else {
+          if (tabHideManager) {
+            tabHideManager.dispose();
+            tabHideManager = null;
+            await TabHideManager.showAllTabs();
             await delay(250);
           }
-
-          if (!tabHideManager) {
-            tabHideManager = new TabHideManager();
-            tabHideManager.onAPIStatusChanged.addListener(() => {
-              if (portManager) {
-                portManager.fireEvent(messageTypes.tabHideAPIChanged, [tabHideManager.isAPIEnabled]);
-              }
-            });
-          }
         }
-      } else {
-        if (tabHideManager) {
-          tabHideManager.dispose();
-          tabHideManager = null;
-          await TabHideManager.showAllTabs();
-          await delay(250);
-        }
-      }
-    };
-    let checking = check();
-    lastCheck = checking;
-    await checking;
-    if (checking === lastCheck) {
-      lastCheck = null;
+      })();
     }
+    return lastTabHideCheck;
   };
   settingsTracker.onChange.addListener((changes, storageArea) => {
     if (changes.tabHide_HideUnloadedTabs || changes.isEnabled) {
@@ -893,6 +885,42 @@ async function start() {
   checkTabHiding();
 
   // #endregion Tab Hiding
+
+
+  // #region Tab Restore Fix
+
+  let tabRestoreFixer = null;
+
+  let lastTabFixCheck = null;
+  let checkTabFixing = async () => {
+    let waiting = lastTabFixCheck;
+    await waiting;
+    if (waiting === lastTabFixCheck || !lastTabFixCheck) {
+      lastTabFixCheck = (async () => {
+        let checkSettings = () => settings.fixTabRestore_waitForUrlInMilliseconds >= 0 && settings.isEnabled;
+        let wanted = checkSettings() && (await TabRestoreFixer.checkPermission()) && checkSettings();
+        if (wanted) {
+          if (!tabRestoreFixer) {
+            tabRestoreFixer = new TabRestoreFixer({ waitForUrlInMilliseconds: settings.fixTabRestore_waitForUrlInMilliseconds });
+          } else {
+            tabRestoreFixer.waitForUrlInMilliseconds = settings.fixTabRestore_waitForUrlInMilliseconds;
+          }
+        } else if (tabRestoreFixer) {
+          tabRestoreFixer.dispose();
+          tabRestoreFixer = null;
+        }
+      })();
+    }
+    return lastTabFixCheck;
+  };
+  settingsTracker.onChange.addListener((changes, storageArea) => {
+    if (changes.fixTabRestore_waitForUrlInMilliseconds || changes.isEnabled) {
+      checkTabFixing();
+    }
+  });
+  checkTabFixing();
+
+  // #endregion Tab Restore Fix
 
 
   // #region Messaging
@@ -906,6 +934,7 @@ async function start() {
       case messageTypes.permissionsChanged: {
         portManager.fireEvent(messageTypes.permissionsChanged, [message.permission, message.value]);
         checkTabHiding();
+        checkTabFixing();
       } break;
       case messageTypes.tabHideAPIChanged: {
         portManager.fireEvent(messageTypes.tabHideAPIChanged, [message.value, sender.tab ? sender.tab.id : null]);
