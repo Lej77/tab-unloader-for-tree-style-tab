@@ -180,15 +180,15 @@ async function initiatePage() {
         }
       }
     };
-    list.onArrayChanged.addListener((list, itemObj, newIndex) => {
-      if (!newIndex && newIndex !== 0) {
-        console.log('Error: context menu order item removed!');
-        return;
-      }
-      saveOrder();
-    });
     starters.createDisposable(() => {
       loadOrder();
+      return new EventListener(list.onArrayChanged, ((list, itemObj, newIndex) => {
+        if (!newIndex && newIndex !== 0) {
+          console.log('Error: context menu order item removed!');
+          return;
+        }
+        saveOrder();
+      }));
     });
 
     let createContextMenuItemSection = ({
