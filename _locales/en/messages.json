@@ -147,7 +147,7 @@
         "message": "Show hidden tabs in Tree Style Tab's sidebar."
     },
     "options_TabHide_Info": {
-        "message": "If this options is enabled then it makes sense to uncheck all the \"$ignoreHiddenTabsOption$\" checkboxes.\n\nTo still be able to select unloaded tabs you can use the \"$showHiddenTabsInTSTOption$\" option.\n\nNote: requires the \"tabHide\" permission.",        
+        "message": "If this options is enabled then it makes sense to uncheck all the \"$ignoreHiddenTabsOption$\" checkboxes.\n\nTo still be able to select unloaded tabs you can use the \"$showHiddenTabsInTSTOption$\" option.\n\nNote: requires the \"tabHide\" permission.",
         "placeholders": {
             "ignoreHiddenTabsOption": {
                 "content": "$1"
@@ -287,5 +287,11 @@
     },
     "contextMenu_rootItemTitle": {
         "message": "Tab Unloader"
+    },
+    "treeStyleTabStyle_dimUnloadedTabs": {
+        "message": "Dim unloaded tabs"
+    },
+    "treeStyleTabStyle_showHiddenTabs": {
+        "message": "Show hidden tabs"
     }
 }

@@ -675,7 +675,7 @@ async function start() {
 
     if (settings.dimUnloadedTabs) {
       style += `
-/* Dim unloaded tabs */
+/* ${browser.i18n.getMessage('treeStyleTabStyle_dimUnloadedTabs')} */
 .tab.discarded {
   opacity: 0.75;
 }
@@ -684,7 +684,7 @@ async function start() {
     }
     if (settings.tabHide_ShowHiddenTabsInTST) {
       style += `
-/* Show hidden tabs */
+/* ${browser.i18n.getMessage('treeStyleTabStyle_showHiddenTabs')} */
 .tab.hidden {
   pointer-events: auto !important;
   position: relative !important;
@@ -902,7 +902,7 @@ async function start() {
         let wanted = checkSettings() && (await checkPermission()) && checkSettings();
         if (wanted) {
           if (!tabRestoreFixer) {
-            tabRestoreFixer = new TabRestoreFixer({ 
+            tabRestoreFixer = new TabRestoreFixer({
               waitForUrlInMilliseconds: settings.fixTabRestore_waitForUrlInMilliseconds,
               waitForIncorrectLoad: settings.fixTabRestore_waitForIncorrectLoad,
             });
@@ -920,7 +920,7 @@ async function start() {
   };
   settingsTracker.onChange.addListener((changes, storageArea) => {
     if (
-      changes.fixTabRestore_waitForUrlInMilliseconds || 
+      changes.fixTabRestore_waitForUrlInMilliseconds ||
       changes.fixTabRestore_waitForIncorrectLoad ||
       changes.isEnabled
     ) {
