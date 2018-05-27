@@ -230,13 +230,13 @@
         "message": "Видалити"
     },
     "optionalPermissions_Available": {
-        "message": "Granted:"
+        "message": "Надано:"
     },
     "optionalPermissions_Granted": {
-        "message": "True"
+        "message": "Так"
     },
     "optionalPermissions_NotGranted": {
-        "message": "False"
+        "message": "Ні"
     },
     "optionalPermissions_TabHide_Title": {
         "message": "\"tabHide\""
@@ -287,5 +287,11 @@
     },
     "contextMenu_rootItemTitle": {
         "message": "Tab Unloader"
+    },
+    "treeStyleTabStyle_dimUnloadedTabs": {
+        "message": "Затінити вивантажені вкладки"
+    },
+    "treeStyleTabStyle_showHiddenTabs": {
+        "message": "Показати приховані вкладки"
     }
 }
