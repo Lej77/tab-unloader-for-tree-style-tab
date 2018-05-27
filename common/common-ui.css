@@ -49,15 +49,34 @@
     align-items: center;
 }
 .statusIndicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
     color: white;
+}
+.statusIndicator.newLine {
+    flex-direction: column;
+}
+.statusIndicator.standardFormat {
     padding: 10px;
     border: 5px;
     border-radius: 5px;
 }
+.statusIndicatorWrapper .statusIndicator.fill {
+    flex: 1 1 auto;
+    align-self: stretch;
+}
 
-.statusIndicator > * {
+.statusIndicator * {
     text-align: center;
-    width: 100%;
+}
+
+.statusIndicator .statusIndicatorValues {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .statusIndicator:not(.enabled):not(.error) {
@@ -71,10 +90,11 @@
     color: black;
 }
 
-.statusIndicator:not(.error) > .statusIndicatorError,
-.statusIndicator:-moz-any(:not(.enabled), .error) > .statusIndicatorEnabled,
-.statusIndicator:-moz-any(.enabled, .error) > .statusIndicatorDisabled {
-    display: none;
+.statusIndicator:not(.error) .statusIndicatorError,
+.statusIndicator:-moz-any(:not(.enabled), .error) .statusIndicatorEnabled,
+.statusIndicator:-moz-any(.enabled, .error) .statusIndicatorDisabled {
+    visibility: hidden;
+    max-height: 0px;
 }
 
 /* #endregion Status Indicator */
@@ -501,30 +521,18 @@
     margin-left: -2px;
 }
 
-.permissionController .permissionInfobox {
-    color: white;
-    display: flex;
-    align-items: center;
-    padding: 5px;
-    padding-left: 10px;
-    width: 115px;
+
+.permissionController .permissionIndicator {
     font-size: 15px;
+
+    align-self: stretch;
 }
-.permissionController .permissionInfobox *:not(:first-child) {
-  text-align: center;
-  flex: 1 1 auto;
+.permissionController .permissionIndicator > * {
+    padding-left: 10px;
+    padding-right: 10px;
 }
-.permissionController .permissionInfobox {
-    background-color: red;
-}
-.permissionController.granted .permissionInfobox {
-    background-color: green;
-}
-.permissionController.granted .permissionInfobox .notGranted {
-    display: none;
-}
-.permissionController:not(.granted) .permissionInfobox .granted {
-    display: none;
+.permissionController .permissionIndicator .statusIndicatorValues {
+    padding-left: 5px;
 }
 
 

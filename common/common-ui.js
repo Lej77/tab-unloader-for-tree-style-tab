@@ -141,29 +141,46 @@ function createNumberInput(message, min = 0, newLine = false) {
 }
 
 
-function createStatusIndicator(headerMessage, enabledMessage, disabledMessage, errorMessage = null) {
+function createStatusIndicator({ headerMessage, enabledMessage, disabledMessage, errorMessage = null, newLine = true, standardFormat = true, fill = false } = {}) {
   let areaWrapper = document.createElement('div');
   areaWrapper.classList.add('statusIndicatorWrapper');
 
   let area = document.createElement('div');
   area.classList.add('statusIndicator');
   area.classList.add('textNotSelectable');
+  if (newLine) {
+    area.classList.add('newLine');
+  }
+  if (standardFormat) {
+    area.classList.add('standardFormat');
+  }
+  if (fill) {
+    area.classList.add('fill');
+  }
   areaWrapper.appendChild(area);
 
-  let createSubelement = (className, message = null) => {
+
+  let createSubelement = (parentArea, className, message = null) => {
     let node = document.createElement('div');
     node.classList.add(className);
     if (message) {
       node.classList.add(messagePrefix + message);
     }
-    area.appendChild(node);
+    parentArea.appendChild(node);
     return node;
   };
 
-  createSubelement('statusIndicatorHeader', headerMessage);
-  createSubelement('statusIndicatorEnabled', enabledMessage);
-  createSubelement('statusIndicatorDisabled', disabledMessage);
-  createSubelement('statusIndicatorError', errorMessage);
+  createSubelement(area, 'statusIndicatorHeader', headerMessage);
+
+
+  let valueArea = document.createElement('div');
+  valueArea.classList.add('statusIndicatorValues');
+  area.appendChild(valueArea);
+
+
+  createSubelement(valueArea, 'statusIndicatorEnabled', enabledMessage);
+  createSubelement(valueArea, 'statusIndicatorDisabled', disabledMessage);
+  createSubelement(valueArea, 'statusIndicatorError', errorMessage);
 
 
   let obj = {
@@ -1544,13 +1561,6 @@ function createOptionalPermissionArea({ permission, titleMessage, explanationMes
   section.title.classList.add('noFontChanges');
   section.title.classList.add('enablable');
 
-  let permissionChanged = (modifiedPermission = false) => {
-    toggleClass(section.area, 'granted', hasPermission);
-    toggleClass(section.title, 'enabled', hasPermission);
-
-    onHasPermissionChanged.fire(obj, modifiedPermission);
-  };
-
 
   let manageArea = document.createElement('div');
   manageArea.classList.add('manageArea');
@@ -1574,23 +1584,16 @@ function createOptionalPermissionArea({ permission, titleMessage, explanationMes
   section.title.appendChild(permissionHeader);
 
 
-  let permissionInfobox = document.createElement('div');
-  permissionInfobox.classList.add('permissionInfobox');
-  section.title.appendChild(permissionInfobox);
-
-  let infoText = document.createElement('div');
-  infoText.classList.add(messagePrefix + 'optionalPermissions_Available');
-  permissionInfobox.appendChild(infoText);
-
-  let grantedInfo = document.createElement('div');
-  grantedInfo.classList.add('granted');
-  grantedInfo.classList.add(messagePrefix + 'optionalPermissions_Granted');
-  permissionInfobox.appendChild(grantedInfo);
-
-  let removedInfo = document.createElement('div');
-  removedInfo.classList.add('notGranted');
-  removedInfo.classList.add(messagePrefix + 'optionalPermissions_NotGranted');
-  permissionInfobox.appendChild(removedInfo);
+  let permissionIndicator = createStatusIndicator({
+    headerMessage: 'optionalPermissions_Available',
+    enabledMessage: 'optionalPermissions_Granted',
+    disabledMessage: 'optionalPermissions_NotGranted',
+    newLine: false,
+    standardFormat: false,
+    fill: true,
+  });
+  permissionIndicator.area.classList.add('permissionIndicator');
+  section.title.appendChild(permissionIndicator.area);
 
 
   let explanation = document.createElement('div');
@@ -1600,6 +1603,14 @@ function createOptionalPermissionArea({ permission, titleMessage, explanationMes
   explanation.classList.add('textSelectable');
   section.content.appendChild(explanation);
 
+
+  let permissionChanged = (modifiedPermission = false) => {
+    toggleClass(section.area, 'granted', hasPermission);
+    toggleClass(section.title, 'enabled', hasPermission);
+    permissionIndicator.isEnabled = hasPermission;
+
+    onHasPermissionChanged.fire(obj, modifiedPermission);
+  };
 
   let start = async () => {
     hasPermission = await browser.permissions.contains(permission);
@@ -1771,7 +1782,7 @@ function createPermissionsArea({ portConnection, requestFailedCallback, sectionA
   };
 
   let hidePermission = createPermissionButtonArea({ permissions: ['tabHide'] }, 'optionalPermissions_TabHide_Title', 'optionalPermissions_TabHide_Explanation');
-  
+
   let tabsPermission = createPermissionButtonArea({ permissions: ['tabs'] }, 'optionalPermissions_Tabs_Title', 'optionalPermissions_Tabs_Explanation');
 
   // #region Tab Hide API Enabled
@@ -1788,12 +1799,12 @@ function createPermissionsArea({ portConnection, requestFailedCallback, sectionA
     checkButton.classList.add(messagePrefix + 'optionalPermissions_TabHide_APIEnabled_Check');
     statusArea.appendChild(checkButton);
 
-    let indicator = createStatusIndicator(
-      'optionalPermissions_TabHide_APIEnabled_Header',
-      'optionalPermissions_TabHide_APIEnabled_Enabled',
-      'optionalPermissions_TabHide_APIEnabled_Disabled',
-      'optionalPermissions_TabHide_APIEnabled_Error'
-    );
+    let indicator = createStatusIndicator({
+      headerMessage: 'optionalPermissions_TabHide_APIEnabled_Header',
+      enabledMessage: 'optionalPermissions_TabHide_APIEnabled_Enabled',
+      disabledMessage: 'optionalPermissions_TabHide_APIEnabled_Disabled',
+      errorMessage: 'optionalPermissions_TabHide_APIEnabled_Error',
+    });
     indicator.area.classList.add('tabHideEnabledIndicator');
     statusArea.appendChild(indicator.area);
 

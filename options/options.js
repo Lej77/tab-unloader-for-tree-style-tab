@@ -54,7 +54,11 @@ async function initiatePage() {
     disableButton.classList.add(messagePrefix + 'options_extensionToggle_DisableButton');
     enableArea.appendChild(disableButton);
 
-    let indicator = createStatusIndicator('options_extensionToggle_Status_Header', 'options_extensionToggle_Status_Enabled', 'options_extensionToggle_Status_Disabled');
+    let indicator = createStatusIndicator({
+      headerMessage: 'options_extensionToggle_Status_Header',
+      enabledMessage: 'options_extensionToggle_Status_Enabled',
+      disabledMessage: 'options_extensionToggle_Status_Disabled',
+    });
     enableArea.appendChild(indicator.area);
 
     let enableButton = document.createElement('button');
