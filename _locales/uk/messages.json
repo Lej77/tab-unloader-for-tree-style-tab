@@ -1,0 +1,297 @@
+{
+    "options_extensionToggle_DisableButton": {
+        "message": "Відключити додаток"
+    },
+    "options_extensionToggle_EnableButton": {
+        "message": "Включити додаток"
+    },
+    "options_extensionToggle_Status_Header": {
+        "message": "Стан додатку:"
+    },
+    "options_extensionToggle_Status_Enabled": {
+        "message": "Включено"
+    },
+    "options_extensionToggle_Status_Disabled": {
+        "message": "Відключено"
+    },
+    "options_unloadOnLeftClick": {
+        "message": "Клік ЛКМ по вкладці для вивантаження."
+    },
+    "options_unloadOnMiddleClick": {
+        "message": "Клік СКМ для вивантаження вкладок. Зверніть увагу, що в TST версії 2.4.18 (і раніше) неможливо запобігти дії СКМ за замовчуванням. Це означає, що коли СКМ відпущена на вкладці, на якій її було натиснуто, то ця вкладка закриється. Щоб використовувати СКМ для вивантаження вкладок в цих версіях TST, вам потрібно натиснути кнопку і утримуючи її, перетягнути мишу на іншу вкладку, перш ніж відпустити кнопку."
+    },
+    "options_unloadOnRightClick": {
+        "message": "Клік правою кнопкою миші на вкладці, щоб вивантажити її. В даний час неможливо запобігти відкриття контекстного меню."
+    },
+    "options_unloadOnLeftClick_Title": {
+        "message": "Клік лівою кнопкою миші (ЛКМ) для вивантаження вкладок"
+    },
+    "options_unloadOnMiddleClick_Title": {
+        "message": "Клік середньою кнопкою миші (СКМ, колесо) для вивантаження вкладок"
+    },
+    "options_unloadOnRightClick_Title": {
+        "message": "Клік правою кнопкою миші (ПКМ) для вивантаження вкладок"
+    },
+    "options_selectOnLeftClick": {
+        "message": "Заборонити вибір вкладки кліком ЛКМ."
+    },
+    "options_selectOnLeftClick_Title": {
+        "message": "Заборонити вибір вкладки кліком ЛКМ."
+    },
+    "options_closeOnMiddleClick": {
+        "message": "Заборонити вибір вкладки кліком СКМ. Зверніть увагу, що в TST v2.4.18 (і більш ранніх версіях) це неможливо."
+    },
+    "options_closeOnMiddleClick_Title": {
+        "message": "Заборонити закриття вкладки кліком СКМ."
+    },
+    "options_modifierKeysInfo": {
+        "message": "Клік буде реєструватися тільки за натискання обраних клавіш-модифікаторів і звільнення необраних клавіш-модифікаторів."
+    },
+    "options_modifierKeysAnyMode": {
+        "message": "Режим Any Key: Якщо чекбокс включений, для реєстрації кліка потрібно натиснути хоча б одну з обраних клавіш-модифікаторів. Непотрібно натискати всі обрані клавіші-модифікатори. Стан необраних клавіш ігнорується. Якщо немає обраних клавіш-модифікаторів, то клік реєструватиметься завжди."
+    },
+    "options_modifierKey_Ctrl": {
+        "message": "Ctrl"
+    },
+    "options_modifierKey_Shift": {
+        "message": "Shift"
+    },
+    "options_modifierKey_Alt": {
+        "message": "Alt"
+    },
+    "options_modifierKey_Meta": {
+        "message": "Meta (Command на macOS)"
+    },
+    "options_clickTimeoutInfo": {
+        "message": "Виміряйте тривалість кліка. Це час між натисканням кнопки миші і відпусканням. Переконайтеся, що клік знаходиться в межах певного інтервалу. Встановіть мінімальний час щоб реєструвати тільки тривалі натискання або максимальний час, щоб запобігти запуску при перетягуванні чи тривалому натисканні на вкладку."
+    },
+    "options_clickTimeoutMin": {
+        "message": "Мінімальна тривалість кліка в мілісекундах (0 = вимкнено): "
+    },
+    "options_clickTimeoutMax": {
+        "message": "Максимальна тривалість кліка в мілісекундах (0 = вимкнено): "
+    },
+    "options_doubleClick_enabled": {
+        "message": "Чекати подвійного кліка."
+    },
+    "options_doubleClick_only": {
+        "message": "Якщо чекбокс включений, реєструватимуться тільки подвійні кліки, в іншому випадку подвійні кліки не спрацюють."
+    },
+    "options_doubleClick_timeout": {
+        "message": "Час у мілісекундах між кліками миші для реєстрації подвійного кліку:"
+    },
+    "options_onDrag_enabled": {
+        "message": "Чекати довгого натискання без перетягування. Це спеціальне повідомлення, що відправляється TST, коли на вкладці довго затиснута ЛКМ. При перетягуванні вкладки повідомлення не відправляється. Це можна використати, щоб дозволяти операцію з довгим натисканням, але скасовувати при перетягуванні вкладок."
+    },
+    "options_onDrag_cancel": {
+        "message": "Якщо чекбокс включений - скасувати, якщо подія зареєстрована; в іншому випадку - дозволити, якщо подія зареєстрована."
+    },
+    "options_onDrag_mouseUpTigger": {
+        "message": "Якщо чекбокс включений, відпускання Кнопки Миші буде також реєструватися як тривале натискання. Наразі TST не відправляє відпускання КМ після перетягування, тому, якщо відпускання КМ відправляється, перетягування не використовується. Т.ч. якщо чекбокс включений, подія буде реєструватися тільки якщо НЕ використовується перетягування."
+    },
+    "options_onDrag_timeout": {
+        "message": "Час очікування тривалого натискання в мілісекундах (буде повідомлено через 400 мілісекунд, якщо вкладка не перетягується): "
+    },
+    "options_dontPreventTSTAction": {
+        "message": "Не заважати дії за замовчуванням на вкладці TST."
+    },
+    "options_applyToAll": {
+        "message": "Застосовується водночас до завантажених і вивантажених вкладок."
+    },
+    "options_applyToUnloadedTabs": {
+        "message": "Реєструвати клік на вивантажених вкладках замість завантажених."
+    },
+    "options_fallbackToLastSelected": {
+        "message": "Обрати попередньо відвідану: Якщо вивантажувана вкладка активна, фокус переключиться на попередню. Якщо цей чекбокс не ввімкнено, обирається найближча вкладка."
+    },
+    "options_ignoreHiddenTabs": {
+        "message": "Ігнорувати приховані вкладки: якщо вкладка активна то вкладка на яку переключиться фокус не повинна бути прихована."
+    },
+    "options_contextMenuItems_Title": {
+        "message": "Елементи контекстного меню"
+    },
+    "options_tstContextMenu_CustomRootLabel": {
+        "message": "Якщо пунктів контекстного меню більше одного, їх буде об'єднано підпунктом з цією назвою (помістіть \"&\" символ перед літерою, яку хочете використовувати як гарячу клавішу) (порожньо = мітка за замовчуванням):"
+    },
+    "options_unloadInTSTContextMenu_Title": {
+        "message": "Вивантажити вкладку"
+    },
+    "options_unloadTreeInTSTContextMenu_Title": {
+        "message": "Вивантажити дерево"
+    },
+    "options_unloadInTSTContextMenu": {
+        "message": "Додайте пункт до контекстного меню TST для вивантаження вкладки."
+    },
+    "options_unloadTreeInTSTContextMenu": {
+        "message": "Додайте пункт до контекстного меню TST для вивантаження дерева."
+    },
+    "options_contextMenu_customLabel": {
+        "message": "Власні мітки пунктів контекстного меню (помістіть \"&\" символ перед літерою, яку хочете використовувати як гарячу клавішу) (порожньо = мітка за замовчуванням):"
+    },
+    "options_unloadInTSTContextMenu_DelayedRegistration": {
+        "message": "Перереєструвати пункти контекстного меню TST-вкладок після затримки, щоб переконатися, що вони розміщені внизу контекстного меню. Затримка в мілісекундах (0 = вимкнено): "
+    },
+    "options_dimUnloadedTabs": {
+        "message": "Затінювати вивантажені вкладки на бічній панелі TST."
+    },
+    "options_disableOptionsPageAnimations": {
+        "message": "Вимкнути анімацію на сторінці параметрів."
+    },
+    "options_TabHide_Header": {
+        "message": "Приховати вкладку"
+    },
+    "options_TabHide_HideUnloadedTabs": {
+        "message": "Приховати вивантажені вкладки за допомогою API приховування вкладок. Приховані вкладки не відображаються на панелі інструментів і не можуть бути обрані за допомогою гарячих клавіш. Якщо поточна вкладка закрита, приховані вкладки не будуть обрані, поки є інші видимі вкладки. Закріплені вкладки не можна приховати."
+    },
+    "options_TabHide_ShowHiddenTabsInTST": {
+        "message": "Показати приховані вкладки на бічній панелі TST."
+    },
+    "options_TabHide_Info": {
+        "message": "Якщо ця опція включена, то є сенс вимкнути всі \"$ignoreHiddenTabsOption$\" чекбокси.\n\nЩоб мати можливість обирати вивантажені вкладки, ви можете використовувати \"$showHiddenTabsInTSTOption$\" опцію.\n\nПримітка: потрібен \"tabHide\" дозвіл.",        
+        "placeholders": {
+            "ignoreHiddenTabsOption": {
+                "content": "$1"
+            },
+            "showHiddenTabsInTSTOption": {
+                "content": "$2"
+            }
+        }
+    },
+    "options_TabRestoreFix_Header": {
+        "message": "Виправити помилку відновлення вкладки"
+    },
+    "options_TabRestoreFix_waitForUrlInMilliseconds": {
+        "message": "Час очікування для вкладки до переходу до коректного URL-у перед виправленням (час в мілісекундах) (рекомендоване значення: 500) (-1 = вимкнено):"
+    },
+    "options_TabRestoreFix_waitForIncorrectLoad": {
+        "message": "Іноді Firefox може помилково позначити вкладку як завантажену. Коли це відбувається, спочатку він позначає вкладку як вивантажену, і відразу після цього - як завантажену. Завдяки цій опції, якщо вкладка позначена як вивантажена, а потім як завантажена (протягом часу встановленого тут) то ця вкладка буде виправлена після її активації. Час очікування неправильного завантаження (в мілісекундах) (-1 = вимкнено):"
+    },
+    "options_TabRestoreFix_permissionWarning": {
+        "message": "Примітка: потрібен \"tabs\" дозвіл."
+    },
+    "options_TreeStyleTabStyle_Header": {
+        "message": "Власний стиль TST"
+    },
+    "options_TreeStyleTabStyle_Info": {
+        "message": "Це зміни стилю бічної панелі TST, внесені цим розширенням:"
+    },
+    "options_unloadAgainAfterDelay": {
+        "message": "Після вивантаження вкладок повторити метод вивантаження знову, після невеликої затримки (час в мілісекундах) (-1 = вимкнено):"
+    },
+    "options_unloadViaAutoTabDiscard_Prefix": {
+        "message": "Вивантаження вкладок за допомогою "
+    },
+    "options_unloadViaAutoTabDiscard_Name": {
+        "message": "Auto Tab Discard"
+    },
+    "options_unloadViaAutoTabDiscard_URL": {
+        "message": "https://addons.mozilla.org/firefox/addon/auto-tab-discard/"
+    },
+    "options_unloadViaAutoTabDiscard_Suffix": {
+        "message": " додаток."
+    },
+    "options_OptionalPermissions_Header": {
+        "message": "Додаткові дозволи"
+    },
+    "options_OtherSettings_Header": {
+        "message": "Інші налаштування"
+    },
+    "options_ResetSettings_Button": {
+        "message": "Скидання налаштувань"
+    },
+    "options_ResetSettings_Prompt": {
+        "message": "Ви хочете скинути всі параметри до значень за замовчуванням?"
+    },
+    "options_Commands_Title": {
+        "message": "Гарячі клавіші"
+    },
+    "options_Commands_Info": {
+        "message": "Встановіть курсор в одне з текстових полів, і натисніть комбінацію клавіш, наприклад \"Alt+X\" щоб застосувати її. Ви також можете натиснути кнопку \"Prompt\" і вручну записати сполучення клавіш."
+    },
+    "options_Commands_ResetButton": {
+        "message": "Скидання"
+    },
+    "options_Commands_PromptButton": {
+        "message": "Введення"
+    },
+    "options_Commands_PromptButton_Description": {
+        "message": "Напишіть текст, що є бажаним поєднанням клавіш, наприклад \"Alt+X\""
+    },
+    "options_Commands_UnloadTab": {
+        "message": "Вивантажити вкладку"
+    },
+    "options_Commands_UnloadTree": {
+        "message": "Вивантажити дерево"
+    },
+    "optionalPermissions_Request": {
+        "message": "Запит"
+    },
+    "optionalPermissions_Remove": {
+        "message": "Видалити"
+    },
+    "optionalPermissions_Available": {
+        "message": "Надано:"
+    },
+    "optionalPermissions_Granted": {
+        "message": "Так"
+    },
+    "optionalPermissions_NotGranted": {
+        "message": "Ні"
+    },
+    "optionalPermissions_TabHide_Title": {
+        "message": "\"tabHide\""
+    },
+    "optionalPermissions_TabHide_Explanation": {
+        "message": "Потрібно дозвіл \"tabHide\" щоб приховати вкладки з допомогою API приховування вкладок.\n\nНаразі це експериментальне API, котре за замовчуванням вимкнено. Для ввімкнення, відвідайте \"about:config\" URL та встановіть \"extensions.webextensions.tabhide.enabled\" у значення true.\n\nЯкщо API не активовано, його неможливо використовувати, навіть якщо надано дозвіл."
+    },
+    "optionalPermissions_TabHide_APIEnabled_Header": {
+        "message": "Статус API:"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Enabled": {
+        "message": "Доступно"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Disabled": {
+        "message": "Недоступно"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Error": {
+        "message": "Відмовлено в дозволі"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Check": {
+        "message": "Перевірити статус API"
+    },
+    "optionalPermissions_Tabs_Title": {
+        "message": "\"tabs\""
+    },
+    "optionalPermissions_Tabs_Explanation": {
+        "message": "\"tabs\" дозвіл потрібен для доступу до заголовка або URL-у вкладки.\n\nЦе необхідно, для виправлення вкладок, які не відновлюються, бо вони мають заново отримати свою URL-адресу."
+    },
+    "permissionsPage_Title": {
+        "message": "Дозволи"
+    },
+    "permissionsPage_Info_Start": {
+        "message": "Через"
+    },
+    "permissionsPage_Info_Bug": {
+        "message": "помилка Firefox"
+    },
+    "permissionsPage_Info_End": {
+        "message": " наразі неможливо запросити додатковий дозвіл на сторінці параметрів. Тому, обхідним шляхом, запитуйте дозволу на цій сторінці."
+    },
+    "contextMenu_unloadTab": {
+        "message": "&Вивантажити вкладку",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
+    },
+    "contextMenu_unloadTree": {
+        "message": "Виванта&жити дерево",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
+    },
+    "contextMenu_rootItemTitle": {
+        "message": "Tab Unloader"
+    },
+    "treeStyleTabStyle_dimUnloadedTabs": {
+        "message": "Затінити вивантажені вкладки"
+    },
+    "treeStyleTabStyle_showHiddenTabs": {
+        "message": "Показати приховані вкладки"
+    }
+}
