@@ -289,7 +289,7 @@
         "message": "Tab Unloader"
     },
         "treeStyleTabStyle_dimUnloadedTabs": {
-        "message": "Затемнить выгруженные вкладки"
+        "message": "Затенить выгруженные вкладки"
     },
         "treeStyleTabStyle_showHiddenTabs": {
         "message": "Показать скрытые вкладки"
