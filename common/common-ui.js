@@ -64,6 +64,7 @@ function setTextMessages(elementsToText = null) {
 }
 
 function bindElementIdsToSettings(settings, createListeners = true) {
+  let listeners = [];
   for (let key of Object.keys(settings)) {
     let element = document.getElementById(key);
     if (!element) {
@@ -79,11 +80,12 @@ function bindElementIdsToSettings(settings, createListeners = true) {
 
     element[propertyName] = settings[key];
     if (createListeners) {
-      element.addEventListener("input", e => {
+      listeners.push(new EventListener(element, "input", (e) => {
         Settings.set(key, e.target[propertyName]);
-      });
+      }));
     }
   }
+  return listeners;
 }
 
 function toggleClass(element, className, enabled) {

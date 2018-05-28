@@ -1697,7 +1697,17 @@ class DisposableCreators {
    * @memberof DisposableCreators
    */
   get isDelaying() {
-    return !Boolean(this.disposableCollection);
+    return !this.isStarted;
+  }
+
+  /**
+   * Creators have been called and any new creaters will be created immediately.
+   * 
+   * @readonly
+   * @memberof DisposableCreators
+   */
+  get isStarted() {
+    return Boolean(this.disposableCollection);
   }
 
   get isDisposed() {
@@ -3961,9 +3971,20 @@ class TabRestoreFixer {
             if (this.fixIncorrectLoad && !this._isTimeoutId(tabInfo.timeoutId)) {
               // Unload again if tab isn't being fixed (probably from being activated):
               tabInfo.lastFixReason = 'incorrectLoad';
-              tabInfo.timeoutId = setTimeout(() => {
+              tabInfo.timeoutId = setTimeout(async () => {
                 tabInfo.timeoutId = null;
 
+                // Check if incorrect load is really fail to restore:
+                if (tabInfo.tab.url) {
+                  let aTab = await browser.tabs.get(tabId);
+                  if (aTab.url === 'about:blank' && aTab.url !== tabInfo.tab.url) {
+                    this._removeTabInfo({ tabId });
+                    browser.tabs.update(tabId, { url: tabInfo.tab.url });
+                    return;
+                  }
+                }
+
+                // Fix incorrect load:
                 browser.tabs.discard(tabId);
               }, this.fixIncorrectLoadAfter);
             }

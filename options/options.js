@@ -9,10 +9,8 @@ async function initiatePage() {
   let onPermissionControllerChange = new EventManager();
 
 
-  let isBound = false;
   starters.createDisposable(() => {
-    bindElementIdsToSettings(settings, !isBound);
-    isBound = true;
+    return bindElementIdsToSettings(settings, true);
   });
 
 
@@ -311,6 +309,9 @@ async function initiatePage() {
     section.content.appendChild(information);
 
 
+    section.content.appendChild(document.createElement('br'));
+
+
     let commandsArea = document.createElement('div');
     commandsArea.classList.add('commandsArea');
     section.content.appendChild(commandsArea);
@@ -497,7 +498,8 @@ async function initiatePage() {
     };
 
 
-    await browser.commands.getAll().then(async (commands) => {
+    // Create areas for all commands:
+    browser.commands.getAll().then(async (commands) => {
       for (let command of commands) {
         await createShortcutArea(command);
       }
@@ -507,6 +509,11 @@ async function initiatePage() {
       starters.createDisposable(() => {
         checkCommands();
       });
+
+      if (starters.isStarted) {
+        starters.stop();
+        starters.start();
+      }
     });
   }
 
