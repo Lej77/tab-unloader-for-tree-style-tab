@@ -899,16 +899,18 @@ async function start() {
       lastTabFixCheck = (async () => {
         let checkSettings = () => settings.fixTabRestore_waitForUrlInMilliseconds >= 0 && settings.isEnabled;
         let checkPermission = async () => TabRestoreFixer.checkPermission();
-        let wanted = checkSettings() && (await checkPermission()) && checkSettings();
+        let wanted = checkSettings();
         if (wanted) {
           if (!tabRestoreFixer) {
             tabRestoreFixer = new TabRestoreFixer({
               waitForUrlInMilliseconds: settings.fixTabRestore_waitForUrlInMilliseconds,
               waitForIncorrectLoad: settings.fixTabRestore_waitForIncorrectLoad,
+              fixIncorrectLoadAfter: settings.fixTabRestore_fixIncorrectLoadAfter,
             });
           } else {
             tabRestoreFixer.waitForUrlInMilliseconds = settings.fixTabRestore_waitForUrlInMilliseconds;
             tabRestoreFixer.waitForIncorrectLoad = settings.fixTabRestore_waitForIncorrectLoad;
+            tabRestoreFixer.fixIncorrectLoadAfter = settings.fixTabRestore_fixIncorrectLoadAfter;
           }
         } else if (tabRestoreFixer) {
           tabRestoreFixer.dispose();
@@ -922,6 +924,7 @@ async function start() {
     if (
       changes.fixTabRestore_waitForUrlInMilliseconds ||
       changes.fixTabRestore_waitForIncorrectLoad ||
+      changes.fixTabRestore_fixIncorrectLoadAfter ||
       changes.isEnabled
     ) {
       checkTabFixing();

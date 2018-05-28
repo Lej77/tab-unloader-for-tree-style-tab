@@ -134,8 +134,9 @@ const defaultValues = Object.freeze({
       tabHide_ShowHiddenTabsInTST: false,
 
 
-      fixTabRestore_waitForUrlInMilliseconds: -1,
+      fixTabRestore_waitForUrlInMilliseconds: 500,
       fixTabRestore_waitForIncorrectLoad: 500,
+      fixTabRestore_fixIncorrectLoadAfter: 500,
 
 
       command_unloadTab_fallbackToLastSelected: false,
@@ -590,35 +591,50 @@ class SettingsTracker {
  * @class EventListener
  */
 class EventListener {
-  constructor(DOMElementOrEventObject, eventNameOrCallback, callback) {
-    let onClose = new EventManager();
-    this.onClose = onClose.subscriber;
 
-    if (typeof eventNameOrCallback === 'string' && typeof callback === 'function') {
+  /**
+   * Creates an instance of EventListener.
+   * @param {any} DOMElementOrEventObject If DOM event: the DOM object to listen on. Otherwise: the event object to add a listener to.
+   * @param {any} eventNameOrCallback If DOM event: the name of the event. Otherwise: callback.
+   * @param {any} callbackOrExtraParameters If DOM event: callback. Otherwise: optional extra paramater for the add listener function.
+   * @memberof EventListener
+   */
+  constructor(DOMElementOrEventObject, eventNameOrCallback, callbackOrExtraParameters = null) {
+    Object.assign(this, {
+      _onClose: new EventManager(),
+    });
+
+    if (typeof eventNameOrCallback === 'string' && typeof callbackOrExtraParameters === 'function') {
       this._DOMElement = DOMElementOrEventObject;
       this._event = eventNameOrCallback;
-      this._callback = callback;
+      this._callback = callbackOrExtraParameters;
     } else {
       this._event = DOMElementOrEventObject;
       this._callback = eventNameOrCallback;
+      this._extraParameter = callbackOrExtraParameters;
     }
+
     if (this._DOMElement) {
       this._DOMElement.addEventListener(this._event, this._callback);
     } else {
-      this._event.addListener(this._callback);
-    }
-
-    this.close = function () {
-      if (this._callback) {
-        if (this._DOMElement) {
-          this._DOMElement.removeEventListener(this._event, this._callback);
-        } else {
-          this._event.removeListener(this._callback);
-        }
-        this._callback = null;
-        onClose.fire(this);
+      if (this._extraParameter) {
+        this._event.addListener(this._callback, this._extraParameter);
+      } else {
+        this._event.addListener(this._callback);
       }
-    };
+    }
+  }
+
+  close() {
+    if (this._callback) {
+      if (this._DOMElement) {
+        this._DOMElement.removeEventListener(this._event, this._callback);
+      } else {
+        this._event.removeListener(this._callback);
+      }
+      this._callback = null;
+      this._onClose.fire(this);
+    }
   }
 
   get isDisposed() {
@@ -630,6 +646,10 @@ class EventListener {
     } else {
       return this._event.hasListener(this._callback);
     }
+  }
+
+  get onClose() {
+    return this._onClose.subscriber;
   }
 }
 
@@ -3729,7 +3749,7 @@ class TabMonitor {
  */
 class TabRestoreFixer {
 
-  constructor({ waitForUrlInMilliseconds = null, waitForIncorrectLoad = null } = {}) {
+  constructor({ waitForUrlInMilliseconds = null, waitForIncorrectLoad = null, fixIncorrectLoadAfter = null } = {}) {
     Object.assign(this, {
       _isDisposed: false,
       _onDisposed: new EventManager(),
@@ -3737,34 +3757,67 @@ class TabRestoreFixer {
       _disposables: new DisposableCollection(),
       _onActivatedListener: null,
 
-      _tabInfoLookup: {},   // Key: tabId, Value: {tab, timeoutId, discardTime}
+      _tabInfoLookup: {},   // Key: tabId, Value: {tab, timeoutId, discardTime, addedAtStart, lastFixReason}
 
       _waitForUrlInMilliseconds: 500,
       _waitForIncorrectLoad: 500,
+      _fixIncorrectLoadAfter: 500,
     });
 
 
     this.waitForUrlInMilliseconds = waitForUrlInMilliseconds;
     this.waitForIncorrectLoad = waitForIncorrectLoad;
+    this.fixIncorrectLoadAfter = fixIncorrectLoadAfter;
 
-
-    this._disposables.trackDisposables([
-      new EventListener(browser.tabs.onUpdated, this._onUpdate.bind(this)),
-      new EventListener(browser.tabs.onRemoved, this._onRemoved.bind(this)),
-    ]);
-    this._addAllDiscarded();
+    this.start = this._start();
   }
 
 
   // #region Private Functions
 
+  async _start() {
+    let { version } = await browser.runtime.getBrowserInfo();
+    let [majorVersion,] = version.split('.');
+
+    this._disposables.trackDisposables([
+      new EventListener(browser.tabs.onUpdated, this._onUpdate.bind(this), majorVersion >= 61 ? {
+        properties: [
+          'discarded',
+          'status',
+          // 'url' always sent (would work without it anyway)
+        ]
+      } : null),
+      new EventListener(browser.tabs.onRemoved, this._onRemoved.bind(this)),
+    ]);
+    this._addAllDiscarded();
+
+    this.start = null;
+  }
+
   async _addAllDiscarded() {
     let tabs = await browser.tabs.query({});
+
+    let tstTabLookup = null;
+    if (!tabs.some(tab => tab.url !== undefined)) {
+      tstTabLookup = {};
+      try {
+        let tstTabs = await TSTManager.getTabs(tabs.map(tab => tab.id));
+        for (let tstTab of tstTabs) {
+          tstTabLookup[tstTab.id] = tstTab;
+        }
+      } catch (error) { }
+    }
+
     let time = Date.now();
     for (let tab of tabs) {
-      this._removeTabInfo({ tabId: tab.id });
+      if (tstTabLookup && tab.url === undefined) {
+        let tstTab = tstTabLookup[tab.id];
+        tab = Object.assign(tstTab, tab);
+      }
+
       if (tab.url !== undefined) {
-        this._tabInfoLookup[tab.id] = { tab, discardTime: time };
+        this._removeTabInfo({ tabId: tab.id });
+        this._tabInfoLookup[tab.id] = { tab, discardTime: time, addedAtStart: true };
       }
     }
   }
@@ -3780,26 +3833,36 @@ class TabRestoreFixer {
     }
   }
 
+
+  _isTimeoutId(timeoutId) {
+    return timeoutId || timeoutId === 0;
+  }
   _clearTimeout(timeoutId) {
-    if (timeoutId || timeoutId === 0) {
+    if (this._isTimeoutId(timeoutId)) {
       clearTimeout(timeoutId);
     }
   }
 
-  _clearAllTimeouts() {
+  _clearAllTimeouts({ checkReason = null } = {}) {
     for (let tabInfo of Object.values(this._tabInfoLookup)) {
+      if (checkReason && !checkReason(tabInfo.lastFixReason)) {
+        continue;
+      }
       this._clearTimeout(tabInfo.timeoutId);
       tabInfo.timeoutId = null;
     }
   }
 
-  async _fixAfterDelay(tabInfo, { checkUrl = false, dontCancel = true } = {}) {
+
+
+
+  async _fixAfterDelay(tabInfo, { reason = null, checkUrl = false, checkUrl_allowNoUrl = false, cancelCurrent = false, fixDiscardedState = false } = {}) {
     if (!tabInfo || !tabInfo.tab) {
       return;
     }
 
-    if (dontCancel) {
-      if (tabInfo.timeoutId || tabInfo.timeoutId === 0) {
+    if (!cancelCurrent) {
+      if (this._isTimeoutId(tabInfo.timeoutId)) {
         return;
       }
     }
@@ -3811,6 +3874,8 @@ class TabRestoreFixer {
       return;
     }
 
+    tabInfo.lastFixReason = reason;
+
     this._clearTimeout(tabInfo.timeoutId);
     tabInfo.timeoutId = setTimeout(async () => {
       tabInfo.timeoutId = null;
@@ -3819,10 +3884,13 @@ class TabRestoreFixer {
 
       if (checkUrl) {
         let tab = await browser.tabs.get(tabId);
-        if (tab.url !== 'about:blank') {
-          return;
+        if (tab.url !== undefined || !checkUrl_allowNoUrl) {
+          if (tab.url !== 'about:blank') {
+            return;
+          }
         }
       }
+
       browser.tabs.update(tabId, { url: url });
     }, this._waitForUrlInMilliseconds);
   }
@@ -3830,11 +3898,19 @@ class TabRestoreFixer {
 
   _onActivated({ tabId, windowId }) {
     if (this.fixActivatedTabs) {
-      this._fixAfterDelay(this._tabInfoLookup[tabId], { checkUrl: true });
+      let tabInfo = this._tabInfoLookup[tabId];
+      if (tabInfo) {
+        this._fixAfterDelay(tabInfo, {
+          reason: 'activated',
+          cancelCurrent: tabInfo.lastFixReason === 'incorrectLoad',
+          checkUrl: tabInfo.addedAtStart,
+          checkUrl_allowNoUrl: !tabInfo.addedAtStart
+        });
+      }
     }
   }
 
-  async _onUpdate(tabId, changeInfo, tab) {
+  _onUpdate(tabId, changeInfo, tab) {
     /* Update events on successful restore:
     
 			# Discarded = true
@@ -3854,33 +3930,57 @@ class TabRestoreFixer {
       When restore fails no events after "Discarded = false" will be sent.
     */
     let tabInfo = null;
-    if (changeInfo.discarded !== undefined || changeInfo.url !== undefined) {
+    if (changeInfo.discarded !== undefined || changeInfo.url !== undefined || changeInfo.status !== undefined) {
       tabInfo = this._tabInfoLookup[tabId];
     }
     if (changeInfo.discarded !== undefined) {
       if (changeInfo.discarded) {
         if (tabInfo) {
           this._clearTimeout(tabInfo.timeoutId);
-          if (!tab.url || tab.url === 'about:blank') {
-            return;
+        }
+        (async () => {
+          tab.discarded = true;
+          if (!tab.url) {
+            try {
+              let tstTab = await TSTManager.getTabs(tab.id);
+              tab = Object.assign(tstTab, tab); // Fixes some properties such as index.
+            } catch (error) { }
           }
-          this._removeTabInfo({ tabInfo });
-        }
-        tab.discarded = true;
-        if (tab.url) {
-          this._tabInfoLookup[tabId] = { tab, discardTime: Date.now() };
-        }
+          if (tab.url && tab.url !== 'about:blank') {
+            this._removeTabInfo({ tabInfo });
+            this._tabInfoLookup[tabId] = { tab, discardTime: Date.now() };
+          }
+        })();
       } else if (tabInfo) {
+        let isIncorrectLoad = false;
         if (this.fixActivatedTabs && tabInfo.discardTime) {
           let timeSinceUnload = Date.now() - tabInfo.discardTime;
           if (timeSinceUnload < this.waitForIncorrectLoad) {
-            return;
+            // Tab incorrectly set as loaded? If no url or status changes after this point then yes.
+
+            if (this.fixIncorrectLoad && !this._isTimeoutId(tabInfo.timeoutId)) {
+              // Unload again if tab isn't being fixed (probably from being activated):
+              tabInfo.lastFixReason = 'incorrectLoad';
+              tabInfo.timeoutId = setTimeout(() => {
+                tabInfo.timeoutId = null;
+
+                browser.tabs.discard(tabId);
+              }, this.fixIncorrectLoadAfter);
+            }
+            isIncorrectLoad = true;
           }
         }
-        this._fixAfterDelay(tabInfo);
+        if (!isIncorrectLoad) {
+          this._fixAfterDelay(tabInfo, {
+            reason: 'loaded',
+            cancelCurrent: tabInfo.lastFixReason === 'incorrectLoad'
+          });
+        }
       }
     }
-    if (changeInfo.url !== undefined) {
+
+    if (changeInfo.url !== undefined || changeInfo.status !== undefined) {
+      // Tab is loaded correctly. (no fix needed after this point)
       if (tabInfo) {
         this._removeTabInfo({ tabInfo });
       }
@@ -3903,7 +4003,7 @@ class TabRestoreFixer {
       return;
     }
     if (value) {
-      if (!this._onActivatedListener) {
+      if (!this._onActivatedListener && !this.isDisposed) {
         this._onActivatedListener = new EventListener(browser.tabs.onActivated, this._onActivated.bind(this));
         this._disposables.trackDisposables(this._onActivatedListener);
       }
@@ -3932,7 +4032,7 @@ class TabRestoreFixer {
       return;
     }
     this._waitForUrlInMilliseconds = value;
-    this._clearAllTimeouts();
+    this._clearAllTimeouts({ checkReason: (reason) => reason === 'activated' || reason === 'loaded' });
   }
 
 
@@ -3957,6 +4057,26 @@ class TabRestoreFixer {
   }
 
 
+  get fixIncorrectLoad() {
+    return this.fixIncorrectLoadAfter >= 0;
+  }
+
+
+  get fixIncorrectLoadAfter() {
+    return this._fixIncorrectLoadAfter;
+  }
+  set fixIncorrectLoadAfter(value) {
+    if (!value && value !== 0) {
+      return;
+    }
+    if (value === this.fixIncorrectLoadAfter) {
+      return;
+    }
+    this._fixIncorrectLoadAfter = value;
+    this._clearAllTimeouts({ checkReason: (reason) => reason === 'incorrectLoad' });
+  }
+
+
   // #region Dispose
 
   dispose() {
@@ -3966,8 +4086,18 @@ class TabRestoreFixer {
     this._isDisposed = true;
 
     this._disposables.dispose();
+    this._onActivatedListener = null;
+
+    if (this.start) {
+      Promise.resolve(this.start).finally(this._dispose.bind(this));
+    } else {
+      this._dispose();
+    }
 
     this._onDisposed.fire(this);
+  }
+  _dispose() {
+    this._tabInfoLookup = {};
   }
 
   get isDisposed() {

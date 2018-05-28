@@ -22,7 +22,9 @@ body {
 
 .mouseClickArea:not(.enabled) > *:not(:first-child),
 .mouseClickArea.enabled .area:not(.enabled) > *:not(:first-child),
-.contextMenuItemArea:not(.enabled) > *:not(:first-child) {
+.contextMenuItemArea:not(.enabled) > *:not(:first-child),
+.fixIncorrectLoadArea:not(.enabled) > .area > *,
+.disabled {
     opacity: 0.6;
 }
 

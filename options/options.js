@@ -591,6 +591,9 @@ async function initiatePage() {
     section.title.appendChild(header);
 
 
+    section.content.classList.add('fixIncorrectLoadArea');
+
+
     let waitForUrl = createNumberInput('options_TabRestoreFix_waitForUrlInMilliseconds', -1, true);
     waitForUrl.input.id = 'fixTabRestore_waitForUrlInMilliseconds';
     section.content.appendChild(waitForUrl.area);
@@ -600,9 +603,23 @@ async function initiatePage() {
     section.content.appendChild(document.createElement('br'));
 
 
+    let fixIncorrectLoadArea = document.createElement('div');
+    fixIncorrectLoadArea.classList.add('area');
+    section.content.appendChild(fixIncorrectLoadArea);
+
+
     let waitForIncorrectLoad = createNumberInput('options_TabRestoreFix_waitForIncorrectLoad', -1, true);
     waitForIncorrectLoad.input.id = 'fixTabRestore_waitForIncorrectLoad';
-    section.content.appendChild(waitForIncorrectLoad.area);
+    fixIncorrectLoadArea.appendChild(waitForIncorrectLoad.area);
+
+
+    fixIncorrectLoadArea.appendChild(document.createElement('br'));
+    fixIncorrectLoadArea.appendChild(document.createElement('br'));
+
+
+    let fixIncorrectLoadAfter = createNumberInput('options_TabRestoreFix_fixIncorrectLoadAfter', -1, true);
+    fixIncorrectLoadAfter.input.id = 'fixTabRestore_fixIncorrectLoadAfter';
+    fixIncorrectLoadArea.appendChild(fixIncorrectLoadAfter.area);
 
 
     section.content.appendChild(document.createElement('br'));
@@ -617,12 +634,15 @@ async function initiatePage() {
     let check = () => {
       let enabled = waitForUrl.input.value >= 0;
       toggleClass(section.title, 'enabled', enabled);
+      toggleClass(section.content, 'enabled', enabled);
+      toggleClass(fixIncorrectLoadAfter.area, 'disabled', enabled && waitForIncorrectLoad.input.value < 0);
       toggleClass(section.title, 'error', enabled && !permissionsArea.checkControllerAvailable(permissionsArea.tabsPermissionController));
     };
     starters.createDisposable(() => {
       check();
       return [
         new EventListener(waitForUrl.input, 'input', check),
+        new EventListener(waitForIncorrectLoad.input, 'input', check),
         new EventListener(permissionsArea.onControllerValueChanged, (controller) => {
           if (permissionsArea.tabsPermissionController === controller) {
             check();

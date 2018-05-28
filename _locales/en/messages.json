@@ -161,13 +161,16 @@
         "message": "Fix for failed tab restore"
     },
     "options_TabRestoreFix_waitForUrlInMilliseconds": {
-        "message": "Time to wait for tab to navigate to correct URL before fixing it (time in milliseconds) (suggested value: 500) (-1 to disable):"
+        "message": "Sometimes a tab that has been unloaded isn't restored correctly. Time to wait for a tab to load before fixing it (compatible with other tab unloaders) (time in milliseconds) (-1 to disable):"
     },
     "options_TabRestoreFix_waitForIncorrectLoad": {
         "message": "Sometimes Firefox can mark a tab as loaded even though it isn't. When this happens it first marks the tab as unloaded and then immediately after marks it as loaded. This option makes it so that if the tab is marked as unloaded and then as loaded within the time specified here then that tab will be fixed when it is activated instead. Time to wait for incorrect load (time in milliseconds) (-1 to disable):"
     },
+    "options_TabRestoreFix_fixIncorrectLoadAfter": {
+        "message": "If the tab is incorrectly marked as loaded by Firefox then unload it again after a delay to mark it as unloaded (time in milliseconds) (-1 to disable):"
+    },
     "options_TabRestoreFix_permissionWarning": {
-        "message": "Note: requires the \"tabs\" permission."
+        "message": "Note: requires the \"tabs\" permission. (Can work without it if Tree Style Tab is installed.)"
     },
     "options_TreeStyleTabStyle_Header": {
         "message": "Custom Tree Style Tab Style"
