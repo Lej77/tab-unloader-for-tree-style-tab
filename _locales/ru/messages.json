@@ -191,7 +191,7 @@
         "message": "https://addons.mozilla.org/firefox/addon/auto-tab-discard/"
     },
     "options_unloadViaAutoTabDiscard_Suffix": {
-        "message": " расширение."
+        "message": " расширения."
     },
     "options_OptionalPermissions_Header": {
         "message": "Дополнительные разрешения"
