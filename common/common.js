@@ -3209,16 +3209,34 @@ class TabHideManager {
       ),
     });
 
+    this.start = Promise.resolve(this._start()).finally(() => { this.start = null; });
+  }
+
+
+  async _start() {
+    let { version } = await browser.runtime.getBrowserInfo();
+    let [majorVersion,] = version.split('.');
+
+    if (this.isDisposed) {
+      return;
+    }
 
     this._disposables.trackDisposables([
-      new EventListener(browser.tabs.onUpdated, (tabId, changeInfo, tab) => {
-        if (changeInfo.discarded !== undefined) {
-          this._changeHideState(tabId, changeInfo.discarded);
-        }
-        if (changeInfo.hidden !== undefined && !this.isAPIEnabled) {
-          this._apiChecker.invalidate();
-        }
-      }),
+      new EventListener(browser.tabs.onUpdated,
+        (tabId, changeInfo, tab) => {
+          if (changeInfo.discarded !== undefined) {
+            this._changeHideState(tabId, changeInfo.discarded);
+          }
+          if (changeInfo.hidden !== undefined && !this.isAPIEnabled) {
+            this._apiChecker.invalidate();
+          }
+        },
+        majorVersion >= 61 ? {
+          properties: [
+            'discarded',
+            'hidden',
+          ]
+        } : null),
       new EventListener(browser.tabs.onCreated, (tab) => {
         if (tab.discarded) {
           this._changeHideState(tab.id, true);

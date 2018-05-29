@@ -118,7 +118,6 @@ input[type="text"]:not(.notFullSize) {
 }
 
 .commandArea button {
-    width: 70px;
     text-align: center;
 }
 .commandArea button:first-of-type {
