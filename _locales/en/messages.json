@@ -160,6 +160,9 @@
     "options_TabRestoreFix_Header": {
         "message": "Fix for failed tab restore"
     },
+    "options_TabRestoreFix_reloadBrokenTabs": {
+        "message": "When a tab is unloaded with the WebExtensions API it can sometimes be put in a \"broken\" state. A \"broken\" tab can't be re-opened if it is closed (not even with session restore at startup) and when its loaded again it will lose its URL. This option will reload (actually re-setting the tab's URL) \"broken\" tabs and then unload them again. \"Broken\" tabs might need to be reloaded many times before they are fixed. (Compatible with other tab unloaders.)"
+    },
     "options_TabRestoreFix_waitForUrlInMilliseconds": {
         "message": "Sometimes a tab that has been unloaded isn't restored correctly. Time to wait for a tab to load before fixing it (compatible with other tab unloaders) (time in milliseconds) (-1 to disable):"
     },
@@ -170,7 +173,7 @@
         "message": "If the tab is incorrectly marked as loaded by Firefox then unload it again after a delay to mark it as unloaded (time in milliseconds) (-1 to disable):"
     },
     "options_TabRestoreFix_permissionWarning": {
-        "message": "Note: requires the \"tabs\" permission. (Can work without it if Tree Style Tab is installed.)"
+        "message": "Note: requires the \"tabs\" permission. (Can work partially without the permission if Tree Style Tab is installed.)"
     },
     "options_TreeStyleTabStyle_Header": {
         "message": "Custom Tree Style Tab Style"

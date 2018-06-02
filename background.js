@@ -897,21 +897,20 @@ async function start() {
     await waiting;
     if (waiting === lastTabFixCheck || !lastTabFixCheck) {
       lastTabFixCheck = (async () => {
-        let checkSettings = () => settings.fixTabRestore_waitForUrlInMilliseconds >= 0 && settings.isEnabled;
-        let checkPermission = async () => TabRestoreFixer.checkPermission();
-        let wanted = checkSettings();
+        let hasPermission = await TabRestoreFixer.checkPermission();
+        let wanted = settings.isEnabled && (settings.fixTabRestore_waitForUrlInMilliseconds >= 0 || (settings.fixTabRestore_reloadBrokenTabs && hasPermission));
+
         if (wanted) {
           if (!tabRestoreFixer) {
-            tabRestoreFixer = new TabRestoreFixer({
-              waitForUrlInMilliseconds: settings.fixTabRestore_waitForUrlInMilliseconds,
-              waitForIncorrectLoad: settings.fixTabRestore_waitForIncorrectLoad,
-              fixIncorrectLoadAfter: settings.fixTabRestore_fixIncorrectLoadAfter,
-            });
-          } else {
-            tabRestoreFixer.waitForUrlInMilliseconds = settings.fixTabRestore_waitForUrlInMilliseconds;
-            tabRestoreFixer.waitForIncorrectLoad = settings.fixTabRestore_waitForIncorrectLoad;
-            tabRestoreFixer.fixIncorrectLoadAfter = settings.fixTabRestore_fixIncorrectLoadAfter;
+            tabRestoreFixer = new TabRestoreFixer();
           }
+
+          tabRestoreFixer.waitForUrlInMilliseconds = settings.fixTabRestore_waitForUrlInMilliseconds;
+          tabRestoreFixer.waitForIncorrectLoad = settings.fixTabRestore_waitForIncorrectLoad;
+          tabRestoreFixer.fixIncorrectLoadAfter = settings.fixTabRestore_fixIncorrectLoadAfter;
+
+          tabRestoreFixer.reloadBrokenTabs = settings.fixTabRestore_reloadBrokenTabs;
+
         } else if (tabRestoreFixer) {
           tabRestoreFixer.dispose();
           tabRestoreFixer = null;
@@ -925,6 +924,7 @@ async function start() {
       changes.fixTabRestore_waitForUrlInMilliseconds ||
       changes.fixTabRestore_waitForIncorrectLoad ||
       changes.fixTabRestore_fixIncorrectLoadAfter ||
+      changes.fixTabRestore_reloadBrokenTabs ||
       changes.isEnabled
     ) {
       checkTabFixing();
