@@ -4037,7 +4037,7 @@ class TabRestoreFixer {
 
         After action to restore tab:        
           
-        # favIconUrl = null     (Only sent if restore will be successful) (Only sent if tab had "discarded = false" when created.)
+        # favIconUrl = null     (Only sent if restore will be successful)
 
           # After this point: URL = 'about:blank'.
 
