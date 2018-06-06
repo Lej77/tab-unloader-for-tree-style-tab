@@ -3798,14 +3798,18 @@ class TabRestoreFixer {
       _disposables: new DisposableCollection(),
       _onActivatedListener: null,
       _onUpdatedListener: null,
+      _onCreatedListener: null,
       _onRemovedListener: null,
+
+      _onTabFixedListener: null,
 
 
       _browserInfo: browser.runtime.getBrowserInfo(),
 
 
       _tabInfoLookup: {},     // Key: tabId, Value: {tab, timeoutId, discardTime, addedAtStart, lastFixReason}
-      _reloadInfoLookup: {},  // Key: tabId, Value: {tab, loading, fixed}
+      _reloadInfoLookup: {},  // Key: tabId, Value: {tab, loading, fixed, redirected, blankComplete}
+      _cachedFixedLookup: {}, // Key: tabId, Value: true
 
 
       _reloadBrokenTabs: false,
@@ -3813,6 +3817,9 @@ class TabRestoreFixer {
       _waitForUrlInMilliseconds: -1,
       _waitForIncorrectLoad: -1,
       _fixIncorrectLoadAfter: -1,
+
+
+      _onTabFixed: new EventManager(),  // Args: TabRestoreFixer, tabId
     });
   }
 
@@ -3846,12 +3853,36 @@ class TabRestoreFixer {
         } : null,
       ],
       [
-        this.isWaitingForUrl || this.reloadBrokenTabs,
+        this.useCacheForFixedTabs,
+        '_onCreatedListener',
+        browser.tabs.onCreated,
+        this._onCreated.bind(this),
+        null,
+      ],
+      [
+        this.isWaitingForUrl || this.reloadBrokenTabs || this.useCacheForFixedTabs,
         '_onRemovedListener',
         browser.tabs.onRemoved,
         this._onRemoved.bind(this),
         null,
       ],
+      [
+        this.reloadBrokenTabs || this.useCacheForFixedTabs,
+        '_onTabFixedListener',
+        this._onTabFixed,
+        (tabRestoreFixer, tabId) => {
+          if (this.reloadBrokenTabs) {
+            let reloadInfo = this._reloadInfoLookup[tabId];
+            if (reloadInfo) {
+              reloadInfo.redirected = true;
+            }
+          }
+          if (this.useCacheForFixedTabs) {
+            delete this._cachedFixedLookup[tabId];
+          }
+        },
+        null,
+      ]
     ]) {
       let [value, key, event, callback, extraParameter,] = listenerInfo;
       if (value && !this.isDisposed) {
@@ -3944,7 +3975,7 @@ class TabRestoreFixer {
 
 
 
-
+  
   async _fixAfterDelay(tabInfo, { reason = null, checkUrl = false, checkUrl_allowNoUrl = false, cancelCurrent = false, fixDiscardedState = false, infoLookup = null } = {}) {
     if (!tabInfo || !tabInfo.tab) {
       return;
@@ -3997,6 +4028,8 @@ class TabRestoreFixer {
       }
 
       browser.tabs.update(tabId, { url: url });
+
+      this._onTabFixed.fire(this, tabId);
     }, this._waitForUrlInMilliseconds);
   }
 
@@ -4018,12 +4051,21 @@ class TabRestoreFixer {
     }
   }
 
+  _onCreated(tab) {
+    if (this.useCacheForFixedTabs && tab.discarded) {
+      this._cachedFixedLookup[tab.id] = true;
+    }
+  }
+
   _onRemoved(tabId, { windowId, isWindowClosing }) {
     if (this.isWaitingForUrl) {
       this._removeTabInfo({ tabId });
     }
     if (this.reloadBrokenTabs) {
       delete this._reloadInfoLookup[tabId];
+    }
+    if (this.useCacheForFixedTabs) {
+      delete this._cachedFixedLookup[tabId];
     }
   }
 
@@ -4059,28 +4101,81 @@ class TabRestoreFixer {
 
     if (this.reloadBrokenTabs && tab.url !== undefined) {
       if (changeInfo.discarded !== undefined && changeInfo.discarded) {
-        let lookup = this._reloadInfoLookup;
+        let reload = false;
+        let discardImmediately = false;
 
         let value = this._reloadInfoLookup[tabId];
+
+        if (value && this._isTimeoutId(value.timeoutId)) {
+          clearTimeout(value.timeoutId);
+          value.timeoutId = null;
+        }
+
+        if (value && value.complete && !value.loading) {
+          value = undefined;
+          delete this._reloadInfoLookup[tabId];
+        }
         if (value) {
-          if (value.fixed && !value.loading) {
+
+          if (((value.fixed && !value.redirected) || value.cantFix) && !value.loading) {
             delete this._reloadInfoLookup[tabId];
+            if (this.useCacheForFixedTabs && !value.cantFix) {
+              this._cachedFixedLookup[tabId] = true;
+            }
           } else {
-            value.loading = false;
-            value.fixed = false;
-            browser.tabs.update(tabId, { url: value.tab.url }).catch((reason) => {
-              delete this._reloadInfoLookup[tabId];
-            });
+            for (let key of Object.keys(value)) {
+              if (key === 'tab') {
+                continue;
+              }
+              delete value[key];
+            }
+            reload = true;
           }
         } else {
           if (tab.url !== 'about:blank') {
-            this._reloadInfoLookup[tabId] = { tab };
+            if (!this.useCacheForFixedTabs || !this._cachedFixedLookup[tabId]) {
+              value = { tab };
+              this._reloadInfoLookup[tabId] = value;
 
-            browser.tabs.update(tabId, { url: tab.url }).catch((reason) => {
-              delete this._reloadInfoLookup[tabId];
-            });
-            browser.tabs.discard(tabId);
+              reload = true;
+              discardImmediately = true;
+            }
           }
+        }
+
+        if (reload) {
+          let tabInfo = null;
+          if (this.isWaitingForUrl) {
+            tabInfo = this._tabInfoLookup[tabId];
+          }
+          if (tabInfo) {
+            this._fixAfterDelay(tabInfo, {
+              reason: 'reloadFix',
+              cancelCurrent: tabInfo.lastFixReason === 'incorrectLoad'
+            });
+          } else if (value) {
+            value.timeoutId = setTimeout(() => {
+              value.redirected = true;
+              browser.tabs.update(tabId, { url: value.tab.url }).catch((reason) => {
+                value.cantFix = true;
+                browser.tabs.discard(tabId);
+              });
+            }, 200);
+          }
+          browser.tabs.reload(tabId)
+            .catch((reason) => {
+              if (value) {
+                if (this._isTimeoutId(value.timeoutId)) {
+                  clearTimeout(value.timeoutId);
+                  value.timeoutId = null;
+                }
+                delete this._reloadInfoLookup[tabId];
+              }
+            });
+
+        }
+        if (discardImmediately) {
+          browser.tabs.discard(tabId);
         }
       }
 
@@ -4093,15 +4188,32 @@ class TabRestoreFixer {
 
       if (changeInfo.status !== undefined) {
         let value = this._reloadInfoLookup[tabId];
+        if (value && this._isTimeoutId(value.timeoutId)) {
+          clearTimeout(value.timeoutId);
+          value.timeoutId = null;
+        }
         if (changeInfo.status === 'complete') {
           if (value) {
-            if (tab.url === 'about:blank' && value.tab.url !== tab.url) {
-              browser.tabs.update(tabId, { url: value.tab.url }).catch((reason) => {
-                delete this._reloadInfoLookup[tabId];
-              });
+            value.loading = false;
+            if (tab.url !== 'about:blank' || value.tab.url === tab.url) {
+              if (this.useCacheForFixedTabs && !value.redirected) {
+                this._cachedFixedLookup[tabId] = true;
+              }
+              value.complete = true;
+            }
+
+            if (value.complete) {
+              value.timeoutId = setTimeout(() => {
+                browser.tabs.discard(tabId);
+              }, 100);
             } else {
-              delete this._reloadInfoLookup[tabId];
-              browser.tabs.discard(tabId);
+              value.timeoutId = setTimeout(() => {
+                value.redirected = true;
+                browser.tabs.update(tabId, { url: value.tab.url }).catch((reason) => {
+                  value.cantFix = true;
+                  browser.tabs.discard(tabId);
+                });
+              }, 100);
             }
           }
         } else {
@@ -4121,8 +4233,9 @@ class TabRestoreFixer {
       }
       if (changeInfo.discarded !== undefined) {
         if (changeInfo.discarded) {
-          if (tabInfo) {
+          if (tabInfo && tabInfo.lastFixReason !== 'reloadFix') {
             this._clearTimeout(tabInfo.timeoutId);
+            tabInfo.timeoutId = null;
           }
           (async () => {
             tab.discarded = true;
@@ -4174,6 +4287,7 @@ class TabRestoreFixer {
                     if (aTab.url === 'about:blank' && aTab.url !== tabInfo.tab.url) {
                       this._removeTabInfo({ tabId });
                       browser.tabs.update(tabId, { url: tabInfo.tab.url });
+                      this._onTabFixed.fire(this, tabId);
                       return;
                     }
                   }
@@ -4206,6 +4320,10 @@ class TabRestoreFixer {
 
   // #endregion Private Functions
 
+  get useCacheForFixedTabs() {
+    return this.reloadBrokenTabs;
+  }
+
 
   get isWaitingForUrl() {
     return this._waitForUrlInMilliseconds >= 0;
@@ -4233,11 +4351,16 @@ class TabRestoreFixer {
 
     if (this.isWaitingForUrl !== wasWaiting) {
       this._clearAllTimeouts();
-      this._tabInfoLookup = {};
+      let newInfoLookup = {};
+      this._tabInfoLookup = newInfoLookup;
 
-      this._checkListeners();
+      let listenersAddedPromise = Promise.resolve(this._checkListeners());
       if (this.isWaitingForUrl) {
-        this._addAllDiscarded();
+        listenersAddedPromise.then(() => {
+          if (newInfoLookup === this._tabInfoLookup) {
+            this._addAllDiscarded();
+          }
+        });
       }
     }
   }
@@ -4306,6 +4429,19 @@ class TabRestoreFixer {
 
     this._checkListeners();
     this._reloadInfoLookup = {};
+
+    let fixedLookup = {};
+    this._cachedFixedLookup = fixedLookup;
+    if (value) {
+      browser.tabs.query({ discarded: true }).then((tabs) => {
+        if (fixedLookup !== this._cachedFixedLookup) {
+          return;
+        }
+        for (let tab of tabs) {
+          fixedLookup[tab.id] = true;
+        }
+      });
+    }
   }
 
 
