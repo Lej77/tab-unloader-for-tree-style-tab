@@ -163,6 +163,21 @@
     "options_TabRestoreFix_reloadBrokenTabs": {
         "message": "When a tab is unloaded with the WebExtensions API it can sometimes be put in a \"broken\" state. A \"broken\" tab can't be re-opened if it is closed (not even with session restore at startup) and when its loaded again it will lose its URL. This option will reload (actually re-setting the tab's URL) \"broken\" tabs and then unload them again. \"Broken\" tabs might need to be reloaded many times before they are fixed. (Compatible with other tab unloaders.)"
     },
+    "options_TabRestoreFix_reloadBrokenTabs_Normal": {
+        "message": "Reload \"broken\" tabs in normal windows."
+    },
+    "options_TabRestoreFix_reloadBrokenTabs_Private": {
+        "message": "Reload \"broken\" tabs in private windows."
+    },
+    "options_TabRestoreFix_reloadBrokenTabs_QuickUnload": {
+        "message": "It is possible to load an unloaded tab and then quickly unload it again without it showing a loading icon when it is unloaded. This can be used to quickly and efficiently determine if a tab is \"broken\". Unfortunatley using the trick causes the extension API to incorrectly report the tab's URL as the default URL \"about:blank\". This means that some extensions might not work as expected when handling these \"quick\" unloaded tabs. The issue will disapear as soon as the tab is loaded again."
+    },
+    "options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Normal": {
+        "message": "Allow \"quick unload\" to test for \"broken\" tabs in normal windows."
+    },
+    "options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Private": {
+        "message": "Allow \"quick unload\" to test for \"broken\" tabs in private windows."
+    },
     "options_TabRestoreFix_waitForUrlInMilliseconds": {
         "message": "Sometimes a tab that has been unloaded isn't restored correctly. Time to wait for a tab to load before fixing it (compatible with other tab unloaders) (time in milliseconds) (-1 to disable):"
     },

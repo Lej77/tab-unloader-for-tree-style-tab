@@ -599,13 +599,52 @@ async function initiatePage() {
 
 
 
+
+
     let reloadBrokenTabsArea = document.createElement('div');
     reloadBrokenTabsArea.classList.add('area');
     section.content.appendChild(reloadBrokenTabsArea);
 
+    let reloadBrokenTabs_info = document.createElement('div');
+    reloadBrokenTabs_info.classList.add(messagePrefix + 'options_TabRestoreFix_reloadBrokenTabs');
+    reloadBrokenTabsArea.appendChild(reloadBrokenTabs_info);
 
-    let reloadBrokenTabs = createCheckBox('fixTabRestore_reloadBrokenTabs', 'options_TabRestoreFix_reloadBrokenTabs');
-    reloadBrokenTabsArea.appendChild(reloadBrokenTabs.area);
+
+    reloadBrokenTabsArea.appendChild(document.createElement('br'));
+
+    let reloadBrokenTabs_Normal = createCheckBox('fixTabRestore_reloadBrokenTabs', 'options_TabRestoreFix_reloadBrokenTabs_Normal');
+    reloadBrokenTabsArea.appendChild(reloadBrokenTabs_Normal.area);
+    reloadBrokenTabsArea.appendChild(document.createElement('br'));
+
+    let reloadBrokenTabs_Private = createCheckBox('fixTabRestore_reloadBrokenTabs_private', 'options_TabRestoreFix_reloadBrokenTabs_Private');
+    reloadBrokenTabsArea.appendChild(reloadBrokenTabs_Private.area);
+    reloadBrokenTabsArea.appendChild(document.createElement('br'));
+
+
+    reloadBrokenTabsArea.appendChild(document.createElement('br'));
+
+
+    let quickUnloadArea = document.createElement('div');
+    quickUnloadArea.classList.add('area');
+    reloadBrokenTabsArea.appendChild(quickUnloadArea);
+
+    let quickUnload_info = document.createElement('div');
+    quickUnload_info.classList.add(messagePrefix + 'options_TabRestoreFix_reloadBrokenTabs_QuickUnload');
+    quickUnloadArea.appendChild(quickUnload_info);
+
+
+    quickUnloadArea.appendChild(document.createElement('br'));
+
+    let quickUnload_Normal = createCheckBox('fixTabRestore_reloadBrokenTabs_quickUnload', 'options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Normal');
+    quickUnloadArea.appendChild(quickUnload_Normal.area);
+    quickUnloadArea.appendChild(document.createElement('br'));
+
+    let quickUnload_Private = createCheckBox('fixTabRestore_reloadBrokenTabs_private_quickUnload', 'options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Private');
+    quickUnloadArea.appendChild(quickUnload_Private.area);
+    quickUnloadArea.appendChild(document.createElement('br'));
+
+
+
 
 
     section.content.appendChild(document.createElement('br'));
@@ -661,18 +700,24 @@ async function initiatePage() {
 
     let check = () => {
       let ensureLoadEnabled = waitForUrl.input.value >= 0;
-      let enabled = ensureLoadEnabled || reloadBrokenTabs.checkbox.checked;
+      let enabled = ensureLoadEnabled || reloadBrokenTabs_Normal.checkbox.checked || reloadBrokenTabs_Private.checkbox.checked;
       toggleClass(section.title, 'enabled', enabled);
       toggleClass(ensureLoadArea, 'enabled', ensureLoadEnabled);
-      toggleClass(fixIncorrectLoadAfter.area, 'disabled', ensureLoadEnabled && waitForIncorrectLoad.input.value < 0);
       toggleClass(section.title, 'error', enabled && !permissionsArea.checkControllerAvailable(permissionsArea.tabsPermissionController));
+
+      toggleClass(fixIncorrectLoadAfter.area, 'disabled', ensureLoadEnabled && waitForIncorrectLoad.input.value < 0);
+      
+      toggleClass(quickUnloadArea, 'disabled', !reloadBrokenTabs_Normal.checkbox.checked && !reloadBrokenTabs_Private.checkbox.checked);
+      toggleClass(quickUnload_Normal.area, 'disabled', !reloadBrokenTabs_Normal.checkbox.checked);
+      toggleClass(quickUnload_Private.area, 'disabled', !reloadBrokenTabs_Private.checkbox.checked);
     };
     starters.createDisposable(() => {
       check();
       return [
         new EventListener(waitForUrl.input, 'input', check),
         new EventListener(waitForIncorrectLoad.input, 'input', check),
-        new EventListener(reloadBrokenTabs.checkbox, 'input', check),
+        new EventListener(reloadBrokenTabs_Normal.checkbox, 'input', check),
+        new EventListener(reloadBrokenTabs_Private.checkbox, 'input', check),
         new EventListener(permissionsArea.onControllerValueChanged, (controller) => {
           if (permissionsArea.tabsPermissionController === controller) {
             check();

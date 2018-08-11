@@ -1060,12 +1060,12 @@ function createCollapsableArea(animationInfo = {}) {
 
   headerArea.addEventListener('click', (e) => {
     let ele = e.target;
-    while (ele) {
+    while (true) {
+      if (!ele || ele.classList.contains('preventOpen')) {
+        return;
+      }
       if (ele === headerArea) {
         break;
-      }
-      if (ele.classList.contains('preventOpen')) {
-        return;
       }
       ele = ele.parentElement;
     }

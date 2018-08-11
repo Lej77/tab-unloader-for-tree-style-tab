@@ -288,9 +288,10 @@
     display: flex;
     position: relative;
 
-    cursor: pointer;
-    
     background-color: hsl(120, 0%, 93%);
+}
+.section > .headerArea:not(.preventOpen) {
+    cursor: pointer;
 }
 .section > .contentWrapper > .contentArea {
     border-top: var(--collapsable-header-border);
@@ -325,7 +326,7 @@
     opacity: 0;
     transition: opacity 0.1s;
 }
-.section > .headerArea .hoverIndicator:hover::after {
+.section > .headerArea:not(.preventOpen) .hoverIndicator:hover::after {
     opacity: 0.15;
 }
 

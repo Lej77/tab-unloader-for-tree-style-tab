@@ -138,7 +138,12 @@ const defaultValues = Object.freeze({
       fixTabRestore_waitForIncorrectLoad: 500,
       fixTabRestore_fixIncorrectLoadAfter: 500,
 
+
       fixTabRestore_reloadBrokenTabs: false,
+      fixTabRestore_reloadBrokenTabs_private: false,
+
+      fixTabRestore_reloadBrokenTabs_quickUnload: true,
+      fixTabRestore_reloadBrokenTabs_private_quickUnload: true,
 
 
       command_unloadTab_fallbackToLastSelected: false,
@@ -603,7 +608,7 @@ class EventListener {
    */
   constructor(DOMElementOrEventObject, eventNameOrCallback, callbackOrExtraParameters = null) {
     Object.assign(this, {
-      _onClose: new EventManager(),
+      _onClose: null,
     });
 
     if (typeof eventNameOrCallback === 'string' && typeof callbackOrExtraParameters === 'function') {
@@ -635,7 +640,9 @@ class EventListener {
         this._event.removeListener(this._callback);
       }
       this._callback = null;
-      this._onClose.fire(this);
+      if (this._onClose) {
+        this._onClose.fire(this);
+      }
     }
   }
 
@@ -651,6 +658,9 @@ class EventListener {
   }
 
   get onClose() {
+    if (!this._onClose) {
+      this._onClose = new EventManager();
+    }
     return this._onClose.subscriber;
   }
 }
@@ -723,7 +733,7 @@ class EventManager extends EventSubscriber {
     let returned = [];
     if (this._listeners.length > 0) {
       let args = Array.from(arguments);
-      for (let listener of this._listeners) {
+      for (let listener of this._listeners.slice()) {
         try {
           returned.push(listener.apply(null, args));
         } catch (error) {
@@ -1519,7 +1529,11 @@ class DisposableCollection {
     let disposables = Array.from(this._trackedDisposables);
     this.untrackDisposables(disposables);
     for (let disposable of disposables) {
-      DisposableCollection.disposeOfObject(disposable);
+      try {
+        DisposableCollection.disposeOfObject(disposable);
+      } catch (error) {
+        console.log('Failed to dispose of object.', '\nObject: ', disposable, '\nError: ', error, '\nStack Trace:\n', error.stack);
+      }
     }
   }
 
@@ -3812,7 +3826,9 @@ class TabRestoreFixer {
       _cachedFixedLookup: {}, // Key: tabId, Value: true
 
 
-      _reloadBrokenTabs: false,
+      _reloadBrokenTabs: false,  // Can be true, false
+      _filterTabsToFix: null,    // (tab) => true/false. WARNING: do not modify the (tab) object.
+      _allowQuickDiscard: false, // Can be true, false, (tab) => true/false. WARNING: do not modify the (tab) object.
 
       _waitForUrlInMilliseconds: -1,
       _waitForIncorrectLoad: -1,
@@ -3975,7 +3991,7 @@ class TabRestoreFixer {
 
 
 
-  
+
   async _fixAfterDelay(tabInfo, { reason = null, checkUrl = false, checkUrl_allowNoUrl = false, cancelCurrent = false, fixDiscardedState = false, infoLookup = null } = {}) {
     if (!tabInfo || !tabInfo.tab) {
       return;
@@ -4111,18 +4127,30 @@ class TabRestoreFixer {
           value.timeoutId = null;
         }
 
-        if (value && value.complete && !value.loading) {
-          value = undefined;
-          delete this._reloadInfoLookup[tabId];
-        }
         if (value) {
-
-          if (((value.fixed && !value.redirected) || value.cantFix) && !value.loading) {
+          // Tab is being fixed:
+          if (
+            !value.loading && (
+              value.cantFix || (
+                !value.redirected && (
+                  (value.fixed && value.discardedImmediately) ||
+                  value.correctUrl
+                )
+              )
+            )
+          ) {
+            // Tab is fixed or can't be fixed:
             delete this._reloadInfoLookup[tabId];
             if (this.useCacheForFixedTabs && !value.cantFix) {
               this._cachedFixedLookup[tabId] = true;
             }
+
+            // Ensure "waitForCorrectURL" fix stores correct URL:
+            if (tab.url === 'about:blank') {
+              tab.url = value.tab.url;
+            }
           } else {
+            // Make new attempt to fix tab:
             for (let key of Object.keys(value)) {
               if (key === 'tab') {
                 continue;
@@ -4132,18 +4160,28 @@ class TabRestoreFixer {
             reload = true;
           }
         } else {
+          // Has not attempted to fix tab:
           if (tab.url !== 'about:blank') {
-            if (!this.useCacheForFixedTabs || !this._cachedFixedLookup[tabId]) {
+            if (
+              (!this.useCacheForFixedTabs || !this._cachedFixedLookup[tabId]) &&
+              (!this.filterTabsToFix || this.filterTabsToFix(tab))
+            ) {
               value = { tab };
               this._reloadInfoLookup[tabId] = value;
 
               reload = true;
-              discardImmediately = true;
+
+              if (this._allowQuickDiscard && typeof this._allowQuickDiscard === 'function' ? this._allowQuickDiscard(tab) : this._allowQuickDiscard) {
+                discardImmediately = true;
+              }
             }
           }
         }
 
+        // Reload tab:
         if (reload) {
+
+          // Set up timeout that will redirect to correct URL:
           let tabInfo = null;
           if (this.isWaitingForUrl) {
             tabInfo = this._tabInfoLookup[tabId];
@@ -4162,6 +4200,8 @@ class TabRestoreFixer {
               });
             }, 200);
           }
+
+          // Reload tab:
           browser.tabs.reload(tabId)
             .catch((reason) => {
               if (value) {
@@ -4174,7 +4214,10 @@ class TabRestoreFixer {
             });
 
         }
+
+        // "Quick discard" test:
         if (discardImmediately) {
+          value.discardedImmediately = true;
           browser.tabs.discard(tabId);
         }
       }
@@ -4195,14 +4238,15 @@ class TabRestoreFixer {
         if (changeInfo.status === 'complete') {
           if (value) {
             value.loading = false;
+
             if (tab.url !== 'about:blank' || value.tab.url === tab.url) {
               if (this.useCacheForFixedTabs && !value.redirected) {
                 this._cachedFixedLookup[tabId] = true;
               }
-              value.complete = true;
+              value.correctUrl = true;
             }
 
-            if (value.complete) {
+            if (value.correctUrl) {
               value.timeoutId = setTimeout(() => {
                 browser.tabs.discard(tabId);
               }, 100);
@@ -4260,11 +4304,11 @@ class TabRestoreFixer {
 
           if (this.fixActivatedTabs && tabInfo.discardTime && !reloadInfo) {
             /* Timeline when tab is incorrectly marked as loaded:
-  
+   
               # Discarded = true
-  
+   
               # Discarded = false
-  
+   
               With nearly no delay. No events after.
             */
             let timeSinceUnload = Date.now() - tabInfo.discardTime;
@@ -4442,6 +4486,22 @@ class TabRestoreFixer {
         }
       });
     }
+  }
+
+
+  get filterTabsToFix() {
+    return this._filterTabsToFix;
+  }
+  set filterTabsToFix(value) {
+    this._filterTabsToFix = value && typeof value === 'function' ? value : null;
+  }
+
+
+  get allowQuickDiscard() {
+    return this._allowQuickDiscard;
+  }
+  set allowQuickDiscard(value) {
+    this._allowQuickDiscard = value;
   }
 
 

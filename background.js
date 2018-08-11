@@ -898,7 +898,8 @@ async function start() {
     if (waiting === lastTabFixCheck || !lastTabFixCheck) {
       lastTabFixCheck = (async () => {
         let hasPermission = await TabRestoreFixer.checkPermission();
-        let wanted = settings.isEnabled && (settings.fixTabRestore_waitForUrlInMilliseconds >= 0 || (settings.fixTabRestore_reloadBrokenTabs && hasPermission));
+        let reloadBrokenTabs = settings.fixTabRestore_reloadBrokenTabs || settings.fixTabRestore_reloadBrokenTabs_private;
+        let wanted = settings.isEnabled && (settings.fixTabRestore_waitForUrlInMilliseconds >= 0 || (reloadBrokenTabs && hasPermission));
 
         if (wanted) {
           if (!tabRestoreFixer) {
@@ -909,7 +910,34 @@ async function start() {
           tabRestoreFixer.waitForIncorrectLoad = settings.fixTabRestore_waitForIncorrectLoad;
           tabRestoreFixer.fixIncorrectLoadAfter = settings.fixTabRestore_fixIncorrectLoadAfter;
 
-          tabRestoreFixer.reloadBrokenTabs = settings.fixTabRestore_reloadBrokenTabs;
+
+          tabRestoreFixer.reloadBrokenTabs = reloadBrokenTabs;
+          tabRestoreFixer.filterTabsToFix = (
+            settings.fixTabRestore_reloadBrokenTabs && settings.fixTabRestore_reloadBrokenTabs_private ?
+              null :
+              (tab) => {
+                if (!tab) {
+                  return false;
+                }
+                if (tab.incognito) {
+                  return settings.fixTabRestore_reloadBrokenTabs_private;
+                } else {
+                  return settings.fixTabRestore_reloadBrokenTabs;
+                }
+              }
+          );
+
+          tabRestoreFixer.allowQuickDiscard = (tab) => {
+            if (!tab) {
+              return false;
+            }
+            if (tab.incognito) {
+              return settings.fixTabRestore_reloadBrokenTabs_private_quickUnload;
+            } else {
+              return settings.fixTabRestore_reloadBrokenTabs_quickUnload;
+            }
+          };
+
 
         } else if (tabRestoreFixer) {
           tabRestoreFixer.dispose();
@@ -925,6 +953,9 @@ async function start() {
       changes.fixTabRestore_waitForIncorrectLoad ||
       changes.fixTabRestore_fixIncorrectLoadAfter ||
       changes.fixTabRestore_reloadBrokenTabs ||
+      changes.fixTabRestore_reloadBrokenTabs_private ||
+      changes.fixTabRestore_reloadBrokenTabs_quickUnload ||
+      changes.fixTabRestore_reloadBrokenTabs_private_quickUnload ||
       changes.isEnabled
     ) {
       checkTabFixing();
