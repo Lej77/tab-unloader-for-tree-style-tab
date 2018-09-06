@@ -84,28 +84,29 @@ input[type="text"]:not(.notFullSize) {
 }
 
 .commandArea {
+    flex: 1 1 auto !important;
+    align-self: center;
     display: flex;
+
     z-index: 1000 !important;
 }
 
-.commandArea label {
+.commandArea > label {
     text-align: center;
     flex: 1 1 auto !important;
 }
 
 .commandArea > .inputArea {
     display: flex;
-
+    padding: 0px;
     margin: -2px;
-
-    z-index: 1000 !important;
-    pointer-events: auto;
+    font-size: 20px;
 }
 .commandArea > .inputArea * {
     flex: 1 1 auto;
 }
 
-.commandArea input[type="text"] {
+.commandArea > .inputArea > input[type="text"] {
     width: 200px;
     margin-right: 5px;
     margin-left: -1px;
@@ -113,9 +114,9 @@ input[type="text"]:not(.notFullSize) {
     padding-left: 10px;
 }
 
-.commandArea button {
+.commandArea > .inputArea > button {
     text-align: center;
 }
-.commandArea button:first-of-type {
+.commandArea > .inputArea > button:first-of-type {
     margin-right: -2px;
 }
