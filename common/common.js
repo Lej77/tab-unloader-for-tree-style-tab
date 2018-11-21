@@ -4,6 +4,7 @@
 // #region Tree Style Tab
 
 const kTST_ID = 'treestyletab@piro.sakura.ne.jp';
+const kMTH_ID = 'multipletab@piro.sakura.ne.jp';
 const tstAPI = Object.freeze({
   REGISTER_SELF: 'register-self',
   UNREGISTER_SELF: 'unregister-self',
@@ -146,6 +147,7 @@ const defaultValues = Object.freeze({
       fixTabRestore_reloadBrokenTabs_private_quickUnload: true,
 
 
+      command_unloadTab_useSelectedTabs: false,
       command_unloadTab_fallbackToLastSelected: false,
       command_unloadTab_ignoreHiddenTabs: false,
 
@@ -155,6 +157,7 @@ const defaultValues = Object.freeze({
 
       unloadInTSTContextMenu: true,
       unloadInTSTContextMenu_CustomLabel: '',
+      unloadInTSTContextMenu_useSelectedTabs: false,
       unloadInTSTContextMenu_fallbackToLastSelected: false,
       unloadInTSTContextMenu_ignoreHiddenTabs: false,
 
@@ -163,6 +166,7 @@ const defaultValues = Object.freeze({
       unloadTreeInTSTContextMenu_fallbackToLastSelected: false,
       unloadTreeInTSTContextMenu_ignoreHiddenTabs: false,
 
+      contextMenu_in_tab_bar: true,
       tstContextMenu_CustomRootLabel: '',
       tstContextMenuOrder: [
         tstContextMenuItemIds.unloadTab,
@@ -2132,6 +2136,65 @@ class ContextMenuItemCollection {
   }
 
 
+  sortParentsFirst() {
+    let previousParentIds = [];
+    for (let iii = 0; iii < this._items.length; iii++) {
+      let item = this._items[iii];
+      if (item.id) {
+        // Have seen this item's id:
+        previousParentIds.push(item.id);
+      }
+      if (!item.parentId) {
+        // Is root item:
+        continue;
+      }
+      if (previousParentIds.includes(item.parentId)) {
+        // Is before this item:
+        continue;
+      }
+
+      // Search for the parent item:
+      for (let jjj = iii; jjj < this._items.length; jjj++) {
+        let item2 = this._items[jjj];
+        if (item2.id === item.parentId) {
+          // Move to before child item:
+          this._items.splice(jjj, 1);
+          this._items.splice(iii, 0, item2);
+          break;
+        }
+      }
+      // Have seen parent id:
+      previousParentIds.push(item.parentId);
+    }
+
+    return this;
+  }
+
+
+  getIds() {
+    return this.items.map(item => item.id);
+  }
+
+  getUniqueId() {
+    let uniqueId = 1; // Can't be 0 since that is false and doesn't count as a id.
+    let ids = this.getIds();
+    while (ids.includes(uniqueId + '')) {
+      uniqueId++;
+    }
+    return uniqueId + '';
+  }
+
+
+  /**
+   * Get the data for each context menu item. The data can be used to register the context menu items.
+   *
+   * @readonly
+   * @memberof ContextMenuItemCollection
+   */
+  get data() {
+    return this._items.map(item => item.data);
+  }
+
   get items() {
     return this._items;
   }
@@ -2161,6 +2224,69 @@ class ContextMenuItemCollection {
 
     return true;
   }
+
+  /**
+   * Create a collection from an array of objects that describe each context menu item.
+   * 
+   * A builder can have the following properties:
+   * id: [optional] (default: a unique id) start with - to become a separator.
+   * title: [optional] (default: will get from i18n API using `contextMenu_${id}`.)
+   * contexts: [optional] (default: will get from default context.)
+   * enabled: [optional] (default: true) If false this item will be ignored.
+   * isDefault: [optional] (default: false) Will apply this item's properties to the default values.
+   * isRootItem: [optional] (default: false) If there are more than 1 root item then this item will be the parent of all of those root items. Otherwise this item will be ignored.
+   * 
+   * Must have either an id or a title.
+   * Or
+   * isDefault is true.
+   *
+   * @param {Array} builders An array of objects that describe context menu items.
+   * @param {number} maxRootItems Max number of root items that are allowed.
+   * @param {Object} defaultValues Default values to use for each builder. Currently only the 'contexts' property is supported.
+   * @returns {ContextMenuItemCollection} A collection of context menu items.
+   * @memberof ContextMenuItemCollection
+   */
+  static fromBuilders(builders, { maxRootItems = 1, defaultValues = {} } = {}) {
+
+    const collection = new ContextMenuItemCollection();
+
+    for (let contextMenuItem of builders) {
+      let { id, title, contexts, enabled = true, isDefault = false, isRootItem = false } = typeof contextMenuItem === 'string' ? { id: contextMenuItem } : contextMenuItem;
+      if (!enabled) {
+        continue;
+      }
+      if (isDefault) {
+        Object.assign(defaultValues, contextMenuItem);
+        return;
+      }
+
+      let details = {
+        contexts: contexts || defaultValues.contexts,
+      };
+      if (typeof id === 'string' && id.startsWith('-')) {
+        Object.assign(details, {
+          type: 'separator',
+        });
+      } else {
+        Object.assign(details, {
+          id: (!id && id !== 0 ? collection.getUniqueId() : id) + '',
+          title: title || browser.i18n.getMessage(`contextMenu_${id}`),
+        });
+      }
+      if (isRootItem) {
+        const rootItems = collection.getRootContextMenuItems().filter(item => item.id != details.id);
+        if (rootItems.length <= maxRootItems) {
+          continue;
+        }
+        for (let item of rootItems) {
+          item.parentId = details.id;
+        }
+      }
+      collection.addContextMenuItems(new ContextMenuItem(details));
+    }
+    return collection;
+  }
+
 }
 
 
@@ -2415,13 +2541,8 @@ class TSTManager {
             // Create root item if more than 1 root item:
             let rootItems = itemCollection.getRootContextMenuItems();
             if (rootItems.length > 1 && targetState.rootContextMenuItemTitle) {
-              let uniqueId = 1; // Can't be 0 since that is false and doesn't count as a id.
-              let ids = items.map(item => item.id);
-              while (ids.includes(uniqueId)) {
-                uniqueId++;
-              }
               let root = new ContextMenuItem({
-                id: uniqueId,
+                id: itemCollection.getUniqueId(),
                 contexts: ['tab'],
                 title: targetState.rootContextMenuItemTitle
               });

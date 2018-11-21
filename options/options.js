@@ -145,6 +145,17 @@ async function initiatePage() {
     section.content.appendChild(delayedRegistration.area);
 
 
+    section.content.appendChild(document.createElement('br'));
+
+
+    let tabbarCheckbox = createCheckBox('contextMenu_in_tab_bar', 'options_contextMenu_in_tab_bar');
+    section.content.appendChild(tabbarCheckbox.area);
+
+
+    section.content.appendChild(document.createElement('br'));
+    section.content.appendChild(document.createElement('br'));
+
+
     let list = createListArea();
     section.content.appendChild(list.area);
 
@@ -200,6 +211,7 @@ async function initiatePage() {
       title,
       enabledKey,
       enabledMessage,
+      useSelectedTabs_key = null,
       fallback_lastSelected_key,
       fallback_ignoreHidden_key,
       customLabelKey,
@@ -239,6 +251,16 @@ async function initiatePage() {
       fallbackOptions.classList.add('enabled');
       section.content.appendChild(fallbackOptions);
 
+
+      if (useSelectedTabs_key) {
+        let useSelected = createCheckBox(useSelectedTabs_key, 'options_useSelectedTabs');
+        fallbackOptions.appendChild(useSelected.area);
+
+        fallbackOptions.appendChild(document.createElement('br'));
+        fallbackOptions.appendChild(document.createElement('br'));
+      }
+
+
       let fallbackToLastSelected = createCheckBox(fallback_lastSelected_key, 'options_fallbackToLastSelected');
       fallbackOptions.appendChild(fallbackToLastSelected.area);
 
@@ -266,6 +288,7 @@ async function initiatePage() {
       title: 'options_unloadInTSTContextMenu_Title',
       enabledKey: 'unloadInTSTContextMenu',
       enabledMessage: 'options_unloadInTSTContextMenu',
+      useSelectedTabs_key: 'unloadInTSTContextMenu_useSelectedTabs',
       fallback_lastSelected_key: 'unloadInTSTContextMenu_fallbackToLastSelected',
       fallback_ignoreHidden_key: 'unloadInTSTContextMenu_ignoreHiddenTabs',
       customLabelKey: 'unloadInTSTContextMenu_CustomLabel',
@@ -329,6 +352,13 @@ async function initiatePage() {
         description: 'options_Commands_UnloadTab',
         createContent: () => {
           let area = document.createElement('div');
+
+          let useSelectedTabs = createCheckBox('command_unloadTab_useSelectedTabs', 'options_useSelectedTabs');
+          area.appendChild(useSelectedTabs.area);
+
+          area.appendChild(document.createElement('br'));
+          area.appendChild(document.createElement('br'));
+
 
           let fallbackToLastSelected = createCheckBox('command_unloadTab_fallbackToLastSelected', 'options_fallbackToLastSelected');
           area.appendChild(fallbackToLastSelected.area);

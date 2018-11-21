@@ -101,6 +101,9 @@
     "options_applyToUnloadedTabs": {
         "message": "Register click on unloaded tabs instead of loaded tabs."
     },
+    "options_useSelectedTabs": {
+        "message": "Unload selected tabs: if multiple tabs are selected then unload all of them."
+    },
     "options_fallbackToLastSelected": {
         "message": "Select last focused: If tab is active then select the last focused tab. If this is not checked then the closest tab is selected."
     },
@@ -109,6 +112,9 @@
     },
     "options_contextMenuItems_Title": {
         "message": "Context menu items"
+    },
+    "options_contextMenu_in_tab_bar": {
+        "message": "Show context menu items in Firefox's tab bar. (Required in Firefox 64 and later.)"
     },
     "options_tstContextMenu_CustomRootLabel": {
         "message": "If there are more than one context menu item they will be gathered under an item with this name (place a \"&\" symbol before the letter that should be used as the keyboard shortcut) (empty to use default label):"

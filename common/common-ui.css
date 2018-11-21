@@ -1,5 +1,3 @@
-
-
 /* #region Global */
 
 .textSelectable {
@@ -22,7 +20,7 @@
 :root.dontBlockScreen .screenBlocker {
     display: none;
 }
-:root:not(.blockScreen):not(.dragging) .screenBlocker {    
+:root:not(.blockScreen):not(.dragging) .screenBlocker {
     display: none;
 }
 
@@ -33,7 +31,7 @@
 .area:not(.noPadding) {
     padding: 5px;
 }
-.area:not(.noMargin) {    
+.area:not(.noMargin) {
     margin: 3px;
 }
 
@@ -106,7 +104,7 @@
 :root {
     --tab-header-height: 30px;
     --tab-header-border-style: 1px solid;
-    --tab-header-border-color:  #ddd;
+    --tab-header-border-color: #ddd;
     --tab-header-border: var(--tab-header-border-style) var(--tab-header-border-color);
 }
 
@@ -133,7 +131,7 @@
 .tabArea > .tabHeaderListWrapper > .tabHeaderList > .tabHeaderWrapper {
     display: flex;
 }
-.tabArea  > .tabHeaderListWrapper > .tabHeaderList > .tabHeaderWrapper > .tabHeader {    
+.tabArea > .tabHeaderListWrapper > .tabHeaderList > .tabHeaderWrapper > .tabHeader {
     border-radius: 5px;
     border-bottom-left-radius: 0px;
     border-bottom-right-radius: 0px;
@@ -146,7 +144,7 @@
     font-size: 15px;
     padding: 10px;
 }
-.tabArea  > .tabHeaderListWrapper > .tabHeaderList > .tabHeaderWrapper:not(.active) > .tabHeader * {
+.tabArea > .tabHeaderListWrapper > .tabHeaderList > .tabHeaderWrapper:not(.active) > .tabHeader * {
     cursor: pointer;
 }
 .tabArea > .tabHeaderListWrapper > .tabHeaderList > .tabHeaderWrapper > .filler {
@@ -187,7 +185,7 @@
 /* #region List */
 
 .dragging * {
-    cursor: initial !important;    
+    cursor: initial !important;
     -moz-user-select: none;
 }
 .draggable,
@@ -220,7 +218,7 @@
     height: 2px;
     margin: 12px;
 }
-.dropMarker.dropTarget {    
+.dropMarker.dropTarget {
     background-color: black;
 }
 
@@ -230,7 +228,7 @@
     flex-flow: column;
     justify-content: center;
     align-items: center;
-    
+
     align-self: stretch;
 }
 .listItemDragWrapper * {
@@ -304,7 +302,7 @@
 .section > .headerArea > .hoverIndicator,
 .section > .headerArea > .hoverIndicator::after {
     position: absolute;
-    
+
     top: 0px;
     bottom: 0px;
     left: 0px;
@@ -325,9 +323,18 @@
 
     background-color: hsl(230, 3%, 60%);
     opacity: 0;
-    transition: opacity 0.1s;
+    transition: opacity 0.1s, background-color 0.1s;
 }
-.section > .headerArea:not(.preventOpen) .hoverIndicator:hover::after {
+/* Keyboard focus */
+.section > .headerArea:focus .hoverIndicator::after {
+    opacity: 0.15;
+    border: 2px solid hsl(230, 3%, 10%);
+}
+.section > .headerArea:focus .hoverIndicator:not(:hover)::after {
+    background-color: transparent;
+}
+/* Mouse hover */
+.section > .headerArea .hoverIndicator:hover::after {
     opacity: 0.15;
 }
 
@@ -445,7 +452,7 @@
     display: inline-block;
 }
 
- .dropDownButton {
+.dropDownButton {
     background-color: var(--dropDown-button-background);
     color: var(--dropDown-button-color);
     opacity: var(--dropDown-button-opacity);
@@ -464,7 +471,8 @@
     float: right;
 }
 
-.dropDownButton:hover, .dropDownArea.open > .dropDownButton {
+.dropDownButton:hover,
+.dropDownArea.open > .dropDownButton {
     opacity: var(--dropDown-button-opacity-hover);
 }
 
@@ -482,7 +490,7 @@
 
     overflow: auto;
 
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
     z-index: 1;
 }
 
@@ -566,3 +574,51 @@
 }
 
 /* #endregion Optional Permissions */
+
+
+
+/* #region Shortcuts */
+
+.commandsArea {
+    margin-top: 15px;
+}
+
+.commandArea {
+    flex: 1 1 auto !important;
+    align-self: center;
+    display: flex;
+
+    z-index: 1000 !important;
+}
+
+.commandArea > label {
+    text-align: center;
+    flex: 1 1 auto !important;
+}
+
+.commandArea > .inputArea {
+    display: flex;
+    padding: 0px;
+    margin: -2px;
+    font-size: 20px;
+}
+.commandArea > .inputArea * {
+    flex: 1 1 auto;
+}
+
+.commandArea > .inputArea > input[type="text"] {
+    width: 200px;
+    margin-right: 5px;
+    margin-left: -1px;
+
+    padding-left: 10px;
+}
+
+.commandArea > .inputArea > button {
+    text-align: center;
+}
+.commandArea > .inputArea > button:first-of-type {
+    margin-right: -2px;
+}
+
+/* #endregion Shortcuts */

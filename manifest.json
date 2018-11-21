@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Tab Unloader for Tree Style Tab",
-  "version": "5.12",
+  "version": "5.13",
   "default_locale": "en",
   "applications": {
     "gecko": {
@@ -13,7 +13,8 @@
     "page": "options/options.html"
   },
   "permissions": [
-    "storage"
+    "storage",
+    "menus"
   ],
   "optional_permissions": [
     "tabHide",

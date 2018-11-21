@@ -3,6 +3,7 @@
 
 async function unloadTabs({ tabs, fallbackOptions = {}, discardAgainAfterDelay = -1, disposables = null, useAutoTabDiscard = false } = {}) {
   try {
+    tabs = await tabs;
     if (!tabs) {
       return;
     }
@@ -525,6 +526,18 @@ class MouseButtonManager {
 
 async function start() {
 
+  // #region Browser Version
+
+  let browserInfo = {};
+  let majorBrowserVersion = 57;
+  try {
+    browserInfo = await browser.runtime.getBrowserInfo();
+    majorBrowserVersion = browserInfo.version.split('.')[0];
+  } catch (error) { }
+
+  // #endregion Browser Version
+
+
   // #region Settings
 
   var timeDisposables = new DisposableCollection();
@@ -547,23 +560,100 @@ async function start() {
     ) {
       timeDisposables.disposeOfAllObjects();
     }
-
-    if (invalidateTST) {
-      invalidateTST();
-    }
   });
   updateClickCombos(settings);
 
   let getUnloadInfo = () => {
-    let info = {
+    return {
       discardAgainAfterDelay: settings.unloadAgainAfterDelay,
       disposables: settings.unloadAgainAfterDelay > 1000 ? timeDisposables : null,
       useAutoTabDiscard: settings.unloadViaAutoTabDiscard,
     };
-    return info;
   };
 
   // #endregion Settings
+
+
+  // #region Get Selected Tabs
+
+  /**
+   * Get the selected tabs in a specific window. If no window id is provided the current window will be used.
+   * 
+   * This will attempt to use the new multiselect WebExtensions API that is supported in Firefox 64 and later. 
+   * If that fails it will attempt to check if any tabs are selected in Multiple Tab Handler.
+   * 
+   * If multiple tabs aren't selected it will return the provided tab or the active tab in the provided window.
+   * 
+   * 
+   * @returns {Array|Undefined} Selected tabs or provided tab.
+   */
+  async function getSelectedTabs({ windowId = null, tab = null } = {}) {
+    // Check Function Args:
+    if (tab !== null) {
+      windowId = tab.windowId;
+    }
+
+    // Configure Tabs Query:
+    let details = { highlighted: true };
+    if (windowId !== null) {
+      details.windowId = windowId;
+    } else {
+      details.currentWindow = true;
+    }
+
+    // Attempt Tabs Query:
+    let tabs = [];
+    try {
+      // Attempt to get multiselected tabs from the WebExtensions API:
+      tabs = await browser.tabs.query(details);
+    } catch (error) { }
+
+    // Fallback to MTH Query:
+    if (majorBrowserVersion < 64 && tabs.length <= 1) {
+      try {
+        // Attempt to get multiselected tabs from Multiple Tab Handler:
+        var selectionInfo = await browser.runtime.sendMessage(kMTH_ID, {
+          type: 'get-tab-selection'
+        });
+        let selection = selectionInfo.selected;
+
+        if (selection.length > 0) {
+          if (windowId === null) {
+            // Get window id for filtering:
+            let window = null;
+            try {
+              window = await browser.windows.get(browser.windows.WINDOW_ID_CURRENT);
+            } catch (error) {
+              try {
+                window = await browser.windows.getCurrent();
+              } catch (error) { }
+            }
+            if (window !== null) {
+              windowId = window.id;
+            }
+          }
+
+          // Filter tabs based on window id:
+          tabs = windowId === null ? selection : selection.filter(tab => tab.windowId = windowId);
+        }
+      } catch (error) { }
+    }
+
+    // Check if not multiple selected tabs:
+    if (tabs.length <= 1 && tab !== null) {
+      // Not multiple selected tabs => Use the provided tab instead:
+      tabs = [tab];
+    } else if (tabs.length === 0) {
+      // No provided tab => Attempts to get the current active tab:
+      delete details.highlighted;
+      details.active = true;
+      tabs = await browser.tabs.query(details);
+    }
+
+    return tabs;
+  }
+
+  // #endregion Get Selected Tabs
 
 
   // #region Handle input
@@ -572,13 +662,13 @@ async function start() {
   for (let manager of mouseButtonManagers) {
     manager.getUnloadInfo = getUnloadInfo;
   }
-  let getButtonManager = (index) => {
+  const getButtonManager = (index) => {
     if (index < 0 || mouseButtonManagers.length <= index) {
       return null;
     }
     return mouseButtonManagers[index];
   };
-  let managerCallback = (index, callback) => {
+  const managerCallback = (index, callback) => {
     if (!callback || typeof callback !== 'function') {
       return false;
     }
@@ -599,13 +689,13 @@ async function start() {
     }
   };
 
-  var onMenuItemClick = async (info, tab) => {
+  const onMenuItemClick = async (info, tab) => {
     switch (info.menuItemId) {
       case tstContextMenuItemIds.unloadTab: {
         await unloadTabs(Object.assign(
           getUnloadInfo(),
           {
-            tabs: tab,
+            tabs: settings.unloadInTSTContextMenu_useSelectedTabs ? getSelectedTabs({ tab: tab }) : tab,
             fallbackOptions: {
               fallbackToLastSelectedTab: settings.unloadInTSTContextMenu_fallbackToLastSelected,
               ignoreHiddenTabs: settings.unloadInTSTContextMenu_ignoreHiddenTabs
@@ -628,6 +718,7 @@ async function start() {
       } break;
     }
   };
+  browser.menus.onClicked.addListener(onMenuItemClick);
 
   browser.commands.onCommand.addListener(async function (command) {
     let [activeTab,] = await browser.tabs.query({ active: true, currentWindow: true });
@@ -636,7 +727,7 @@ async function start() {
         await unloadTabs(Object.assign(
           getUnloadInfo(),
           {
-            tabs: activeTab,
+            tabs: settings.command_unloadTab_useSelectedTabs ? getSelectedTabs({ tab: activeTab }) : activeTab,
             fallbackOptions: {
               fallbackToLastSelectedTab: settings.command_unloadTab_fallbackToLastSelected,
               ignoreHiddenTabs: settings.command_unloadTab_ignoreHiddenTabs
@@ -662,6 +753,79 @@ async function start() {
   });
 
   // #endregion Handle input
+
+
+  // #region Context Menu
+
+  function getContextMenuItems() {
+    // Create items:
+    let items = ContextMenuItemCollection.fromBuilders([
+      // Unload tab:
+      {
+        enabled: settings.unloadInTSTContextMenu,
+        id: tstContextMenuItemIds.unloadTab,
+        contexts: ['tab'],
+        title: settings.unloadInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadTab')
+      },
+      // Unload tree:
+      {
+        enabled: settings.unloadTreeInTSTContextMenu,
+        id: tstContextMenuItemIds.unloadTree,
+        contexts: ['tab'],
+        title: settings.unloadTreeInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadTree')
+      },
+      // Dummy root item to customize title:
+      {
+        contexts: ['tab'],
+        title: settings.tstContextMenu_CustomRootLabel || browser.i18n.getMessage('contextMenu_rootItemTitle'),
+        isRootItem: true,
+      }
+    ]);
+
+    // Re-order items based on user preference:
+    let contextMenuItems = settings.tstContextMenuOrder;
+    if (!contextMenuItems || !Array.isArray(contextMenuItems)) {
+      contextMenuItems = [];
+    }
+    for (let itemId of contextMenuItems) {
+      let item = items.getContextMenuItem(itemId);
+      if (item) {
+        items.addContextMenuItems(item);
+      }
+    }
+
+    items.sortParentsFirst();
+
+    return items;
+  }
+
+  async function updateContextMenu() {
+    try {
+      await browser.menus.removeAll();
+
+      if (settings.isEnabled && settings.contextMenu_in_tab_bar) {
+        for (let details of getContextMenuItems().data) {
+          await browser.menus.create(details);
+        }
+      }
+    } catch (error) {
+      return false;
+    }
+    return true;
+  }
+
+  settingsTracker.onChange.addListener(async (changes, storageArea) => {
+    if (!settings.isEnabled && !changes.isEnabled) {
+      return;
+    }
+    if (!settings.contextMenu_in_tab_bar && !changes.contextMenu_in_tab_bar) {
+      return;
+    }
+    updateContextMenu();
+  });
+  updateContextMenu();
+
+  // #endregion Context Menu
 
 
   // #region Handle TST configuration
@@ -722,50 +886,22 @@ async function start() {
     }
 
 
-    try {
-      state.rootContextMenuItemTitle = settings.tstContextMenu_CustomRootLabel || browser.i18n.getMessage('contextMenu_rootItemTitle');
-    } catch (error) { }
-
-    if (settings.unloadInTSTContextMenu) {
-      state.contextMenuItems.addContextMenuItems(new ContextMenuItem({
-        id: tstContextMenuItemIds.unloadTab,
-        contexts: ['tab'],
-        title: settings.unloadInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadTab')
-      }));
-    }
-
-    if (settings.unloadTreeInTSTContextMenu) {
-      state.contextMenuItems.addContextMenuItems(new ContextMenuItem({
-        id: tstContextMenuItemIds.unloadTree,
-        contexts: ['tab'],
-        title: settings.unloadTreeInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadTree')
-      }));
-    }
-
-    let contextMenuItems = settings.tstContextMenuOrder;
-    if (!contextMenuItems || !Array.isArray(contextMenuItems)) {
-      contextMenuItems = [];
-    }
-    for (let itemId of contextMenuItems) {
-      let item = state.contextMenuItems.getContextMenuItem(itemId);
-      if (item) {
-        state.contextMenuItems.addContextMenuItems(item);
-      }
-    }
+    state.contextMenuItems = getContextMenuItems();
 
 
     state.style = style;
 
     return state;
   };
-  var invalidateTST = async () => {
-    await tstManager.setState(getTSTState());
-  };
 
 
   // Set up TST and listen for messages:
 
   let tstManager = new TSTManager(getTSTState());
+
+  settingsTracker.onChange.addListener(async (changes, storageArea) => {
+    await tstManager.setState(getTSTState());
+  });
 
 
   let isFirstTSTRegistration = true;
@@ -778,7 +914,10 @@ async function start() {
     }
 
     timeDisposables.trackDisposables(
-      new Timeout(() => tstManager.invalidateTST([TSTManager.resetTypes.listeningTypes, TSTManager.resetTypes.contextMenu]), time)
+      new Timeout(() => {
+        tstManager.invalidateTST([TSTManager.resetTypes.listeningTypes, TSTManager.resetTypes.contextMenu]);
+        updateContextMenu();
+      }, time)
     );
   };
   let tstRegistrationListener = new EventListener(tstManager.onRegistrationChange, (oldState, newState) => {
