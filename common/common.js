@@ -132,6 +132,7 @@ const defaultValues = Object.freeze({
       }),
 
       tabHide_HideUnloadedTabs: false,
+      tabHide_SuppressTSTHiddenClass: true,
       tabHide_ShowHiddenTabsInTST: false,
 
 
@@ -2810,7 +2811,7 @@ class TSTManager {
   /**
    * Get tabs from Tree Style Tab. These tabs will include tree information.
    * 
-   * @param {number|Array} tabIds Can be a single intiger id or multiple ids in an array.
+   * @param {number|Array} tabIds Can be a single integer id or multiple ids in an array.
    * @returns {Object|Array} A tab or an array of tabs.
    */
   static async getTabs(tabIds) {
@@ -2862,6 +2863,55 @@ class TSTManager {
   }
 
   // #endregion Get Tabs
+
+
+  // #region Add/Remove Tab Classes
+
+  /**
+   * Add classes to some tabs.
+   *
+   * @static
+   * @param {number|Array} tabs A tab id or an array of tab ids.
+   * @param {string|Array} state A string or an array of strings that represent the names of the classes to add.
+   * @memberof TSTManager
+   */
+  static async addTabClass(tabs, state) {
+    if ((!tabs && tabs !== 0) || !state) {
+      return;
+    }
+    if (!Array.isArray(tabs)) {
+      tabs = [tabs];
+    }
+    await browser.runtime.sendMessage(kTST_ID, {
+      type: 'add-tab-state',
+      tabs,
+      state,
+    });
+  }
+
+  /**
+   * Remove classes from some tabs.
+   *
+   * @static
+   * @param {number|Array} tabs A tab id or an array of tab ids.
+   * @param {string|Array} state A string or an array of strings that represent the names of the classes to remove.
+   * @memberof TSTManager
+   */
+  static async removeTabClass(tabs, state) {
+    if ((!tabs && tabs !== 0) || !state) {
+      return;
+    }
+    if (!Array.isArray(tabs)) {
+      tabs = [tabs];
+    }
+    await browser.runtime.sendMessage(kTST_ID, {
+      type: 'remove-tab-state',
+      tabs,
+      state,
+    });
+  }
+
+  // #endregion Add/Remove Tab Classes
 
 
   // #region Group Tab
@@ -3326,7 +3376,7 @@ class MouseClickCombo {
  */
 class TabHideManager {
 
-  constructor() {
+  constructor({ suppressTSTHiddenClass = false } = {}) {
     Object.assign(this, {
       _isDisposed: false,
       _onDisposed: new EventManager(),
@@ -3335,6 +3385,9 @@ class TabHideManager {
 
       _isAPIEnabled: true,
       _onAPIStatusChanged: new EventManager(),
+
+      _suppressTSTHiddenClass: suppressTSTHiddenClass,
+      _onSuppressTSTHiddenClassChanged: new EventManager(),
 
       _apiChecker: new RequestManager(
         async () => {
@@ -3384,17 +3437,30 @@ class TabHideManager {
           this.updateAllHideStates();
         }
       }),
+      new EventListener(this.onSuppressTSTHiddenClassChanged, () => {
+        this.suppressAllTSTHiddenClass();
+      }),
     ]);
 
     this.updateAllHideStates();
   }
 
 
+  /**
+   * Show/Hide some tabs.
+   *
+   * @param {number|Array<number>} tabId A tab id or an array of tab ids to show/hide.
+   * @param {boolean} hide Indicates if the tabs should be hidden.
+   * @memberof TabHideManager
+   */
   async _changeHideState(tabId, hide) {
     if (this.isDisposed) {
       return;
     }
     if (!this.isAPIEnabled) {
+      if (hide && this._suppressTSTHiddenClass) {
+        await TabHideManager.changeTSTHiddenClass(tabId);
+      }
       this._apiChecker.invalidate();
       return;
     }
@@ -3404,6 +3470,9 @@ class TabHideManager {
     try {
       if (hide) {
         await browser.tabs.hide(tabId);
+        if (this._suppressTSTHiddenClass) {
+          await TabHideManager.changeTSTHiddenClass(tabId);
+        }
       } else {
         await browser.tabs.show(tabId);
       }
@@ -3430,6 +3499,11 @@ class TabHideManager {
       this._apiChecker.invalidate();
     }
     return false;
+  }
+
+
+  async suppressAllTSTHiddenClass(windowId = null) {
+    await TabHideManager.changeAllTSTHiddenClass(this.suppressTSTHiddenClass, windowId);
   }
 
 
@@ -3479,7 +3553,74 @@ class TabHideManager {
   // #endregion API Status
 
 
+  // #region Suppress TST Hidden Class
+
+  get suppressTSTHiddenClass() {
+    return Boolean(this._suppressTSTHiddenClass);
+  }
+  set suppressTSTHiddenClass(value) {
+    value = Boolean(value);
+    if (value === this.suppressTSTHiddenClass) {
+      return;
+    }
+    this._suppressTSTHiddenClass = value;
+    if (!this.isDisposed) {
+      this._onSuppressTSTHiddenClassChanged.fire(value);
+    }
+  }
+
+  get onSuppressTSTHiddenClassChanged() {
+    return this._onSuppressTSTHiddenClassChanged.subscriber;
+  }
+
+  // #endregion Suppress TST Hidden Class
+
+
   // #region Static Functions
+
+  /**
+   * Add/Remove the 'hidden' class from tabs in Tree Style Tab.
+   *
+   * @param {number|Array<number>} tabIds Tab id or array of tab ids.
+   * @param {boolean} remove Indicates if the class should be removed.
+   * @returns {boolean} True if the class was removed successfully; otherwise false.
+   * @memberof TabHideManager
+   */
+  static async changeTSTHiddenClass(tabIds, remove = true) {
+    if (!tabIds && tabIds !== 0) {
+      return;
+    }
+    if (!Array.isArray(tabIds)) {
+      tabIds = [tabIds];
+    }
+
+    try {
+      if (remove) {
+        await TSTManager.removeTabClass(tabIds, 'hidden');
+      } else {
+        await TSTManager.addTabClass(tabIds, 'hidden');
+      }
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Add/Remove the 'hidden' class from all hidden tabs in Tree Style Tab.
+   *
+   * @param {boolean} remove Indicates if the class should be removed.
+   * @param {number|null} windowId Window to apply changes to. Null to apply to all.
+   * @memberof TabHideManager
+   */
+  static async changeAllTSTHiddenClass(remove, windowId = null) {
+    const details = { hidden: true };
+    if (windowId || windowId === 0) {
+      details.windowId = windowId;
+    }
+    const hiddenTabs = await browser.tabs.query(details);
+    await TabHideManager.changeTSTHiddenClass(hiddenTabs.map(tab => tab.id), remove);
+  }
 
   static async checkPermission() {
     try {
@@ -3507,7 +3648,6 @@ class TabHideManager {
   }
 
   // #endregion Static Functions
-
 }
 
 

@@ -597,6 +597,17 @@ async function initiatePage() {
     hideTabsArea.appendChild(document.createElement('br'));
     hideTabsArea.appendChild(document.createElement('br'));
 
+
+    const moreOptionArea = document.createElement('div');
+    moreOptionArea.classList.add('area');
+    hideTabsArea.appendChild(moreOptionArea);
+
+    const suppressTSTHiddenClass = createCheckBox('tabHide_SuppressTSTHiddenClass', 'options_TabHide_SuppressTSTHiddenClass');
+    moreOptionArea.appendChild(suppressTSTHiddenClass.area);
+
+
+    hideTabsArea.appendChild(document.createElement('br'));
+
     let info = document.createElement('div');
     info.classList.add('message');
     info.textContent = browser.i18n.getMessage('options_TabHide_Info', ['options_ignoreHiddenTabs', 'options_TabHide_ShowHiddenTabsInTST'].map(messageName => browser.i18n.getMessage(messageName)));
@@ -617,6 +628,7 @@ async function initiatePage() {
         toggleClass(section.title, 'enabled', enabled);
         toggleClass(section.title, 'error', needAPI);
         toggleClass(section.content, 'enabled', enabled);
+        toggleClass(moreOptionArea, 'disabled', !enableCheckbox.checkbox.checked);
       };
       let disposables = [
         new EventListener(enableCheckbox.checkbox, 'input', (e) => check()),

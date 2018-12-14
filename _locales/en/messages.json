@@ -18,7 +18,7 @@
         "message": "Left click tabs to unload them."
     },
     "options_unloadOnMiddleClick": {
-        "message": "Middle click tabs to unload them. (Note that in Tree Style Tab v2.4.18 and earlier there is no way to prevent Tree Style Tab's default action. This means that If the mouse button is released on the tab it was pressed on then that tab will be closed. To use middle click to unload tabs in those versions of Tree Stlye Tab you need to press and hold the button and drag the mouse to another tab before releasing it.)"
+        "message": "Middle click tabs to unload them. (Note that in Tree Style Tab v2.4.18 and earlier there is no way to prevent Tree Style Tab's default action. This means that If the mouse button is released on the tab it was pressed on then that tab will be closed. To use middle click to unload tabs in those versions of Tree Style Tab you need to press and hold the button and drag the mouse to another tab before releasing it.)"
     },
     "options_unloadOnRightClick": {
         "message": "Right click tabs to unload them. (Currently there is no way to stop the context menu from opening.)"
@@ -48,7 +48,7 @@
         "message": "The click will only register if the selected modifier keys are pressed and the unselected modifier keys are released."
     },
     "options_modifierKeysAnyMode": {
-        "message": "Any Key Mode: If checked then at least one of the selected modifier keys must be pressed for a click to register. It is not necessary to press all of the selected modifier keys. The state of the unselected modifier keys are ignored. If there are no selected modifier keys then a click will allways register."
+        "message": "Any Key Mode: If checked then at least one of the selected modifier keys must be pressed for a click to register. It is not necessary to press all of the selected modifier keys. The state of the unselected modifier keys are ignored. If there are no selected modifier keys then a click will always register."
     },
     "options_modifierKey_Ctrl": {
         "message": "Ctrl"
@@ -63,7 +63,7 @@
         "message": "Meta (Command on macOS)"
     },
     "options_clickTimeoutInfo": {
-        "message": "Measure the click duration. That is the time between a mouse down and a mouse up event. Ensure that it is within a certain intervall. Set a minimum time to only register long presses or set a maximum time to prevent triggering when dragging or long-pressing tabs."
+        "message": "Measure the click duration. That is the time between a mouse down and a mouse up event. Ensure that it is within a certain interval. Set a minimum time to only register long presses or set a maximum time to prevent triggering when dragging or long-pressing tabs."
     },
     "options_clickTimeoutMin": {
         "message": "Minimum click duration in milliseconds (set to 0 to disable): "
@@ -149,6 +149,9 @@
     "options_TabHide_HideUnloadedTabs": {
         "message": "Hide unloaded tabs with the tab hiding API. Hidden tabs will not be shown in the toolbar and can't be selected with keyboard shortcuts. When the current tab is closed hidden tabs will not be selected as long as there are other visible tabs. Pinned tabs can't be hidden."
     },
+    "options_TabHide_SuppressTSTHiddenClass": {
+        "message": "Suppress special behavior in Tree Style Tab regarding hidden tabs."
+    },
     "options_TabHide_ShowHiddenTabsInTST": {
         "message": "Show hidden tabs in Tree Style Tab's sidebar."
     },
@@ -176,7 +179,7 @@
         "message": "Reload \"broken\" tabs in private windows."
     },
     "options_TabRestoreFix_reloadBrokenTabs_QuickUnload": {
-        "message": "It is possible to load an unloaded tab and then quickly unload it again without it showing a loading icon when it is unloaded. This can be used to quickly and efficiently determine if a tab is \"broken\". Unfortunatley using the trick causes the extension API to incorrectly report the tab's URL as the default URL \"about:blank\". This means that some extensions might not work as expected when handling these \"quick\" unloaded tabs. The issue will disapear as soon as the tab is loaded again."
+        "message": "It is possible to load an unloaded tab and then quickly unload it again without it showing a loading icon when it is unloaded. This can be used to quickly and efficiently determine if a tab is \"broken\". Unfortunately using the trick causes the extension API to incorrectly report the tab's URL as the default URL \"about:blank\". This means that some extensions might not work as expected when handling these \"quick\" unloaded tabs. The issue will disappear as soon as the tab is loaded again."
     },
     "options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Normal": {
         "message": "Allow \"quick unload\" to test for \"broken\" tabs in normal windows."

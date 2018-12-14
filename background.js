@@ -885,6 +885,10 @@ async function start() {
       }
     }
 
+    if (settings.tabHide_HideUnloadedTabs && settings.tabHide_SuppressTSTHiddenClass) {
+      state.addListeningTypes('sidebar-show');
+    }
+
 
     state.contextMenuItems = getContextMenuItems();
 
@@ -941,6 +945,16 @@ async function start() {
     switch (message.type) {
       case 'ready': {
         isFirstTSTRegistration = true;
+
+        if (tabHideManager && settings.tabHide_SuppressTSTHiddenClass) {
+          tabHideManager.suppressAllTSTHiddenClass();
+        }
+      } break;
+
+      case 'sidebar-show': {
+        if (tabHideManager && settings.tabHide_SuppressTSTHiddenClass) {
+          tabHideManager.suppressAllTSTHiddenClass(message.windowId || message.window);
+        }
       } break;
 
       case 'tab-clicked':
@@ -991,12 +1005,12 @@ async function start() {
           if (!tabHideManager) {
             if (settings.tabHide_ShowHiddenTabsInTST) {
               // Ensure that hidden tabs are visible in TST before hiding tabs:
-              await invalidateTST();
+              await tstManager.setState(getTSTState());
               await delay(250);
             }
 
             if (!tabHideManager) {
-              tabHideManager = new TabHideManager();
+              tabHideManager = new TabHideManager({ suppressTSTHiddenClass: settings.tabHide_SuppressTSTHiddenClass });
               tabHideManager.onAPIStatusChanged.addListener(() => {
                 if (portManager) {
                   portManager.fireEvent(messageTypes.tabHideAPIChanged, [tabHideManager.isAPIEnabled]);
@@ -1004,11 +1018,15 @@ async function start() {
               });
             }
           }
+          if (tabHideManager) {
+            tabHideManager.suppressTSTHiddenClass = settings.tabHide_SuppressTSTHiddenClass;
+          }
         } else {
           if (tabHideManager) {
             tabHideManager.dispose();
             tabHideManager = null;
             await TabHideManager.showAllTabs();
+            await TabHideManager.changeAllTSTHiddenClass(false);
             await delay(250);
           }
         }
@@ -1017,7 +1035,7 @@ async function start() {
     return lastTabHideCheck;
   };
   settingsTracker.onChange.addListener((changes, storageArea) => {
-    if (changes.tabHide_HideUnloadedTabs || changes.isEnabled) {
+    if (changes.tabHide_HideUnloadedTabs || changes.isEnabled || changes.tabHide_SuppressTSTHiddenClass) {
       checkTabHiding();
     }
   });
