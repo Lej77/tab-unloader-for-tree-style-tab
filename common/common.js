@@ -136,7 +136,7 @@ const defaultValues = Object.freeze({
       tabHide_ShowHiddenTabsInTST: false,
 
 
-      fixTabRestore_waitForUrlInMilliseconds: 500,
+      fixTabRestore_waitForUrlInMilliseconds: -1,
       fixTabRestore_waitForIncorrectLoad: 500,
       fixTabRestore_fixIncorrectLoadAfter: 500,
 
@@ -144,8 +144,8 @@ const defaultValues = Object.freeze({
       fixTabRestore_reloadBrokenTabs: false,
       fixTabRestore_reloadBrokenTabs_private: false,
 
-      fixTabRestore_reloadBrokenTabs_quickUnload: true,
-      fixTabRestore_reloadBrokenTabs_private_quickUnload: true,
+      fixTabRestore_reloadBrokenTabs_quickUnload: false,
+      fixTabRestore_reloadBrokenTabs_private_quickUnload: false,
 
 
       command_unloadTab_useSelectedTabs: false,
@@ -158,7 +158,7 @@ const defaultValues = Object.freeze({
 
       unloadInTSTContextMenu: true,
       unloadInTSTContextMenu_CustomLabel: '',
-      unloadInTSTContextMenu_useSelectedTabs: false,
+      unloadInTSTContextMenu_useSelectedTabs: true,
       unloadInTSTContextMenu_fallbackToLastSelected: false,
       unloadInTSTContextMenu_ignoreHiddenTabs: false,
 
@@ -2138,34 +2138,100 @@ class ContextMenuItemCollection {
 
 
   sortParentsFirst() {
-    let previousParentIds = [];
+    // Build lookup:
+    const idToItem = {};
+    const parentIdToChildrenIds = {};
+    const rootIds = [];
+    for (let item of this._items) {
+      idToItem[item.id] = item;
+      if (item.parentId) {
+        let array = parentIdToChildrenIds[item.parentId];
+        if (!array) {
+          array = [item.id];
+          parentIdToChildrenIds[item.parentId] = array;
+        } else {
+          array.push(item.id);
+        }
+      } else {
+        rootIds.push(item.id);
+      }
+    }
+
+    // Sort items:
+    const previousIds = new Set();
+    const hoistItem = (beforeIndex, item) => {
+      if (!item) {
+        return beforeIndex;
+      }
+
+      if (item.parentId) {
+        beforeIndex = hoistItem(idToItem[item.parentId]);
+      }
+
+      let offset = 0;
+      const siblings = item.parentId ? parentIdToChildrenIds[item.parentId] : rootIds;
+      if (siblings) {
+        const siblingIds = siblings.map(item => item.id);
+        let siblingIndex = 0;
+        while (true) {
+          if (siblingIndex >= siblingIds.length) {
+            break;
+          }
+          if (previousIds.has(siblingIds[siblingIndex])) {
+            siblingIndex++;
+          } else {
+            break;
+          }
+        }
+        if (siblingIndex < siblingIds.length) {
+          let siblingId = siblingIds[siblingIndex];
+          for (let jjj = beforeIndex; jjj < this._items.length; jjj++) {
+            let item2 = this._items[jjj];
+            if (siblingId === item2.id) {
+              // Move to before child item:
+              this._items.splice(jjj, 1);
+              this._items.splice(beforeIndex, 0, item2);
+              offset++;
+
+              previousIds.add(item2.id);
+
+              if (item2.id === item.id) {
+                // Has hoisted wanted item (we can skip the rest):
+                break;
+              }
+
+              // Get id of next sibling:
+              siblingIndex++;
+              if (siblingIndex >= siblingIds.length) {
+                break;
+              }
+              siblingId = siblingIds[siblingIndex];
+            }
+          }
+        }
+      } else {
+        // Should not occur:
+        previousIds.add(item.id);
+      }
+      return beforeIndex + offset;
+    };
     for (let iii = 0; iii < this._items.length; iii++) {
       let item = this._items[iii];
       if (item.id) {
         // Have seen this item's id:
-        previousParentIds.push(item.id);
+        previousIds.add(item.id);
       }
       if (!item.parentId) {
         // Is root item:
         continue;
       }
-      if (previousParentIds.includes(item.parentId)) {
+      if (previousIds.has(item.parentId)) {
         // Is before this item:
         continue;
       }
 
-      // Search for the parent item:
-      for (let jjj = iii; jjj < this._items.length; jjj++) {
-        let item2 = this._items[jjj];
-        if (item2.id === item.parentId) {
-          // Move to before child item:
-          this._items.splice(jjj, 1);
-          this._items.splice(iii, 0, item2);
-          break;
-        }
-      }
-      // Have seen parent id:
-      previousParentIds.push(item.parentId);
+      // Hoist the parent item (and all of its parents):
+      iii = hoistItem(iii, idToItem[item.parentId]);
     }
 
     return this;
@@ -2177,7 +2243,7 @@ class ContextMenuItemCollection {
   }
 
   getUniqueId() {
-    let uniqueId = 1; // Can't be 0 since that is false and doesn't count as a id.
+    let uniqueId = 0;
     let ids = this.getIds();
     while (ids.includes(uniqueId + '')) {
       uniqueId++;
@@ -2478,7 +2544,7 @@ class TSTManager {
         return;
       }
       let values = this._onMessage.fire(message);
-      if (message.type === 'ready') {
+      if (message.type === 'ready' || message.type === 'permissions-changed' ) {
         // passive registration for secondary (or after) startup:
         this.invalidateTST(true);
         return Promise.resolve(true);

@@ -524,6 +524,43 @@ class MouseButtonManager {
 }
 
 
+/**
+ * Detects if this extension has access to private windows.
+ *
+ * @class PrivateWindowDetector
+ */
+class PrivatePermissionDetector {
+  constructor() {
+    this._onCreatedCallback = this._onWindowCreated.bind(this);
+    this.hasPermission = false;
+    this._isDisposed = false;
+
+    browser.windows.onCreated.addListener(this._onCreatedCallback);
+    browser.windows.getAll().then((windows) => {
+      for (const window of windows) {
+        this._onWindowCreated(window);
+      }
+    }).catch(error => console.error('Failed to get windows from Firefox.\nError:\n', error));
+  }
+
+  _onWindowCreated(window) {
+    if (window.incognito) {
+      this.hasPermission = true;
+      this.dispose();
+    }
+  }
+
+  dispose() {
+    if (this.isDisposed) return;
+    browser.windows.onCreated.removeListener(this._onCreatedCallback);
+    this._isDisposed = true;
+  }
+  get isDisposed() {
+    return this._isDisposed;
+  }
+}
+
+
 async function start() {
 
   // #region Browser Version
@@ -572,6 +609,13 @@ async function start() {
   };
 
   // #endregion Settings
+
+
+  // #region Detect Private Permission
+
+  const privatePermission = new PrivatePermissionDetector();
+
+  // #endregion Detect Private Permission
 
 
   // #region Get Selected Tabs
@@ -937,6 +981,11 @@ async function start() {
       return;
     }
     if (message.tab) {
+      if (message.tab.incognito && !privatePermission.hasPermission) {
+        // Extension isn't granted permission to access private windows.
+        console.warn('Can\'t handle tab in private window because Firefox haven\'t granted the extension access to private windows.');
+        return;
+      }
       let tstDiscarded = message.tab.discarded;
       defineProperty(message.tab, 'discarded', () => {
         return tstDiscarded && !message.tab.active;

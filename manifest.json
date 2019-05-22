@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Tab Unloader for Tree Style Tab",
-  "version": "5.14",
+  "version": "5.15",
   "default_locale": "en",
   "applications": {
     "gecko": {
@@ -30,7 +30,11 @@
     "resources/permissions.html*"
   ],
   "commands": {
-    "unload-tab": {},
-    "unload-tree": {}
+    "unload-tab": {
+      "description": "__MSG_options_Commands_UnloadTab__"
+    },
+    "unload-tree": {
+      "description": "__MSG_options_Commands_UnloadTree__"
+    }
   }
 }

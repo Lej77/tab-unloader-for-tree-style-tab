@@ -663,6 +663,12 @@ async function initiatePage() {
 
 
 
+    let deprecatedWarning = document.createElement('div');
+    deprecatedWarning.classList.add(messagePrefix + 'options_TabRestoreFix_deprecatedWarning');
+    section.content.appendChild(deprecatedWarning);
+
+    section.content.appendChild(document.createElement('br'));
+
 
 
     let reloadBrokenTabsArea = document.createElement('div');
@@ -994,6 +1000,9 @@ async function initiatePage() {
 
       // Clear settings:
       await Settings.clear();
+
+      // Wait for settings to be updated:
+      await delay(250);
 
       // Reload settings:
       starters.stop();

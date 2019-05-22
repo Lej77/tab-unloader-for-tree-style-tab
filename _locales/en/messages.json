@@ -156,7 +156,7 @@
         "message": "Show hidden tabs in Tree Style Tab's sidebar."
     },
     "options_TabHide_Info": {
-        "message": "If this options is enabled then it makes sense to uncheck all the \"$ignoreHiddenTabsOption$\" checkboxes.\n\nTo still be able to select unloaded tabs you can use the \"$showHiddenTabsInTSTOption$\" option.\n\nNote: requires the \"tabHide\" permission.",
+        "message": "If this options is enabled then it makes sense to uncheck all the \"$ignoreHiddenTabsOption$\" checkboxes.\n\nTo still be able to select unloaded tabs you can use the \"$showHiddenTabsInTSTOption$\" option.\n\nNote: requires the \"tabHide\" permission. Also this feature is experimental and might not work correctly.",
         "placeholders": {
             "ignoreHiddenTabsOption": {
                 "content": "$1"
@@ -198,6 +198,9 @@
     },
     "options_TabRestoreFix_permissionWarning": {
         "message": "Note: requires the \"tabs\" permission. (Can work partially without the permission if Tree Style Tab is installed.)"
+    },
+    "options_TabRestoreFix_deprecatedWarning": {
+        "message": "This section is a workaround for a Firefox bug that was fixed in Firefox 62."
     },
     "options_TreeStyleTabStyle_Header": {
         "message": "Custom Tree Style Tab Style"
@@ -272,7 +275,7 @@
         "message": "\"tabHide\""
     },
     "optionalPermissions_TabHide_Explanation": {
-        "message": "The \"tabHide\" permission is needed to hide tabs with the tab hiding API.\n\nThis is currently an experimental API and it is disabled by default. To enable it, visit the \"about:config\" URL and set \"extensions.webextensions.tabhide.enabled\" to true.\n\nIf the API is not enabled then it can't be used even if the permission is granted."
+        "message": "The \"tabHide\" permission is needed to hide tabs with the tab hiding API.\n\nThis is an experimental API in Firefox 59 and 60. To enable it in Firefox 59 or 60, visit the \"about:config\" URL and set \"extensions.webextensions.tabhide.enabled\" to true.\n\nIf the API is not enabled then it can't be used even if the permission is granted."
     },
     "optionalPermissions_TabHide_APIEnabled_Header": {
         "message": "API Status:"
@@ -308,11 +311,11 @@
         "message": " it is currently not possible to request optional permission from the options page. As a workaround request permissions from this page instead."
     },
     "contextMenu_unloadTab": {
-        "message": "&Suspend Tab",
+        "message": "Suspend T&ab(s)",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
     },
     "contextMenu_unloadTree": {
-        "message": "Susp&end Tree",
+        "message": "Suspend Tree",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
     },
     "contextMenu_rootItemTitle": {
