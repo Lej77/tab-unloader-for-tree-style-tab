@@ -24,7 +24,7 @@
         "hash": "8be2de96c9e51a9e56ef5da305c3330a"
     },
     "options_unloadOnMiddleClick": {
-        "message": "中键点击标签页进行卸载。（请注意，在 树状标签页 v2.4.18 以及更早的版本中，树状标签页 的默认动作无法被阻止。这意味着，如果在一个标签页上按下鼠标中键又松开，那么这个标签页将会被关闭。为了能在 树状标签页 的这些版本中通过中键点击来卸载标签页，您需要先按住鼠标中键并将鼠标拖动至另一个标签页后再松开。）",
+        "message": "中键点击标签页进行卸载。（请注意，在 Tree Style Tab v2.4.18 以及更早的版本中，Tree Style Tab 的默认动作无法被阻止。这意味着，如果在一个标签页上按下鼠标中键又松开，那么这个标签页将会被关闭。为了能在 Tree Style Tab 的这些版本中通过中键点击来卸载标签页，您需要先按住鼠标中键并将鼠标拖动至另一个标签页后再松开。）",
         "hash": "93952a4c13dfcccabdb1055a28adc77e"
     },
     "options_unloadOnRightClick": {
@@ -52,7 +52,7 @@
         "hash": "9e3e8bcc73eee665e06e5f8e47a5d998"
     },
     "options_closeOnMiddleClick": {
-        "message": "防止通过中键点击来关闭标签页。如果此操作成功，那么被点击的标签将不会被关闭。（请注意，在 树状标签页 v2.4.18 以及更早的版本中，该项无法实现）",
+        "message": "防止通过中键点击来关闭标签页。如果此操作成功，那么被点击的标签将不会被关闭。（请注意，在 Tree Style Tab v2.4.18 以及更早的版本中，该项无法实现）",
         "hash": "16339ed2c3ec2338ceee18410dcf4067"
     },
     "options_closeOnMiddleClick_Title": {
@@ -80,7 +80,7 @@
         "hash": "a65b71114daa3d6da5528b783fe54142"
     },
     "options_modifierKey_Meta": {
-        "message": "Meta（MacOS中的命令）",
+        "message": "Meta（MacOS 中的命令）",
         "hash": "6ff938394459c9d95fbc195fafe1e29f"
     },
     "options_clickTimeoutInfo": {
@@ -108,7 +108,7 @@
         "hash": "23f2d9684d73a9389ff631e89a73e7a5"
     },
     "options_onDrag_enabled": {
-        "message": "检测没有拖放行为的长按。这是一个特殊通知，会在标签页被鼠标左键长按时由 树状标签页 进行发送。如果该标签页被拖动，则该通知不会被发送。这个可以用来允许通过长按进行的操作，并在拖放标签页时取消。",
+        "message": "检测没有拖放行为的长按。这是一个特殊通知，会在标签页被鼠标左键长按时由 Tree Style Tab 进行发送。如果该标签页被拖动，则该通知不会被发送。这个可以用来允许通过长按进行的操作，并在拖放标签页时取消。",
         "hash": "a5ec83872d5206ebcbd7d904dff93556"
     },
     "options_onDrag_cancel": {
@@ -116,7 +116,7 @@
         "hash": "7e56907f7a4daed41418328b9e02f3b3"
     },
     "options_onDrag_mouseUpTigger": {
-        "message": "如果此项被勾选，那么鼠标松开事件会被当做长按事件来触发相应操作。目前 树状标签页 不会在拖放操作后发送鼠标松开事件，所以如果要发送一个鼠标松开事件，那么在此之前拖放不能被指定用途。这意味着，如果此项被勾选，那么该事件会在拖放没有被指定用途时才触发相应操作。",
+        "message": "如果此项被勾选，那么鼠标松开事件会被当做长按事件来触发相应操作。目前 Tree Style Tab 不会在拖放操作后发送鼠标松开事件，所以如果要发送一个鼠标松开事件，那么在此之前拖放不能被指定用途。这意味着，如果此项被勾选，那么该事件会在拖放没有被指定用途时才触发相应操作。",
         "hash": "2168e72a6c43f6aae0e85acbe88027d2"
     },
     "options_onDrag_timeout": {
@@ -124,7 +124,7 @@
         "hash": "1986726cb0fd589f6f0bc10263b8a43d"
     },
     "options_dontPreventTSTAction": {
-        "message": "不要阻止 树状标签页 的默认动作。",
+        "message": "不要阻止 Tree Style Tab 的默认动作。",
         "hash": "bd91fd86d0ce474e574adb7f1e8b4d86"
     },
     "options_applyToAll": {
@@ -152,7 +152,7 @@
         "hash": "769b0fe66cd898c7a43e94ed2b5d7b74"
     },
     "options_contextMenu_in_tab_bar": {
-        "message": "在 Firefox 的原生标签栏中显示相关上下文菜单项。（需要 Firefox 64 以及更新的版本。）",
+        "message": "在 Firefox 的原生标签栏中显示相关上下文菜单项。（需要 Firefox 64 以及更高的版本。）",
         "hash": "2be82a667deb7d7e9bd99c4de7e7cad1"
     },
     "options_tstContextMenu_CustomRootLabel": {
@@ -168,11 +168,11 @@
         "hash": "56dd041b4aeb212f337be91d6e28112e"
     },
     "options_unloadInTSTContextMenu": {
-        "message": "在 树状标签页 的上下文菜单项中添加一项，用来卸载标签页。",
+        "message": "在 Tree Style Tab 的上下文菜单项中添加一项，用来卸载标签页。",
         "hash": "960200a6f31e2c0a19d98c5bd438f982"
     },
     "options_unloadTreeInTSTContextMenu": {
-        "message": "在 树状标签页 的上下文菜单项中添加一项，用来卸载标签树。",
+        "message": "在 Tree Style Tab 的上下文菜单项中添加一项，用来卸载标签树。",
         "hash": "a40c58f90a72af71e03432df64928154"
     },
     "options_contextMenu_customLabel": {
@@ -180,11 +180,11 @@
         "hash": "b95df73871d284aa6901c7059fc05006"
     },
     "options_unloadInTSTContextMenu_DelayedRegistration": {
-        "message": "在延迟一定时间后再将上下文菜单项重新注入到 树状标签页 ，以保证它们被放置在整个上下文菜单的末尾。该延迟以毫秒为单位（0 代表禁用）：",
+        "message": "在延迟一定时间后再将上下文菜单项重新注入到 Tree Style Tab ，以保证它们被放置在整个上下文菜单的末尾。该延迟以毫秒为单位（0 代表禁用）：",
         "hash": "130005c3dce2926b49451d5589c74bb0"
     },
     "options_dimUnloadedTabs": {
-        "message": "让 树状标签页 侧栏中的未加载标签页变暗。",
+        "message": "让 Tree Style Tab 侧栏中的未加载标签页变暗。",
         "hash": "24f08b075df48d93f4cbfe8a8c7712bc"
     },
     "options_disableOptionsPageAnimations": {
@@ -200,11 +200,11 @@
         "hash": "f389ef6ea005b497d7ce9d86eb4d4bad"
     },
     "options_TabHide_SuppressTSTHiddenClass": {
-        "message": "禁止 树状标签页 中关于隐藏标签页的特殊行为。",
+        "message": "禁止 Tree Style Tab 中关于隐藏标签页的特殊行为。",
         "hash": "e9d35c95cd2aded7ab841d040ae1f3af"
     },
     "options_TabHide_ShowHiddenTabsInTST": {
-        "message": "在 树状标签页 侧栏中显示隐藏标签页。",
+        "message": "在 Tree Style Tab 侧栏中显示隐藏标签页。",
         "hash": "720a7b045f218fb4200814f9e3236673"
     },
     "options_TabHide_Info": {
@@ -220,7 +220,7 @@
         "hash": "ee1534abe23debc42cce709e04bea9b4"
     },
     "options_TabRestoreFix_reloadBrokenTabs": {
-        "message": "当通过 WebExtensions API 来卸载一个标签页时，该标签页偶尔会被置为 “已损坏” 状态。如果一个 “已损坏” 的标签页被关闭，它将无法被重新打开（甚至通过启动时的会话还原也做不到），当它被再次加载时，它的网址将会被丢失。此选项将会重新加载 “已损坏” 标签页（其实就是重新设置这些标签页的网址），然后再卸载它们。这些 “已损坏” 的标签页在被修复前可能需要被重新加载多次。（与其它标签页下载器兼容。）",
+        "message": "当通过 WebExtensions API 来卸载一个标签页时，该标签页偶尔会被置为 “已损坏” 状态。如果一个 “已损坏” 的标签页被关闭，它将无法被重新打开（甚至通过启动时的会话还原也做不到），当它被再次加载时，它的网址将会被丢失。此选项将会重新加载 “已损坏” 标签页（其实就是重新设置这些标签页的网址），然后再卸载它们。这些 “已损坏” 的标签页在被修复前可能需要被重新加载多次。（与其它标签页卸载工具兼容。）",
         "hash": "02374404917e2344c400be9bba235995"
     },
     "options_TabRestoreFix_reloadBrokenTabs_Normal": {
@@ -244,7 +244,7 @@
         "hash": "c015999b475e7dda094851363a10c66d"
     },
     "options_TabRestoreFix_waitForUrlInMilliseconds": {
-        "message": "一个已被卸载的标签页偶尔不会被正确地还原。在修复它之前将会等待该时间（和其它标签页卸载器兼容）（以毫秒为单位）（-1 代表禁用）：",
+        "message": "一个已被卸载的标签页偶尔不会被正确地还原。在修复它之前将会等待该时间（和其它标签页卸载工具兼容）（以毫秒为单位）（-1 代表禁用）：",
         "hash": "497e4c7c4df45cb54205709e46692b6c"
     },
     "options_TabRestoreFix_waitForIncorrectLoad": {
@@ -256,19 +256,19 @@
         "hash": "5ab8426310875d06063ea1726c9386f4"
     },
     "options_TabRestoreFix_permissionWarning": {
-        "message": "请注意： 这需要 “标签页” 权限。（如果已安装 树状标签页 ，则即使没有该权限，其也能部分工作。）",
+        "message": "请注意： 这需要 “标签页” 权限。（如果已安装 Tree Style Tab ，则即使没有该权限，其也能部分工作。）",
         "hash": "8d96a02f94f39f73f9cdaf47a83c2b6f"
     },
     "options_TabRestoreFix_deprecatedWarning": {
-        "message": "该片段是对一个 Firefox bug 所作出的变通方法，其已于 Firefox 62 中被修复。",
+        "message": "该片段是对一个 Firefox 的 bug 所作出的变通方法，其已于 Firefox 62 中被修复。",
         "hash": "710b0d7f2412612c6991288ea5d85d0b"
     },
     "options_TreeStyleTabStyle_Header": {
-        "message": "自定义标签树和标签页样式",
+        "message": "自定义 Tree Style Tab 样式",
         "hash": "5fd0a0ee2bbe488ede1949028db3ede2"
     },
     "options_TreeStyleTabStyle_Info": {
-        "message": "这里就是此扩展对 树状标签页 侧栏所做的样式更改：",
+        "message": "这里就是此扩展对 Tree Style Tab 侧栏所做的样式更改：",
         "hash": "65a3e86ca827c4743996ed9d0a2d00bb"
     },
     "options_unloadAgainAfterDelay": {
@@ -280,7 +280,7 @@
         "hash": "ac94ae03e6a14bc15ecdb2084dc56822"
     },
     "options_unloadViaAutoTabDiscard_Name": {
-        "message": "自动丢弃标签页",
+        "message": "Auto Tab Discard",
         "hash": "e7698a4f219f82720687a412ed05bf19"
     },
     "options_unloadViaAutoTabDiscard_URL": {
@@ -312,7 +312,7 @@
         "hash": "3e4c94412820831fbea1494aa4d5ecf4"
     },
     "options_Commands_Info": {
-        "message": "选择下方的一个文本输入框，然后按下一个键盘组合比如 “Alt+X” 来将其绑定为所选文本框的键盘快捷方式。如果你想的话，也可以按下 “指定” 按钮并手动输入一个键盘快捷方式。（键盘快捷方式需要 Firefox 60 或者 更新的版本）",
+        "message": "选择下方的一个文本输入框，然后按下一个键盘组合比如 “Alt+X” 来将其绑定为所选文本框的键盘快捷方式。如果你想的话，也可以按下 “指定” 按钮并手动输入一个键盘快捷方式。（键盘快捷方式需要 Firefox 60 或者 更高的版本）",
         "hash": "d6711bc41af7a9731bc4b1d271f65d27"
     },
     "options_Commands_ResetButton": {
@@ -400,7 +400,7 @@
         "hash": "e20b369d5898f439e32492ec58bebae0"
     },
     "permissionsPage_Info_Bug": {
-        "message": "Firefox 的bug",
+        "message": "Firefox 的 bug",
         "hash": "14c1dd0ce7c71705f066be31c2141ffd"
     },
     "permissionsPage_Info_End": {
@@ -418,7 +418,7 @@
         "hash": "19897ed83ded86d5294cc214607f5b9e"
     },
     "contextMenu_rootItemTitle": {
-        "message": "标签页卸载器",
+        "message": "标签页卸载工具",
         "hash": "c7af804c17996fe7a3db2059fae79655"
     },
     "treeStyleTabStyle_dimUnloadedTabs": {
