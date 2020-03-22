@@ -1,0 +1,434 @@
+{
+    "options_extensionToggle_DisableButton": {
+        "message": "禁用扩展",
+        "hash": "b80731df5e051b1d48b870883db518a8"
+    },
+    "options_extensionToggle_EnableButton": {
+        "message": "启用扩展",
+        "hash": "c61d05c3db531f0ee5f15ef296f6ae73"
+    },
+    "options_extensionToggle_Status_Header": {
+        "message": "扩展状态：",
+        "hash": "9a1c365e53e90af8c37d2146ef2cb96e"
+    },
+    "options_extensionToggle_Status_Enabled": {
+        "message": "已启用",
+        "hash": "9689c35327e2444f88c808cffbdf2920"
+    },
+    "options_extensionToggle_Status_Disabled": {
+        "message": "已禁用",
+        "hash": "624dcfb216e1ef66dcac7893dbe10821"
+    },
+    "options_unloadOnLeftClick": {
+        "message": "左键点击标签页进行卸载。",
+        "hash": "8be2de96c9e51a9e56ef5da305c3330a"
+    },
+    "options_unloadOnMiddleClick": {
+        "message": "中键点击标签页进行卸载。（请注意，在 Tree Style Tab v2.4.18 以及更早的版本中，Tree Style Tab 的默认动作无法被阻止。这意味着，如果在一个标签页上按下鼠标中键又松开，那么这个标签页将会被关闭。为了能在 Tree Style Tab 的这些版本中通过中键点击来卸载标签页，您需要先按住鼠标中键并将鼠标拖动至另一个标签页后再松开。）",
+        "hash": "93952a4c13dfcccabdb1055a28adc77e"
+    },
+    "options_unloadOnRightClick": {
+        "message": "右键点击标签页进行卸载。（目前无法阻止上下文菜单被打开。）",
+        "hash": "db36e4484c2b8627452e671f047a1ffc"
+    },
+    "options_unloadOnLeftClick_Title": {
+        "message": "左键点击以卸载标签页",
+        "hash": "3670a40eb71d5528eb3790e380b04c55"
+    },
+    "options_unloadOnMiddleClick_Title": {
+        "message": "中键点击以卸载标签页",
+        "hash": "81b678ca3920bce09f9df8fce4cd9032"
+    },
+    "options_unloadOnRightClick_Title": {
+        "message": "右键点击以卸载标签页",
+        "hash": "748520af9a3083019ab8d7d9e20da432"
+    },
+    "options_selectOnLeftClick": {
+        "message": "防止通过左键点击来选择标签页。如果此操作成功，那么被点击的标签页将不会被选中。",
+        "hash": "fe1eb81c8508651fb449dc35a05f23da"
+    },
+    "options_selectOnLeftClick_Title": {
+        "message": "防止通过左键点击来选择标签页",
+        "hash": "9e3e8bcc73eee665e06e5f8e47a5d998"
+    },
+    "options_closeOnMiddleClick": {
+        "message": "防止通过中键点击来关闭标签页。如果此操作成功，那么被点击的标签将不会被关闭。（请注意，在 Tree Style Tab v2.4.18 以及更早的版本中，该项无法实现）",
+        "hash": "16339ed2c3ec2338ceee18410dcf4067"
+    },
+    "options_closeOnMiddleClick_Title": {
+        "message": "防止通过中键点击来关闭标签页",
+        "hash": "482cf8f20be91a9ce8e9b5c071d615e8"
+    },
+    "options_modifierKeysInfo": {
+        "message": "只有在按下所选修饰按键并松开剩余修饰按键时，该次点击才会触发相应操作。",
+        "hash": "4fdf47832c9fba89589ea367fd3972b6"
+    },
+    "options_modifierKeysAnyMode": {
+        "message": "任意按键模式：如果此项被勾选，那么只要按住所选修饰按键中的至少一个，点击就会触发相应操作。不需要同时按住所有被勾选的修饰按键。未被勾选的修饰按键的状态会被忽略。如果没有修饰按键被勾选，那么点击将一直触发相应操作。",
+        "hash": "3ecc9663e225c082f3e9075f01c88fdd"
+    },
+    "options_modifierKey_Ctrl": {
+        "message": "Ctrl",
+        "hash": "9a56ef2052b663bb43d70803ccf4c907"
+    },
+    "options_modifierKey_Shift": {
+        "message": "Shift",
+        "hash": "2b34fb1481182ab8c1ffac3d2cc9493c"
+    },
+    "options_modifierKey_Alt": {
+        "message": "Alt",
+        "hash": "a65b71114daa3d6da5528b783fe54142"
+    },
+    "options_modifierKey_Meta": {
+        "message": "Meta（MacOS 中的命令）",
+        "hash": "6ff938394459c9d95fbc195fafe1e29f"
+    },
+    "options_clickTimeoutInfo": {
+        "message": "测量点击的持续时间，也就是鼠标按下和松开之间的间隔时间。确保其在一定的间隔之内。设置一个最小时间，可使得相应操作只会在长按时被触发；或者设置一个最大时间，防止相应操作在拖放或长按标签页时被触发。",
+        "hash": "ca98ebfadc33ba16860c980e813b227a"
+    },
+    "options_clickTimeoutMin": {
+        "message": "最小点击时长，单位为毫秒（设为 0 以禁用）：",
+        "hash": "6d7cb8db7e1dc76b2cc2205fba68aaa1"
+    },
+    "options_clickTimeoutMax": {
+        "message": "最大点击时长，单位为毫秒（设为 0 以禁用）：",
+        "hash": "ef96bd95e94bcecbbd84e0a8cac2588f"
+    },
+    "options_doubleClick_enabled": {
+        "message": "检测双击。",
+        "hash": "49cce27e472cb4b300132f622960dbaf"
+    },
+    "options_doubleClick_only": {
+        "message": "如果此项被勾选，将只有双击才会触发相应操作；反之，双击将会取消相应操作。",
+        "hash": "647de54cd4a6e2b8320632b88bc78df7"
+    },
+    "options_doubleClick_timeout": {
+        "message": "若两次鼠标按下事件之间的间隔时间小于该值，则会被算作双击，单位为毫秒：",
+        "hash": "23f2d9684d73a9389ff631e89a73e7a5"
+    },
+    "options_onDrag_enabled": {
+        "message": "检测没有拖放行为的长按。这是一个特殊通知，会在标签页被鼠标左键长按时由 Tree Style Tab 进行发送。如果该标签页被拖动，则该通知不会被发送。这个可以用来允许通过长按进行的操作，并在拖放标签页时取消。",
+        "hash": "a5ec83872d5206ebcbd7d904dff93556"
+    },
+    "options_onDrag_cancel": {
+        "message": "一个事件被触发时，如果此项被勾选，则取消相应操作；反之，则允许相应操作。",
+        "hash": "7e56907f7a4daed41418328b9e02f3b3"
+    },
+    "options_onDrag_mouseUpTigger": {
+        "message": "如果此项被勾选，那么鼠标松开事件会被当做长按事件来触发相应操作。目前 Tree Style Tab 不会在拖放操作后发送鼠标松开事件，所以如果要发送一个鼠标松开事件，那么在此之前拖放不能被指定用途。这意味着，如果此项被勾选，那么该事件会在拖放没有被指定用途时才触发相应操作。",
+        "hash": "2168e72a6c43f6aae0e85acbe88027d2"
+    },
+    "options_onDrag_timeout": {
+        "message": "以毫秒为单位的长按等待时间（如果该标签页未被拖动，则应在 400 毫秒后进行告知）：",
+        "hash": "1986726cb0fd589f6f0bc10263b8a43d"
+    },
+    "options_dontPreventTSTAction": {
+        "message": "不要阻止 Tree Style Tab 的默认动作。",
+        "hash": "bd91fd86d0ce474e574adb7f1e8b4d86"
+    },
+    "options_applyToAll": {
+        "message": "同时应用于已加载和未加载标签页。",
+        "hash": "b2982c5c92bd0e95032d96b711a0d6a6"
+    },
+    "options_applyToUnloadedTabs": {
+        "message": "在未加载标签页而非已加载标签页上的点击才会触发相应操作。",
+        "hash": "4cc5f4e241fe4c7218a37225a7a1a34f"
+    },
+    "options_useSelectedTabs": {
+        "message": "卸载所选标签页：如果多个标签页被选中，则将其全部卸载。",
+        "hash": "f718b86f450be7944ee9484698a1fd59"
+    },
+    "options_fallbackToLastSelected": {
+        "message": "选择上次聚焦：如果标签页为活动状态，则会选择上次聚焦的标签页。如果此项未被勾选，则最近的标签页会被选中。",
+        "hash": "0587dd90d5a9004f57622904af2d861a"
+    },
+    "options_ignoreHiddenTabs": {
+        "message": "忽略隐藏标签页：如果标签页为活动状态，则新选择的标签页不能是隐藏标签页。",
+        "hash": "d6bd679f1cfb21b8cc79c25d2ca6f397"
+    },
+    "options_contextMenuItems_Title": {
+        "message": "上下文菜单项",
+        "hash": "769b0fe66cd898c7a43e94ed2b5d7b74"
+    },
+    "options_contextMenu_in_tab_bar": {
+        "message": "在 Firefox 的原生标签栏中显示相关上下文菜单项。（需要 Firefox 64 以及更高的版本。）",
+        "hash": "2be82a667deb7d7e9bd99c4de7e7cad1"
+    },
+    "options_tstContextMenu_CustomRootLabel": {
+        "message": "如果有超过一个上下文菜单项，那么它们将会被集中到一个条目当中，该条目名为（在字母之前放置一个 “&” 符号将会使该字母被用作该项的键盘快捷方式）（留空代表使用默认标签）：",
+        "hash": "6bdcc242a939fd143fa040fc2839041a"
+    },
+    "options_unloadInTSTContextMenu_Title": {
+        "message": "卸载标签页",
+        "hash": "862c74cce2d43071305c014ffe9df09e"
+    },
+    "options_unloadTreeInTSTContextMenu_Title": {
+        "message": "卸载标签树",
+        "hash": "56dd041b4aeb212f337be91d6e28112e"
+    },
+    "options_unloadInTSTContextMenu": {
+        "message": "在 Tree Style Tab 的上下文菜单项中添加一项，用来卸载标签页。",
+        "hash": "960200a6f31e2c0a19d98c5bd438f982"
+    },
+    "options_unloadTreeInTSTContextMenu": {
+        "message": "在 Tree Style Tab 的上下文菜单项中添加一项，用来卸载标签树。",
+        "hash": "a40c58f90a72af71e03432df64928154"
+    },
+    "options_contextMenu_customLabel": {
+        "message": "自定义上下文菜单项标签（在字母之前放置一个 “&” 符号将会使该字母被用作该项的键盘快捷方式）（留空代表使用默认标签）：",
+        "hash": "b95df73871d284aa6901c7059fc05006"
+    },
+    "options_unloadInTSTContextMenu_DelayedRegistration": {
+        "message": "在延迟一定时间后再将上下文菜单项重新注入到 Tree Style Tab ，以保证它们被放置在整个上下文菜单的末尾。该延迟以毫秒为单位（0 代表禁用）：",
+        "hash": "130005c3dce2926b49451d5589c74bb0"
+    },
+    "options_dimUnloadedTabs": {
+        "message": "让 Tree Style Tab 侧栏中的未加载标签页变暗。",
+        "hash": "24f08b075df48d93f4cbfe8a8c7712bc"
+    },
+    "options_disableOptionsPageAnimations": {
+        "message": "禁用选项页面的动画",
+        "hash": "535a4c7a702ca4ede76ac286216c5ea3"
+    },
+    "options_TabHide_Header": {
+        "message": "标签页隐藏",
+        "hash": "fae353353336e63bcf296fcb4c8ddbd3"
+    },
+    "options_TabHide_HideUnloadedTabs": {
+        "message": "通过用于隐藏标签页的 API 来隐藏未加载标签页。隐藏标签页不会被显示在工具栏中，且无法被键盘快捷方式选中。在当前标签页被关闭时，只要还有其它可见标签页，隐藏标签页就不会被选中。固定标签页无法被隐藏。",
+        "hash": "f389ef6ea005b497d7ce9d86eb4d4bad"
+    },
+    "options_TabHide_SuppressTSTHiddenClass": {
+        "message": "禁止 Tree Style Tab 中关于隐藏标签页的特殊行为。",
+        "hash": "e9d35c95cd2aded7ab841d040ae1f3af"
+    },
+    "options_TabHide_ShowHiddenTabsInTST": {
+        "message": "在 Tree Style Tab 侧栏中显示隐藏标签页。",
+        "hash": "720a7b045f218fb4200814f9e3236673"
+    },
+    "options_TabHide_Info": {
+        "message": "如果该选项被启用，那么其对于取消勾选所有的 “$ignoreHiddenTabsOption$” 复选框来说是有用的。\n\n为了仍然能够选中未加载标签页，你可以使用 “$showHiddenTabsInTSTOption$” 选项。\n\n请注意：这需要 “标签页隐藏” 权限。而且此功能同样是实验性的，可能不会正确工作。",
+        "placeholders": {
+            "ignoreHiddenTabsOption": { "content": "$1" },
+            "showHiddenTabsInTSTOption": { "content": "$2" }
+        },
+        "hash": "e0fb2c35c3b0208e8f207279e3d15e20"
+    },
+    "options_TabRestoreFix_Header": {
+        "message": "修复未成功的标签页还原",
+        "hash": "ee1534abe23debc42cce709e04bea9b4"
+    },
+    "options_TabRestoreFix_reloadBrokenTabs": {
+        "message": "当通过 WebExtensions API 来卸载一个标签页时，该标签页偶尔会被置为 “已损坏” 状态。如果一个 “已损坏” 的标签页被关闭，它将无法被重新打开（甚至通过启动时的会话还原也做不到），当它被再次加载时，它的网址将会被丢失。此选项将会重新加载 “已损坏” 标签页（其实就是重新设置这些标签页的网址），然后再卸载它们。这些 “已损坏” 的标签页在被修复前可能需要被重新加载多次。（与其它标签页卸载工具兼容。）",
+        "hash": "02374404917e2344c400be9bba235995"
+    },
+    "options_TabRestoreFix_reloadBrokenTabs_Normal": {
+        "message": "在普通窗口中重新载入 “已损坏” 标签页。",
+        "hash": "3a50548fcebbe7e337d362729b49df68"
+    },
+    "options_TabRestoreFix_reloadBrokenTabs_Private": {
+        "message": "在隐私窗口中重新载入 “已损坏” 标签页。",
+        "hash": "8366577d68f778721e105933a0f047ba"
+    },
+    "options_TabRestoreFix_reloadBrokenTabs_QuickUnload": {
+        "message": "加载一个未加载标签页然后立即将其卸载，且在其被卸载时不显示加载图标，这是可以做到的。这个可以被用来快速而有效地判断一个标签页是否 “已损坏” 。不幸的是，使用该技巧会导致扩展 API 错误地将该标签页的网址报告为默认网址 “about:blank” 。这意味着，在处理这些被 “快速” 卸载的标签页时，一些扩展可能无法按照预期进行工作。这个问题将会在该标签页被再次加载时立刻消失。",
+        "hash": "bfd6a80d679a17c18f501a18536689b7"
+    },
+    "options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Normal": {
+        "message": "允许用 “快速卸载” 来测试普通窗口中的 “已损坏” 标签页。",
+        "hash": "3f2e1a6a28d2b0343806e816f5302a87"
+    },
+    "options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Private": {
+        "message": "允许用 “快速卸载” 来测试隐私窗口中的 “已损坏” 标签页。",
+        "hash": "c015999b475e7dda094851363a10c66d"
+    },
+    "options_TabRestoreFix_waitForUrlInMilliseconds": {
+        "message": "一个已被卸载的标签页偶尔不会被正确地还原。在修复它之前将会等待该时间（和其它标签页卸载工具兼容）（以毫秒为单位）（-1 代表禁用）：",
+        "hash": "497e4c7c4df45cb54205709e46692b6c"
+    },
+    "options_TabRestoreFix_waitForIncorrectLoad": {
+        "message": "Firefox 偶尔会将未加载状态的标签页标记为已加载。当这种情况发生时，其首先会将该标签页标记为未加载，然后立刻标记为已加载。如果该标签页被标记为未加载然后又在这里指定的时间之内被标记为已加载，那么此选项将能够使得该标签页在其被激活时才得到修复。错误加载的等待时间（以毫秒为单位）为（-1 代表禁用）：",
+        "hash": "564b86a2b7a9862eee83c5f568278951"
+    },
+    "options_TabRestoreFix_fixIncorrectLoadAfter": {
+        "message": "如果该标签页被 Firefox 错误地标记为已加载，则在延迟该时间（以毫秒为单位）后再次卸载它，以使其被标记为未加载（-1 代表禁用）：",
+        "hash": "5ab8426310875d06063ea1726c9386f4"
+    },
+    "options_TabRestoreFix_permissionWarning": {
+        "message": "请注意： 这需要 “标签页” 权限。（如果已安装 Tree Style Tab ，则即使没有该权限，其也能部分工作。）",
+        "hash": "8d96a02f94f39f73f9cdaf47a83c2b6f"
+    },
+    "options_TabRestoreFix_deprecatedWarning": {
+        "message": "该片段是对一个 Firefox 的 bug 所作出的变通方法，其已于 Firefox 62 中被修复。",
+        "hash": "710b0d7f2412612c6991288ea5d85d0b"
+    },
+    "options_TreeStyleTabStyle_Header": {
+        "message": "自定义 Tree Style Tab 样式",
+        "hash": "5fd0a0ee2bbe488ede1949028db3ede2"
+    },
+    "options_TreeStyleTabStyle_Info": {
+        "message": "这里就是此扩展对 Tree Style Tab 侧栏所做的样式更改：",
+        "hash": "65a3e86ca827c4743996ed9d0a2d00bb"
+    },
+    "options_unloadAgainAfterDelay": {
+        "message": "在卸载多个标签页时，间隔一个短暂延迟（以毫秒为单位）后再进行下一次卸载。该延迟大小为（-1 代表禁用）：",
+        "hash": "f545d1213903115101330c00d3f039db"
+    },
+    "options_unloadViaAutoTabDiscard_Prefix": {
+        "message": "通过",
+        "hash": "ac94ae03e6a14bc15ecdb2084dc56822"
+    },
+    "options_unloadViaAutoTabDiscard_Name": {
+        "message": "Auto Tab Discard",
+        "hash": "e7698a4f219f82720687a412ed05bf19"
+    },
+    "options_unloadViaAutoTabDiscard_URL": {
+        "message": "https://addons.mozilla.org/firefox/addon/auto-tab-discard/",
+        "hash": "2aa03c4fb60ac23be5010dd2c0dbab11"
+    },
+    "options_unloadViaAutoTabDiscard_Suffix": {
+        "message": "扩展来卸载标签页",
+        "hash": "6bd7d33da5e74b6eec55d27f93675a1e"
+    },
+    "options_OptionalPermissions_Header": {
+        "message": "可选权限",
+        "hash": "d26b6626a41a0e2af8629717b6bb1a39"
+    },
+    "options_OtherSettings_Header": {
+        "message": "其它设置",
+        "hash": "0da3b206ce82c07a308c4754fb8a5afe"
+    },
+    "options_ResetSettings_Button": {
+        "message": "重置设置",
+        "hash": "f5545c85577b03ed93d451abf748ce8d"
+    },
+    "options_ResetSettings_Prompt": {
+        "message": "您想要重置所有设置为默认值吗",
+        "hash": "efb0732b8fbad8ba229adacec8e59350"
+    },
+    "options_Commands_Title": {
+        "message": "键盘快捷键",
+        "hash": "3e4c94412820831fbea1494aa4d5ecf4"
+    },
+    "options_Commands_Info": {
+        "message": "选择下方的一个文本输入框，然后按下一个键盘组合比如 “Alt+X” 来将其绑定为所选文本框的键盘快捷方式。如果你想的话，也可以按下 “指定” 按钮并手动输入一个键盘快捷方式。（键盘快捷方式需要 Firefox 60 或者 更高的版本）",
+        "hash": "d6711bc41af7a9731bc4b1d271f65d27"
+    },
+    "options_Commands_ResetButton": {
+        "message": "重置",
+        "hash": "0d25968a7dfc21f95043a86dd5373b81"
+    },
+    "options_Commands_PromptButton": {
+        "message": "指定",
+        "hash": "9635e60de0a0ced247f57a018b078152"
+    },
+    "options_Commands_PromptButton_Description": {
+        "message": "请输入文本来表示一个键盘快捷键。 比如 “Alt+X”",
+        "hash": "2b60e52f0d530f4e64cb067e788ce50f"
+    },
+    "options_Commands_UnloadTab": {
+        "message": "卸载标签页",
+        "hash": "862c74cce2d43071305c014ffe9df09e"
+    },
+    "options_Commands_UnloadTree": {
+        "message": "卸载标签树",
+        "hash": "56dd041b4aeb212f337be91d6e28112e"
+    },
+    "optionalPermissions_Request": {
+        "message": "请求",
+        "hash": "6308e104f913c46817c56d0aa5e7a001"
+    },
+    "optionalPermissions_Remove": {
+        "message": "移除",
+        "hash": "3908a268c854fe64242e38845dbb7c81"
+    },
+    "optionalPermissions_Available": {
+        "message": "是否被授予：",
+        "hash": "11e3e2893bac3b5c26b7bd37b5073de1"
+    },
+    "optionalPermissions_Granted": {
+        "message": "是",
+        "hash": "2d26162c8b4948b9e1bb7afbcddff3cb"
+    },
+    "optionalPermissions_NotGranted": {
+        "message": "否",
+        "hash": "746d8eb67a9d40ab91403bae19a08c92"
+    },
+    "optionalPermissions_TabHide_Title": {
+        "message": "“隐藏标签页”",
+        "hash": "8310fd5cdd0c10a45aaf0aa7ff4a4a2e"
+    },
+    "optionalPermissions_TabHide_Explanation": {
+        "message": "通过用来隐藏标签页的 API 来隐藏标签页时需要用到 “标签页隐藏” 权限。\n\n在 Firefox 59 和 60 中，这是一个实验性的 API 。若要在 Firefox 59 或 60 中启用它，请访问 “about:config” 并将 “extensions.webextensions.tabhide.enabled” 设置为 true 。\n\n如果该 API 未被启用，那么它将无法被使用，即使已被授予权限。",
+        "hash": "ef57213eb0aa98ff1bd8417cf75ca2d6"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Header": {
+        "message": "API 状态：",
+        "hash": "1e43f9d064762a63d31ad8949f378f57"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Enabled": {
+        "message": "可用",
+        "hash": "c9988aeddd357b9fe8a20daab44d980c"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Disabled": {
+        "message": "不可用",
+        "hash": "b57d09b2b7322d3eb14568c9d161a348"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Error": {
+        "message": "权限被拒绝",
+        "hash": "697edcc886c7ae0314fba8b0d400f79e"
+    },
+    "optionalPermissions_TabHide_APIEnabled_Check": {
+        "message": "检查 API 状态",
+        "hash": "9fef3e2ec434d6c69d97d8514dfe0d1e"
+    },
+    "optionalPermissions_Tabs_Title": {
+        "message": "“标签页”",
+        "hash": "3ef094340e2e6e981a0b8f44a4d80021"
+    },
+    "optionalPermissions_Tabs_Explanation": {
+        "message": "访问标签页的标题或网址需要 “标签页” 权限。\n\n此权限会用来修复某些标签页（这些标签页的网址需要被重新设置，因此未能被正确还原）。",
+        "hash": "ab8673afa4124b79b793ff0342de7acd"
+    },
+    "permissionsPage_Title": {
+        "message": "权限",
+        "hash": "29dcac1ee5e888f5435ab6fc809cdc4b"
+    },
+    "permissionsPage_Info_Start": {
+        "message": "由于一个",
+        "hash": "e20b369d5898f439e32492ec58bebae0"
+    },
+    "permissionsPage_Info_Bug": {
+        "message": "Firefox 的 bug",
+        "hash": "14c1dd0ce7c71705f066be31c2141ffd"
+    },
+    "permissionsPage_Info_End": {
+        "message": "当前无法从选项页面中获取可选权限。作为一个变通方法，请从此页面中获取权限。",
+        "hash": "467fde8d45d30c1d1db90623b2bdd401"
+    },
+    "contextMenu_unloadTab": {
+        "message": "挂起标签页(&A)",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut.",
+        "hash": "ece30802b4bf70b6fd9e3414c4ca1a15"
+    },
+    "contextMenu_unloadTree": {
+        "message": "挂起标签树",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut.",
+        "hash": "19897ed83ded86d5294cc214607f5b9e"
+    },
+    "contextMenu_rootItemTitle": {
+        "message": "标签页卸载工具",
+        "hash": "c7af804c17996fe7a3db2059fae79655"
+    },
+    "treeStyleTabStyle_dimUnloadedTabs": {
+        "message": "让未加载标签页变暗",
+        "hash": "3ad637eb56c67a48199c4c2af6cb7e78"
+    },
+    "treeStyleTabStyle_showHiddenTabs": {
+        "message": "显示隐藏标签页",
+        "hash": "ccbcfd4478b2e97d6d7d4a8378227dc0"
+    },
+
+    "__WET_LOCALE__": { "message": "zh" }
+}
