@@ -324,7 +324,7 @@
         "hash": "9635e60de0a0ced247f57a018b078152"
     },
     "options_Commands_PromptButton_Description": {
-        "message": "请输入文本来表示一个键盘快捷键。 比如 “Alt+X”",
+        "message": "请输入文本来表示一个键盘快捷键。比如 “Alt+X”",
         "hash": "2b60e52f0d530f4e64cb067e788ce50f"
     },
     "options_Commands_UnloadTab": {
