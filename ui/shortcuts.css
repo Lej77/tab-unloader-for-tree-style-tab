@@ -1,0 +1,46 @@
+/* #region Shortcuts */
+
+.commandsArea {
+    margin-top: 15px;
+}
+.commandArea {
+    flex: 1 1 auto !important;
+    align-self: center;
+    display: flex;
+
+    overflow: hidden;
+
+    z-index: 1000 !important;
+}
+
+.commandArea > label {
+    text-align: center;
+    flex: 1 1 auto !important;
+}
+
+.commandArea > .inputArea {
+    display: flex;
+    padding: 0px;
+    margin: -2px;
+    font-size: 20px;
+}
+.commandArea > .inputArea * {
+    flex: 1 1 auto;
+}
+
+.commandArea > .inputArea > input[type="text"] {
+    width: 200px;
+    margin-right: 5px;
+    margin-left: -1px;
+
+    padding-left: 10px;
+}
+
+.commandArea > .inputArea > button {
+    text-align: center;
+}
+.commandArea > .inputArea > button:first-of-type {
+    margin-right: -2px;
+}
+
+/* #endregion Shortcuts */

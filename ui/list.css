@@ -1,0 +1,100 @@
+/* #region List */
+
+.dragging * {
+    cursor: initial !important;
+    -moz-user-select: none;
+}
+.draggable,
+[draggable=true] {
+    cursor: move;
+    pointer-events: initial !important;
+}
+
+.list {
+    padding: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.listItem.dragged > .sectionWrapper {
+    opacity: 0.6;
+}
+
+.listItem > .sectionWrapper {
+    border: 2px solid transparent;
+    border-radius: 5px;
+}
+
+.listItem.dropTarget > .sectionWrapper {
+    border-color: black;
+    background-color: black;
+}
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme .listItem.dropTarget > .sectionWrapper {
+        border-color: white;
+        background-color: white;
+    }
+}
+
+.dropMarker {
+    height: 2px;
+    margin: 12px;
+}
+.dropMarker.dropTarget {
+    background-color: black;
+}
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme .dropMarker.dropTarget {
+        background-color: white;
+    }
+}
+
+.listItemDragWrapper {
+    width: 40px;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+
+    align-self: stretch;
+}
+.listItemDragWrapper * {
+    flex: 0 0 auto;
+}
+.dragIcon {
+    --drag-icon-border-size: 2px;
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    justify-content: space-between;
+}
+.dragIconLine {
+    width: 100%;
+    flex: 0 0 auto;
+
+    background-color: hsl(0, 0%, 60%);
+    height: var(--drag-icon-border-size);
+}
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme .dragIconLine {
+        background-color: hsl(0, 0%, 90%);
+    }
+}
+.dragIcon * {
+    transition: background-color 0.05s;
+}
+.dragIcon.dragged *,
+.dragIcon:hover * {
+    background-color: hsl(196, 61%, 59%);
+}
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme .dragIcon.dragged *,
+    :root.support-dark-theme .dragIcon:hover * {
+        background-color: hsl(207, 100%, 70%);
+    }
+}
+
+/* #endregion List */

@@ -1,8 +1,17 @@
+@import "../ui/collapsable.css";
+@import "../ui/shortcuts.css";
+@import "../ui/status-indicator.css";
+@import "../ui/screen-block.css";
+@import "../ui/utilities.css";
+@import "../ui/permissions.css";
+@import "../ui/list.css";
+
+
 body {
     overflow-y: hidden;
 }
 
-.extensionToggleArea {    
+.extensionToggleArea {
     display: flex;
     justify-content: space-between;
     margin-bottom: 35px;

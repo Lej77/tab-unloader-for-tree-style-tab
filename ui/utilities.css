@@ -1,0 +1,63 @@
+/* #region Global */
+
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme,
+    :root.support-dark-theme body {
+        background: #202023;
+        color: white;
+    }
+    :root.support-dark-theme select,
+    :root.support-dark-theme input,
+    :root.support-dark-theme textarea {
+        background: hsl(240, 2%, 25%);
+        border-color: transparent;
+        color: rgb(249, 249, 250);
+    }
+
+    /* Links: */
+    :root.support-dark-theme :link {
+        color: hsl(210, 100%, 64%);
+    }
+    :root.support-dark-theme :visited {
+        color: hsl(214, 100%, 48%);
+    }
+    :root.support-dark-theme :link:hover,
+    :root.support-dark-theme :visited:hover {
+        color: hsl(210, 100%, 54%);
+    }
+    :root.support-dark-theme :link:active,
+    :root.support-dark-theme :visited:active {
+        color: hsl(214, 100%, 48%);
+    }
+}
+
+
+.textSelectable {
+    -moz-user-select: text;
+}
+.textNotSelectable {
+    -moz-user-select: none;
+}
+
+*[class*='message'] {
+    white-space: pre-line;
+}
+
+
+.area {
+    border: 1px solid black;
+    border-radius: 5px;
+}
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme .area {
+        border-color: white;
+    }
+}
+.area:not(.noPadding) {
+    padding: 10px;
+}
+.area:not(.noMargin) {
+    margin: 3px;
+}
+
+/* #endregion Global */

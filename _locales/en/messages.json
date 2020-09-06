@@ -110,6 +110,15 @@
     "options_ignoreHiddenTabs": {
         "message": "Ignore hidden tabs: if tab is active then the tab that is selected instead must not be hidden."
     },
+    "options_select_IgnoreHiddenTabs": {
+        "message": "Ignore hidden tabs: the tab that is selected must not be hidden."
+    },
+    "options_wrapAround": {
+        "message": "Wrap around when selecting: when searching for a new tab to select the search will wrap around from the start to the end or from the end to the start of the tab list."
+    },
+    "options_applyToTstTree": {
+        "message": "Unload Tree: if the tab that should be unloaded has child tabs then those will be unloaded as well."
+    },
     "options_contextMenuItems_Title": {
         "message": "Context menu items"
     },
@@ -143,6 +152,9 @@
     "options_disableOptionsPageAnimations": {
         "message": "Disable animations on options page."
     },
+    "options_disableOptionsPageDarkTheme": {
+        "message": "Disable dark theme support on options page."
+    },
     "options_TabHide_Header": {
         "message": "Tab Hiding"
     },
@@ -167,7 +179,7 @@
         }
     },
     "options_TabRestoreFix_Header": {
-        "message": "Fix for failed tab restore"
+        "message": "Fix for failed tab restore (Firefox 61 and earlier)"
     },
     "options_TabRestoreFix_reloadBrokenTabs": {
         "message": "When a tab is unloaded with the WebExtensions API it can sometimes be put in a \"broken\" state. A \"broken\" tab can't be re-opened if it is closed (not even with session restore at startup) and when its loaded again it will lose its URL. This option will reload (actually re-setting the tab's URL) \"broken\" tabs and then unload them again. \"Broken\" tabs might need to be reloaded many times before they are fixed. (Compatible with other tab unloaders.)"
@@ -255,6 +267,12 @@
     },
     "options_Commands_UnloadTree": {
         "message": "Unload tree"
+    },
+    "options_Commands_SelectPreviousTab": {
+        "message": "Select previous loaded tab"
+    },
+    "options_Commands_SelectNextTab": {
+        "message": "Select next loaded tab"
     },
     "optionalPermissions_Request": {
         "message": "Request"

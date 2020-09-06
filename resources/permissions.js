@@ -1,15 +1,23 @@
 
+import {
+    createPermissionsArea,
+} from '../ui/common.js';
+
+import {
+    setTextMessages,
+} from '../ui/utilities.js';
+
+
 async function initiatePage() {
+    const permissionsArea = createPermissionsArea({ standardSectionAnimationInfo: { standard: true, bodyImmediately: false } });
+    document.body.appendChild(permissionsArea.area);
 
-  let permissionsArea = createPermissionsArea({standardSectionAnimationInfo: { standard: true, bodyImmediately: false }});
-  document.body.appendChild(permissionsArea.area);
+    try {
+        document.title = browser.i18n.getMessage('permissionsPage_Title');
+    } catch (error) { }
 
-  try {
-    document.title = browser.i18n.getMessage('permissionsPage_Title');  
-  } catch (error) { }
-  
 
-  setTextMessages();
+    setTextMessages();
 }
 
 

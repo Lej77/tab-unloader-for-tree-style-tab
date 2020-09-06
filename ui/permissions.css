@@ -1,0 +1,60 @@
+/* #region Optional Permissions */
+
+.permissionController .permissionHeader {
+    flex: 1 1 auto !important;
+    align-self: center;
+    font-size: 20px;
+}
+
+.permissionController .manageArea {
+    display: flex;
+    padding: 0px;
+    margin: -2px;
+}
+.permissionController .manageArea > *:not(:first-child) {
+    margin-left: -2px;
+}
+
+
+.permissionController .permissionIndicator {
+    font-size: 15px;
+
+    align-self: stretch;
+}
+.permissionController .permissionIndicator > * {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+.permissionController .permissionIndicator .statusIndicatorValues {
+    padding-left: 5px;
+}
+
+
+:root.prompting > *:not(.prompt) {
+    opacity: 0.6;
+}
+:root.prompting .screenBlocker {
+    background-color: hsla(0, 0%, 0%, 30%);
+}
+
+.browserActionPrompt:not(.active) {
+    display: none;
+}
+.browserActionPrompt {
+    position: absolute;
+    background-color: white;
+    border: 1px solid black;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 5px 5px 10px -1px;
+    width: 80%;
+    left: 10%;
+}
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme .browserActionPrompt {
+        background: #202023;
+        box-shadow: none;
+    }
+}
+
+/* #endregion Optional Permissions */

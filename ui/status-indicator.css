@@ -1,0 +1,59 @@
+@import "../ui/utilities.css";
+
+/* #region Status Indicator */
+
+.statusIndicatorWrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.statusIndicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    color: white;
+}
+.statusIndicator.newLine {
+    flex-direction: column;
+}
+.statusIndicator.standardFormat {
+    padding: 10px;
+    border: 5px;
+    border-radius: 5px;
+}
+.statusIndicatorWrapper .statusIndicator.fill {
+    flex: 1 1 auto;
+    align-self: stretch;
+}
+
+.statusIndicator * {
+    text-align: center;
+}
+
+.statusIndicator .statusIndicatorValues {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.statusIndicator:not(.enabled):not(.error) {
+    background-color: red;
+}
+.statusIndicator.enabled:not(.error) {
+    background-color: green;
+}
+.statusIndicator.error {
+    background-color: yellow;
+    color: black;
+}
+
+.statusIndicator:not(.error) .statusIndicatorError,
+.statusIndicator:-moz-any(:not(.enabled), .error) .statusIndicatorEnabled,
+.statusIndicator:-moz-any(.enabled, .error) .statusIndicatorDisabled {
+    visibility: hidden;
+    max-height: 0px;
+}
+
+/* #endregion Status Indicator */

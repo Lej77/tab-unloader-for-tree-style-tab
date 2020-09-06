@@ -1,0 +1,209 @@
+@import "../ui/utilities.css";
+
+/* #region Collapsable Section */
+
+:root {
+    --collapsable-border: 1px solid hsl(0, 0%, 50%);
+    --collapsable-header-border: 1px solid hsl(0, 0%, 60%);
+}
+
+.section {
+    border: var(--collapsable-border);
+    border-radius: 5px;
+    background-color: hsl(0, 0%, 100%);
+    overflow: hidden;
+}
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme {
+        --collapsable-border: 1px solid hsl(0, 0%, 50%);
+        --collapsable-header-border: 1px solid hsl(0, 0%, 40%);
+    }
+    :root.support-dark-theme .section {
+        background: #202023;
+    }
+    :root.support-dark-theme .section > .headerArea {
+        background-color: hsl(120, 0%, 20%);
+    }
+}
+
+.section > .headerArea {
+    min-height: 30px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+
+    text-align: center;
+
+    display: flex;
+    position: relative;
+    overflow: hidden;
+
+    background-color: hsl(120, 0%, 93%);
+}
+.section > .headerArea:not(.preventOpen) {
+    cursor: pointer;
+}
+.section > .contentWrapper > .contentArea {
+    border-top: var(--collapsable-header-border);
+}
+
+
+/* #region Header Hover */
+
+.section > .headerArea > .hoverIndicator,
+.section > .headerArea > .hoverIndicator::after {
+    position: absolute;
+
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+}
+
+.section > .headerArea > .hoverIndicator {
+    pointer-events: auto !important;
+
+    z-index: 100;
+}
+
+.section > .headerArea > .hoverIndicator::after {
+    content: "";
+    pointer-events: none;
+
+    z-index: 1000;
+
+    background-color: hsl(230, 3%, 60%);
+    opacity: 0;
+    transition: opacity 0.1s, background-color 0.1s;
+}
+/* Keyboard focus */
+.section > .headerArea:focus .hoverIndicator::after {
+    opacity: 0.15;
+    border: 2px solid hsl(230, 3%, 10%);
+}
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme .section > .headerArea:focus .hoverIndicator::after {
+        opacity: 0.20;
+        border: 2px solid hsl(230, 3%, 100%);
+    }
+}
+.section > .headerArea:focus .hoverIndicator:not(:hover)::after,
+.section > .headerArea.preventOpen:focus .hoverIndicator::after {
+    background-color: transparent;
+}
+/* Mouse hover */
+.section > .headerArea:not(.preventOpen) .hoverIndicator:hover::after {
+    opacity: 0.15;
+}
+
+/* #endregion Header Hover */
+
+
+/* #region Enabled */
+
+.enablable {
+    background-color: hsl(120, 80%, 90%) !important;
+}
+.enablable:not(.enabled) {
+    background-color: hsl(0, 80%, 90%) !important;
+}
+.enablable.enabled.error {
+    background-color: hsl(60, 80%, 90%) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme .enablable {
+        background-color: hsl(120, 80%, 20%) !important;
+    }
+    :root.support-dark-theme .enablable:not(.enabled) {
+        background-color: hsl(0, 80%, 20%) !important;
+    }
+    :root.support-dark-theme .enablable.enabled.error {
+        background-color: hsl(60, 80%, 20%) !important;
+    }
+}
+
+/* #endregion Enabled */
+
+
+/* #region Header children */
+
+.section > .headerArea > * {
+    text-align: center;
+}
+.section > .headerArea * {
+    flex: 0 0 auto;
+
+    pointer-events: none;
+    z-index: 50;
+}
+
+.section > .headerArea *.preventOpen,
+.section > .headerArea *.preventOpen * {
+    pointer-events: all;
+    z-index: 500;
+}
+
+/* #endregion Header children */
+
+
+/* #region Collapsed/Closed */
+
+.section > .contentWrapper {
+    overflow-y: hidden;
+}
+.collapsable.collapsed > .contentWrapper {
+    overflow: hidden;
+    max-height: 0px !important;
+}
+.collapsable:not(.open) > .contentWrapper {
+    display: none;
+}
+
+/* #endregion Collapsed/Closed */
+
+
+/* #region Standard modifiers */
+
+.section > .headerArea.center > *,
+.section > .headerArea > *.center {
+    flex: 1 1 auto;
+    text-align: center;
+    align-self: center;
+}
+.section > .headerArea.stretch > *,
+.section > .headerArea > *.stretch {
+    flex: 1 1 auto;
+    text-align: stretch;
+    align-self: stretch;
+}
+.section:not(.noShadow) {
+    box-shadow: 1px 1px 4px -1px;
+}
+@media (prefers-color-scheme: dark) {
+    :root.support-dark-theme .section:not(.noShadow) {
+        box-shadow: unset;
+    }
+}
+
+.section > .headerArea:not(.noFontChanges) {
+    font-size: 20px;
+}
+.section > .headerArea.small {
+    min-height: 25px;
+}
+.section > .headerArea.small:not(.noFontChanges) {
+    font-size: 18px;
+}
+.section.standardFormat {
+    margin: 10px;
+    margin-bottom: 25px;
+}
+.section.standardFormat > .contentWrapper > .contentArea,
+.section > .contentWrapper > .contentArea.standardFormat {
+    padding: 5px;
+    padding-bottom: 10px;
+}
+
+/* #endregion Standard modifiers */
+
+/* #endregion Collapsable Section */
