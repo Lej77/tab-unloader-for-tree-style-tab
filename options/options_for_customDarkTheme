@@ -1,0 +1,10 @@
+body {
+    overflow-y: hidden;
+}
+
+div.collapsable, div.headerArea, div.contentArea {
+    background: rgb(27,27,29) !important;
+}
+div.headerArea.enablable:not(.enabled) {
+    background: rgb(70,0,0) !important;
+}
