@@ -43,6 +43,8 @@ export const defaultValues = Object.freeze({
                 enabled: true,
                 alt: true,
                 meta: true,
+
+                onDragModern_PreventDragAndDrop: true,
             }),
             unloadOnMiddleClick: createComboData({
                 enabled: true,
@@ -190,6 +192,10 @@ export const defaultValues = Object.freeze({
             onDragMouseUpTrigger: false,
             /** Time in milliseconds to wait for drag events before unloading tab. */
             onDragTimeout: 500,
+            /** The drag APIs changed in Tree Style Tab v2.7.8. If this is `true` then assume that we are using the more modern versions. Requires Tree Style Tab v2.7.8 and later. */
+            onDragModern: true,
+            /** The more modern drag APIs allows sending a message to prevent drag and drop of tabs, this setting ensures we send that message. Requires Tree Style Tab v2.7.8 and later. */
+            onDragModern_PreventDragAndDrop: false,
 
             /** Don't prevent Tree Style Tab's default action while waiting to decide if the tab should be unloaded. */
             dontPreventTSTAction: false,
@@ -210,22 +216,22 @@ export const defaultValues = Object.freeze({
         };
     },
     get MouseClickComboCollection() {
-        let standardMessages = {
+        const standardMessages = {
 
         };
-        let getStandardMessages = () => {
+        const getStandardMessages = () => {
             return Object.assign({}, standardMessages);
         };
-        let getStandardInfo = () => {
-            let obj = {
+        const getStandardInfo = () => {
+            const obj = {
                 get allowDragDrop() {
                     return obj.button === 0;
                 },
             };
             return obj;
         };
-        let createInfo = (obj) => {
-            let info = Object.assign(getStandardInfo(), obj);
+        const createInfo = (obj) => {
+            const info = Object.assign(getStandardInfo(), obj);
             info.messages = Object.assign(getStandardMessages(), info.messages);
             return info;
         };

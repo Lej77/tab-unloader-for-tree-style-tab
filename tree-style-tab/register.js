@@ -209,6 +209,19 @@ export class TSTState {
             'tab-mouseup',
         ];
     }
+    /**
+     * Get the names of Tree Style Tab event types that listen to its undocumented custom drag selection feature that is used by Multiple Tab Handler.
+     *
+     * In Tree Style Tab v2.7.8 and later you must send a `{ type: "start-custom-drag", windowId }` message for this events to start. In earlier versions
+     * they would start automatically after about 400ms (this was customizable in Tree Style Tab's hidden developer section with more settings).
+     *
+     * In Tree Style Tab v2.7.8 and later listening to the `tab-dragready` event type causes Tree Style Tab to auto switch into the `long press` drag selection
+     * mode that prevents drag and drop.
+     *
+     * @static
+     * @returns {string[]} Event type names.
+     * @memberof TSTState
+     */
     static getDragListeningTypes() {
         return [
             'tab-dragready',
@@ -217,6 +230,19 @@ export class TSTState {
             'tab-dragenter',
             'tab-dragexit',
             'tab-dragend',
+        ];
+    }
+    /**
+     * Get the names of Tree Style Tab event types that listen to drag and drop in the sidebar. (Available in TST 2.7.8 and later):
+     *
+     * @static
+     * @returns {string[]} event type names.
+     * @memberof TSTState
+     */
+    static getNativeDragListeningTypes() {
+        return [
+            // available in TST 2.7.8 and later
+            'native-tab-dragstart',
         ];
     }
 }
@@ -531,6 +557,7 @@ export async function registerToTST({ listeningTypes = [], style = null, name = 
         if (style && typeof style === "string") {
             message.style = style;
         }
+        console.log('register to tst: ', message);
         await browser.runtime.sendMessage(kTST_ID, message);
     }
     catch (e) {

@@ -9,6 +9,10 @@ import {
     EventListener,
 } from '../common/events.js';
 
+import {
+    kTST_ID,
+} from '../tree-style-tab/utilities.js';
+
 
 
 export class Monitor {
@@ -52,45 +56,78 @@ export class MonitorCollection {
 
 
 
+/**
+ * Detects if a tab is long pressed (without that being because of drag and drop), and can be extended to instead detect only if a tab is being drag and dropped.
+ *
+ * @export
+ * @class DragMonitor
+ * @extends {Monitor}
+ */
 export class DragMonitor extends Monitor {
-    constructor({ data, time, events }) {
+    constructor({ data, time, events, message }) {
         super();
         var op = this.operationManager;
 
         // this.allow.then((value) => console.log('DragMonitor: ' + value));
 
-        let onDragEnabled = data.onDragEnabled;
-        let onDragCancel = data.onDragCancel;
-        let onDragOnly = !onDragCancel;
-        let onDragTimeout = data.onDragTimeout;
-        let hasOnDragTimeout = onDragTimeout && onDragTimeout > 0;
+        let {
+            onDragEnabled,
+            onDragCancel,
+            onDragTimeout,
+            onDragMouseUpTrigger,
+            onDragModern,
+            onDragModern_PreventDragAndDrop,
+        } = data;
+
+        const onDragOnly = !onDragCancel;
+        const hasOnDragTimeout = onDragTimeout && onDragTimeout > 0;
         onDragEnabled = onDragEnabled && hasOnDragTimeout;
 
-        let setDragged = (dragged) => {
+        const setLongPress = (dragged) => {
             op.resolve(dragged ? !onDragCancel : !onDragOnly);
         };
 
         if (!onDragEnabled) {
             op.resolve(true);
             return;
-        } else if (!hasOnDragTimeout) {
+        } else if (!onDragModern && !hasOnDragTimeout) {
             op.resolve(false);
             return;
         }
 
         op.trackDisposables([
-            new Timeout(() => {
-                setDragged(false);
+            new Timeout(async () => {
+                // Legacy version: no event => drag and drop in progress. (dragged = false)
+                // Modern version: no event => drag and drop not started. (dragged/longPress = true) Can prevent it in the future with a message.
+                setLongPress(onDragModern);
+                if (onDragModern && onDragModern_PreventDragAndDrop) {
+                    try {
+                        await browser.runtime.sendMessage(kTST_ID, {
+                            type: "start-custom-drag",
+                            windowId: message.tab.windowId,
+                        });
+                    } catch (error) {
+                        console.error('Failed to prevent drag and drop in Tree Style Tab\'s sidebar!.\nError:\n', error);
+                    }
+                }
             }, onDragTimeout),
             new EventListener(events.onDrag, (eventMessage, eventTime) => {
-                // This event is fired after 400 milliseconds if the tab is not dragged.
-                setDragged(true);
+                // Legacy version: This event is fired after 400 milliseconds if the tab is not dragged.
+                // Modern version: only fired if we send a `start-custom-drag` message.
+                setLongPress(true);
+            }),
+            new EventListener(events.onNativeDrag, (eventMessage, eventTime) => {
+                // The user has started drag and drop for a tab in the sidebar. Only available in "modern" Tree Style Tab (v2.7.8 and later).
+                setLongPress(false);
             }),
             new EventListener(events.onTabUp, (eventMessage, eventTime) => {
-                setDragged(data.onDragMouseUpTrigger);
+                // Mouse up isn't sent after a drag and drop operation is started.
+                setLongPress(onDragMouseUpTrigger);
             }),
             new EventListener(events.onTabDown, (eventMessage, eventTime) => {
-                setDragged(false);
+                // A new tab is being clicked so cancel this old operation. We should have seen a mouse up event if the previous tab wasn't drag and dropped.
+                // TL;DR; the previous tab was probably drag and dropped.
+                setLongPress(false);
             }),
         ]);
     }

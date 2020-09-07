@@ -14,6 +14,23 @@
         color: rgb(249, 249, 250);
     }
 
+    :root.support-dark-theme button {
+        background: hsl(240, 2%, 20%);
+        border: 2px solid hsl(240, 2%, 40%);
+        border-right-color: hsl(240, 2%, 30%);
+        border-bottom-color: hsl(240, 2%, 30%);
+        color: white;
+    }
+    :root.support-dark-theme button:hover {
+        background: hsl(240, 2%, 29%);
+    }
+    :root.support-dark-theme button:focus {
+        background: hsl(240, 2%, 33%);
+    }
+    :root.support-dark-theme button:active {
+        background: hsl(240, 2%, 38%);
+    }
+
     /* Links: */
     :root.support-dark-theme :link {
         color: hsl(210, 100%, 64%);

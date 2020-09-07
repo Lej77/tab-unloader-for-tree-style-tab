@@ -39,13 +39,13 @@
 }
 
 .statusIndicator:not(.enabled):not(.error) {
-    background-color: red;
+    background-color: hsl(0, 100%, 38%);
 }
 .statusIndicator.enabled:not(.error) {
-    background-color: green;
+    background-color: hsl(120, 100%, 22%);
 }
 .statusIndicator.error {
-    background-color: yellow;
+    background-color: hsl(60, 100%, 45%);
     color: black;
 }
 

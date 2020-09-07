@@ -87,10 +87,16 @@
         "message": "If checked then cancel if an event is registered; otherwise only allow if an event is registered."
     },
     "options_onDrag_mouseUpTigger": {
-        "message": "If checked then mouse up events will also register as long-press events. Currently Tree Style Tab doesn't send mouse up events after drag and drop operations so if a mouse up event is sent then drag and drop wasn't used. This means that if this is checked then an event will be register if drag and drop is NOT used."
+        "message": "If checked then mouse up events will also register as long-press events. Currently Tree Style Tab doesn't send mouse up events after drag and drop operations so if a mouse up event is sent then drag and drop wasn't used. In other words this option changes the check from \"long press tabs\" to \"any click that doesn't start a drag and drop operation\" (as long as Tree Style Tab doesn't change its strange behavior around this)."
     },
     "options_onDrag_timeout": {
-        "message": "Time in milliseconds to wait for long press (should be notified after 400 milliseconds if the tab isn't dragged): "
+        "message": "Time in milliseconds to wait for long press (in legacy mode we should be notified after 400 milliseconds if the tab isn't dragged so keep it slight above that) (in modern mode this should be how long we want to wait before preventing/ignoring drag and drop): "
+    },
+    "options_onDrag_Modern": {
+        "message": "Tree Style Tab's drag API was changed and is slightly different in Tree Style Tab v2.7.8 and later then it was previously. Check this setting if you are using a more modern Tree Style Tab version. (The more modern API has a new event type that is sent when a drag and drop operation is started in the sidebar. So instead of waiting for a \"long press\" event before a timeout we instead wait for a timeout and cancel on a \"drag and drop\" event.)"
+    },
+    "options_onDrag_Modern_PreventDragAndDrop": {
+        "message": "The more modern drag API doesn't switch into the special \"long press\" mode automatically, instead it requires that we send a message to Tree Style Tab when we want to do so. Check this setting to send such a message after the timeout has expired. This will mimic how Tree Style Tab used to work and prevent drag and drop operations from being started after a certain time (specified by the timeout)."
     },
     "options_dontPreventTSTAction": {
         "message": "Don't prevent Tree Style Tab's default action."

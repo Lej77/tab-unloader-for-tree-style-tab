@@ -394,6 +394,25 @@ export function createMouseClickArea(combo, sectionAnimationInfo = {}) {
 
 
         dragDropArea.appendChild(document.createElement('br'));
+        dragDropArea.appendChild(document.createElement('br'));
+
+
+        const onDragModern_PreventDragAndDrop = createCheckBox(null, 'options_onDrag_Modern_PreventDragAndDrop');
+        const onDragModern = createCheckBox(null, 'options_onDrag_Modern');
+        bindCheckboxToObj(onDragModern.checkbox, 'onDragModern', (checked) => {
+            toggleClass(onDragModern_PreventDragAndDrop.area, 'disabled', !checked);
+        });
+        dragDropArea.appendChild(onDragModern.area);
+
+
+        dragDropArea.appendChild(document.createElement('br'));
+
+
+        bindCheckboxToObj(onDragModern_PreventDragAndDrop.checkbox, 'onDragModern_PreventDragAndDrop');
+        dragDropArea.appendChild(onDragModern_PreventDragAndDrop.area);
+
+
+        dragDropArea.appendChild(document.createElement('br'));
 
 
         const onDragTimeout = createNumberInput('options_onDrag_timeout', 1, true);

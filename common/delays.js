@@ -259,6 +259,8 @@ export class OperationManager {
 
         this.resolve = (value) => setValue(value);
         this.reject = (value) => setValue(value, true);
+
+        this.onDisposed = disposableCollection.onDisposed;
     }
 }
 

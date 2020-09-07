@@ -293,6 +293,7 @@ class MouseButtonManager {
             'onTabDown',
             'onTabUp',
             'onDrag',
+            'onNativeDrag',
         ];
         for (const eventName of eventNames) {
             const manager = new EventManager();
@@ -300,13 +301,13 @@ class MouseButtonManager {
             events[eventName] = manager.subscriber;
         }
 
-        const createMonitors = (time, message) => {
-            let data = combo.data;
+        const createMonitors = (time, mouseDownMessage) => {
+            const data = combo.data;
             if (!time) {
                 time = Date.now();
             }
-            let monitorData = { data, time, events, message };
-            let col = new MonitorCollection([
+            const monitorData = { data, time, events, message: mouseDownMessage };
+            const col = new MonitorCollection([
                 new ClickDurationMonitor(monitorData),
                 new DoubleClickMonitor(monitorData),
             ]);
@@ -355,13 +356,17 @@ class MouseButtonManager {
                 return false;
             }
             const applyToAll = combo.applyToAllTabs && info.allowForAll;
-            if (!applyToAll) {
+            if (!applyToAll && !combo.applyToTstTree) {
+                // TODO: can't apply to only loaded or unloaded tabs if applying to a Tree Style Tab Tree since we currently can't determine that.
+
+                // Only apply to unloaded or loaded tabs, not for both kinds of tabs:
                 const unloaded = await message.tab.discarded;
                 let registerUnloaded = info.applyToUnloadedTabs;
                 if (info.allowForAll) {
                     registerUnloaded = combo.applyToUnloadedTabs;
                 }
                 if (Boolean(unloaded) !== Boolean(registerUnloaded)) {
+                    // Tab is already in the wanted state.
                     return false;
                 }
             }
@@ -411,6 +416,10 @@ class MouseButtonManager {
         this.onDrag = (message) => {
             let time = Date.now();
             return checkAny(eventManagers.onDrag.fire(message, time));
+        };
+        this.onNativeDrag = (message) => {
+            let time = Date.now();
+            return checkAny(eventManagers.onNativeDrag.fire(message, time));
         };
     }
 }
@@ -491,7 +500,7 @@ async function start() {
         const all = !index && index !== 0;
         if (all) {
             const returned = [];
-            for (let manager of mouseButtonManagers) {
+            for (const manager of mouseButtonManagers) {
                 returned.push(callback(manager));
             }
             return returned;
@@ -719,7 +728,13 @@ async function start() {
         if (mouseClickCombos.combos.some(combo => combo.enabled)) {
             state.addListeningTypes(TSTState.getClickListeningTypes());
             if (mouseClickCombos.combos.some(combo => combo.enabled && combo.onDragEnabled && combo.info.button === 0)) {
-                state.addListeningTypes(['tab-dragready', 'tab-dragstart']);
+                state.addListeningTypes(['tab-dragstart']);
+                if (mouseClickCombos.combos.some(combo => combo.enabled && combo.onDragEnabled && combo.info.button === 0 && !combo.onDragModern)) {
+                    // Support for legacy drag mode:
+                    state.addListeningTypes(['tab-dragready']);
+                    // Listening to this event type causes Tree Style Tab to auto switch into the `long press` drag selection mode that prevents drag and drop.
+                }
+                state.addListeningTypes(TSTState.getNativeDragListeningTypes());
             }
         }
 
@@ -816,6 +831,10 @@ async function start() {
             case 'tab-dragexit':
             case 'tab-dragend': {
                 return checkAny(managerCallback(null, (manager) => manager.onDrag(message)));
+            } break;
+
+            case 'native-tab-dragstart': {
+                return checkAny(managerCallback(null, (manager) => manager.onNativeDrag(message)));
             } break;
 
             case 'fake-contextMenu-click': {
