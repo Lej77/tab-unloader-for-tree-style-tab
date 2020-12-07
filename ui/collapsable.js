@@ -393,26 +393,26 @@ export function createCollapsableArea(animationInfo = {}) {
   // #endregion Animation Info
 
 
-  let area = document.createElement('div');
+  const area = document.createElement('div');
   area.classList.add('collapsable');
   area.classList.add('section');
 
 
-  let headerArea = document.createElement('div');
+  const headerArea = document.createElement('div');
   headerArea.classList.add('headerArea');
   headerArea.classList.add('textNotSelectable');
   area.appendChild(headerArea);
 
-  let hoverIndicator = document.createElement('div');
+  const hoverIndicator = document.createElement('div');
   hoverIndicator.classList.add('hoverIndicator');
   headerArea.appendChild(hoverIndicator);
 
 
-  let contentWrapper = document.createElement('div');
+  const contentWrapper = document.createElement('div');
   contentWrapper.classList.add('contentWrapper');
   area.appendChild(contentWrapper);
 
-  let contentArea = document.createElement('div');
+  const contentArea = document.createElement('div');
   contentArea.classList.add('contentArea');
   contentWrapper.appendChild(contentArea);
 

@@ -7,9 +7,25 @@
 @import "../ui/list.css";
 
 
-body {
+/* The parent page will expand to fit this page's content, but there is a delay so the scrollbar will flash on and off if we don't hide it: */
+:root.embeddedInExtensionPage body {
     overflow-y: hidden;
 }
+/* The parent page won't resize to fit the horizontal scrollbar so make sure that is never needed for body by showing the scrollbar for child elements instead. */
+:root.embeddedInExtensionPage body > * {
+    max-width: 100%;
+    overflow: auto;
+}
+
+
+#topLinkToOptionsPage {
+  float: right;
+  padding-right: 1em;
+}
+:root:not(.embeddedInExtensionPage) #topLinkToOptionsPage {
+  display: none;
+}
+
 
 .extensionToggleArea {
     display: flex;

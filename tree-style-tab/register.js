@@ -32,7 +32,10 @@ import {
  */
 export class TSTState {
     constructor() {
-        this.listeningTypes = ['ready'];
+        this.listeningTypes = [
+            'ready',
+            'wait-for-shutdown',
+        ];
         this.contextMenuItems = new ContextMenuItemCollection();
         this.rootContextMenuItemTitle = '';
         this.style = '';
@@ -173,6 +176,13 @@ export class TSTState {
         return clone;
     }
 
+    /**
+     * Add the names of some events that Tree Style Tab should notify this extension
+     * about.
+     *
+     * @param {string | string[]} listeningTypes Names of event types.
+     * @memberof TSTState
+     */
     addListeningTypes(listeningTypes) {
         if (!Array.isArray(listeningTypes)) {
             listeningTypes = [listeningTypes];
@@ -245,6 +255,18 @@ export class TSTState {
             'native-tab-dragstart',
         ];
     }
+
+    /**
+     * Get the names for events that tell Tree Style Tab to detect when this extension
+     * is unloaded/disabled.
+     *
+     * @static
+     * @returns {string[]} event type names.
+     * @memberof TSTState
+     */
+    static getWaitForShutdownListeningTypes() {
+        return ['wait-for-shutdown'];
+    }
 }
 
 
@@ -281,6 +303,15 @@ export class TSTManager {
 
         this._registrationUpdater = new RequestManager(this._handleStateUpdate.bind(this), 500, false);
 
+        /** @type {null | ((shouldUnregister: boolean) => void)} */
+        this._lastWaitForShutdownPromiseResolve = null;
+        /** @type {EventListener} A listener for an event that will be triggered when the extension is disabled. */
+        this._beforeUnloadListener = new EventListener(window, 'beforeunload', () => {
+            if (this._lastWaitForShutdownPromiseResolve) {
+                this._lastWaitForShutdownPromiseResolve(true);
+                this._lastWaitForShutdownPromiseResolve = null;
+            }
+        });
 
         // Attempt to register to TST:
         this.invalidateTST(true);
@@ -300,9 +331,24 @@ export class TSTManager {
             }
             const values = this._onMessage.fire(message);
             if (message.type === 'ready' || message.type === 'permissions-changed') {
-                // passive registration for secondary (or after) startup:
+                // 'ready': passive registration for secondary (or after) startup:
+                // 'permissions-changed': If your addon injects additional style rules
+                //      to TST's sidebar, you may need to re-inject it when permissions
+                //      are changed
                 this.invalidateTST(true);
                 return Promise.resolve(true);
+            } else if (message.type == 'wait-for-shutdown') {
+                return new Promise((resolve, reject) => {
+                    try {
+                        if (this._lastWaitForShutdownPromiseResolve) {
+                            // Don't keep more than 1 promise alive for this event (cancel the previous one):
+                            this._lastWaitForShutdownPromiseResolve(false);
+                        }
+                        this._lastWaitForShutdownPromiseResolve = resolve;
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
             } else {
                 for (const value of values) {
                     if (value !== undefined) {
@@ -311,7 +357,7 @@ export class TSTManager {
                 }
             }
         } catch (error) {
-            console.log('Error on Tree Style Tab message handling!\n', error, '\nStack Trace:\n', error.stack);
+            console.error('Error on Tree Style Tab message handling!\n', error, '\nStack Trace:\n', error.stack);
         }
     }
 
@@ -351,7 +397,7 @@ export class TSTManager {
                     // This was previously all that was required:
                     await unregisterFromTST();
                     // But newer TST versions also require this:
-                    await registerToTST({style: ' '});
+                    await registerToTST({ style: ' ' });
                 }
                 // Update listening types and/or register new style:
                 let success = true;
@@ -516,6 +562,12 @@ export class TSTManager {
         this._externalMessageListener.dispose();
         this._registrationUpdater.dispose();
 
+        if (this._lastWaitForShutdownPromiseResolve) {
+            this._lastWaitForShutdownPromiseResolve(false);
+            this._lastWaitForShutdownPromiseResolve = null;
+        }
+        this._beforeUnloadListener.dispose();
+
         this._onDisposed.fire(this);
     }
     get isDisposed() {
@@ -557,7 +609,6 @@ export async function registerToTST({ listeningTypes = [], style = null, name = 
         if (style && typeof style === "string") {
             message.style = style;
         }
-        console.log('register to tst: ', message);
         await browser.runtime.sendMessage(kTST_ID, message);
     }
     catch (e) {

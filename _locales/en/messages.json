@@ -14,6 +14,9 @@
     "options_extensionToggle_Status_Disabled": {
         "message": "Disabled"
     },
+    "options_openInSeparateTab": {
+        "message": "Open this options page in a separate tab"
+    },
     "options_unloadOnLeftClick": {
         "message": "Left click tabs to unload them."
     },
@@ -90,7 +93,7 @@
         "message": "If checked then mouse up events will also register as long-press events. Currently Tree Style Tab doesn't send mouse up events after drag and drop operations so if a mouse up event is sent then drag and drop wasn't used. In other words this option changes the check from \"long press tabs\" to \"any click that doesn't start a drag and drop operation\" (as long as Tree Style Tab doesn't change its strange behavior around this)."
     },
     "options_onDrag_timeout": {
-        "message": "Time in milliseconds to wait for long press (in legacy mode we should be notified after 400 milliseconds if the tab isn't dragged so keep it slight above that) (in modern mode this should be how long we want to wait before preventing/ignoring drag and drop): "
+        "message": "Time in milliseconds to wait for long press (in legacy mode we should be notified after 400 milliseconds if the tab isn't dragged so keep it slightly above that) (in modern mode this should be how long we want to wait before preventing/ignoring drag and drop): "
     },
     "options_onDrag_Modern": {
         "message": "Tree Style Tab's drag API was changed and is slightly different in Tree Style Tab v2.7.8 and later then it was previously. Check this setting if you are using a more modern Tree Style Tab version. (The more modern API has a new event type that is sent when a drag and drop operation is started in the sidebar. So instead of waiting for a \"long press\" event before a timeout we instead wait for a timeout and cancel on a \"drag and drop\" event.)"

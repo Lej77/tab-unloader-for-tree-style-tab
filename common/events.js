@@ -384,7 +384,7 @@ export class EventManager extends EventSubscriber {
         returned.push(listener.apply(null, args));
       } catch (error) {
         const stack = this._stackTraceWhenAdded.get(listener);
-        console.log('Error during event handling!\n', error, '\nListener added at:\n', stack, '\nError at:\n', error.stack);
+        console.error('Error during event handling!\n', error, '\nListener added at:\n', stack, '\nError at:\n', error.stack);
       }
     }
     return returned;

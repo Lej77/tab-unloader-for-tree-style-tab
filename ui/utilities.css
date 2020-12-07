@@ -49,6 +49,11 @@
 }
 
 
+* {
+    box-sizing: border-box;
+}
+
+
 .textSelectable {
     -moz-user-select: text;
 }

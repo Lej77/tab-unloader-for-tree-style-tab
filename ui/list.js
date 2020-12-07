@@ -265,18 +265,17 @@ export function createListArea() {
         // #region Get Mouse Info
 
         let e = lastMouseEvent;
-        let bodyPos = document.body.getBoundingClientRect();    // Since the scrolling is handled by Firefox's extension page this will allways be positioned at (0, 0). Still used here for future proofing.
-        let mousePos = {
-          x: lastMouseEvent.clientX - bodyPos.left,
-          y: lastMouseEvent.clientY - bodyPos.top,
+        const mousePos = {
+          x: lastMouseEvent.clientX,
+          y: lastMouseEvent.clientY,
         };
 
         if (globalInfo.debugDrag) {
-          console.log('move'); console.log(e); console.log(bodyPos);
+          console.log('move\ne: ', e);
         }
 
         document.documentElement.classList.add('dontBlockScreen');
-        let mouseTarget = document.elementFromPoint(mousePos.x, mousePos.y);
+        const mouseTarget = document.elementFromPoint(mousePos.x, mousePos.y);
         document.documentElement.classList.remove('dontBlockScreen');
 
         // #endregion Get Mouse Info

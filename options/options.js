@@ -75,6 +75,17 @@ quickLoadSetting('disableOptionsPageDarkTheme')
     })
     .catch(error => console.error('Failed to disable dark theme support on options page.', error));
 
+{
+    let embedded = true;
+    try {
+        embedded = new URLSearchParams(window.location.search).get('embedded') != 'false';
+    } catch (error) {
+        console.error('Failed to get page query params.\nError: ', error);
+    }
+    if (embedded) {
+        document.documentElement.classList.add('embeddedInExtensionPage');
+    }
+}
 
 async function initiatePage() {
     let starters = new DisposableCreators();
@@ -101,10 +112,10 @@ async function initiatePage() {
 
     // #region Animation
 
-    let sectionAnimationInfo = new AnimationInfo();
+    const sectionAnimationInfo = new AnimationInfo();
     {
         starters.createDisposable(() => {
-            let animationUpdate = () => {
+            const animationUpdate = () => {
                 try {
                     if (settings.disableOptionsPageAnimations) {
                         sectionAnimationInfo.update({ reset: true });
@@ -113,7 +124,7 @@ async function initiatePage() {
                     }
                 } catch (error) { }
             };
-            let listener = new EventListener(settingsTracker.onChange, (changes) => {
+            const listener = new EventListener(settingsTracker.onChange, (changes) => {
                 if (changes.disableOptionsPageAnimations) {
                     animationUpdate();
                 }
@@ -126,12 +137,32 @@ async function initiatePage() {
     // #endregion Animation
 
 
+    // #region Link to separate option page
+
+    {
+        const area = document.createElement('p');
+        document.body.appendChild(area);
+
+        const link = document.createElement('a');
+        link.classList.add(messagePrefix + 'options_openInSeparateTab');
+        link.id = 'topLinkToOptionsPage';
+        link.target = "_blank";
+        link.href = browser.runtime.getURL(browser.runtime.getManifest().options_ui.page + '?embedded=false');
+        area.appendChild(link);
+    }
+
+    // #endregion Link to separate option page
+
+
     // #region Enable/Disable Extension
 
     {
+        const wrapperArea = document.createElement('div');
+        document.body.appendChild(wrapperArea);
+
         let enableArea = document.createElement('div');
         enableArea.classList.add('extensionToggleArea');
-        document.body.appendChild(enableArea);
+        wrapperArea.appendChild(enableArea);
 
         let disableButton = document.createElement('button');
         disableButton.classList.add(messagePrefix + 'options_extensionToggle_DisableButton');
@@ -741,25 +772,32 @@ async function initiatePage() {
     // #region Tree Style Tab Style
 
     {
-        let section = createCollapsableArea(sectionAnimationInfo);
+        const section = createCollapsableArea(sectionAnimationInfo);
         section.area.classList.add('standardFormat');
         section.title.classList.add('center');
         section.title.classList.add('enablable');
         section.content.classList.add('treeStyleTabStyleArea');
         document.body.appendChild(section.area);
 
-        let header = document.createElement('div');
+        const header = document.createElement('div');
         header.classList.add(messagePrefix + 'options_TreeStyleTabStyle_Header');
         section.title.appendChild(header);
 
-        let label = document.createElement('label');
+
+        const dimUnloadedCheckbox = createCheckBox('dimUnloadedTabs', 'options_dimUnloadedTabs');
+        section.content.appendChild(dimUnloadedCheckbox.area);
+
+        section.content.appendChild(document.createElement('br'));
+        section.content.appendChild(document.createElement('br'));
+
+        const label = document.createElement('label');
         label.classList.add('styleLabel');
         label.classList.add(messagePrefix + 'options_TreeStyleTabStyle_Info');
         section.content.appendChild(label);
 
         section.content.appendChild(document.createElement('br'));
 
-        let currentStyle = document.createElement('textarea');
+        const currentStyle = document.createElement('textarea');
         currentStyle.classList.add('styleTextarea');
         currentStyle.rows = 15;
         currentStyle.readOnly = true;
@@ -855,13 +893,6 @@ async function initiatePage() {
         area.classList.add('otherSettingsArea');
         section.content.appendChild(area);
 
-        let dimUnloadedCheckbox = createCheckBox('dimUnloadedTabs', 'options_dimUnloadedTabs');
-        area.appendChild(dimUnloadedCheckbox.area);
-
-
-        area.appendChild(document.createElement('br'));
-        area.appendChild(document.createElement('br'));
-
 
         let unloadAgain = createNumberInput('options_unloadAgainAfterDelay', -1, true);
         unloadAgain.input.id = 'unloadAgainAfterDelay';
@@ -914,12 +945,11 @@ async function initiatePage() {
 
 
         const checkSection = () => {
-            toggleClass(section.title, 'enabled', dimUnloadedCheckbox.checkbox.checked || unloadAgain.input.value >= 0 || disableOptionAnimations.checkbox.checked || unloadViaAutoTabDiscard.checkbox.checked || disableOptionsDarkTheme.checkbox.checked);
+            toggleClass(section.title, 'enabled', unloadAgain.input.value >= 0 || disableOptionAnimations.checkbox.checked || unloadViaAutoTabDiscard.checkbox.checked || disableOptionsDarkTheme.checkbox.checked);
         };
         starters.createDisposable((delayed) => {
             checkSection();
             return [
-                new EventListener(dimUnloadedCheckbox.checkbox, 'input', checkSection),
                 new EventListener(unloadAgain.input, 'input', checkSection),
                 new EventListener(disableOptionAnimations.checkbox, 'input', checkSection),
                 new EventListener(disableOptionsDarkTheme.checkbox, 'input', checkSection),
