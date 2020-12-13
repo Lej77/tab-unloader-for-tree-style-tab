@@ -12,6 +12,16 @@ export class PrivatePermissionDetector {
         this.hasPermission = false;
         this._isDisposed = false;
 
+        this._promiseResolve = null;
+        /** @type {Promise<boolean>} */
+        this._promise = new Promise((resolve) => {
+            if (this._isDisposed) {
+                resolve(this.hasPermission);
+            } else {
+                this._promiseResolve = resolve;
+            }
+        });
+
         browser.windows.onCreated.addListener(this._onCreatedCallback);
         browser.windows.getAll().then((windows) => {
             for (const window of windows) {
@@ -31,8 +41,16 @@ export class PrivatePermissionDetector {
         if (this.isDisposed) return;
         browser.windows.onCreated.removeListener(this._onCreatedCallback);
         this._isDisposed = true;
+
+        if (this._promiseResolve) {
+            this._promiseResolve(this.hasPermission);
+        }
     }
     get isDisposed() {
         return this._isDisposed;
+    }
+
+    get promise() {
+        return this._promise;
     }
 }

@@ -15,10 +15,6 @@ import {
 } from '../common/connections.js';
 
 import {
-    defineProperty,
-} from '../common/utilities.js';
-
-import {
     TabHideManager,
 } from '../common/hide-unloaded-tabs.js';
 
@@ -28,6 +24,7 @@ import {
 
 import {
     createCollapsableArea,
+    AnimationInfo,
 } from '../ui/collapsable.js';
 
 import {
@@ -45,6 +42,178 @@ import {
 } from '../ui/status-indicator.js';
 
 
+/**
+ * @typedef {import('../ui/collapsable.js').AnimationDefinition} AnimationDefinition
+ */
+null;
+
+
+/**
+ * Create an animation and ensure its kept up to date when settings are changed.
+ *
+ * @param {AnimationDefinition} standardSectionAnimationInfo Standard definition for an animation.
+ * @returns {AnimationInfo} A section animation.
+ */
+function createSectionAnimationInfo(standardSectionAnimationInfo) {
+    const sectionAnimationInfo = new AnimationInfo();
+
+    settingsTracker.start.then(() => {
+        const animationUpdate = () => {
+            try {
+                if (settings.disableOptionsPageAnimations) {
+                    sectionAnimationInfo.update({ reset: true });
+                } else if (!standardSectionAnimationInfo) {
+                    sectionAnimationInfo.update({ standard: true });
+                } else {
+                    sectionAnimationInfo.update(Object.assign({}, standardSectionAnimationInfo));
+                }
+            } catch (error) { }
+        };
+        new EventListener(settingsTracker.onChange, (changes) => {
+            if (changes.disableOptionsPageAnimations) {
+                animationUpdate();
+            }
+        });
+        animationUpdate();
+    });
+
+    return sectionAnimationInfo;
+}
+
+
+// eslint-disable-next-line valid-jsdoc
+/**
+ * Create an area that informs about current privacy permissions configuration.
+ *
+ * @export
+ * @param {Object} Params Parameters
+ * @param {PortConnection} [Params.portConnection] Port to use for talking to background page.
+ * @param {AnimationInfo} [Params.sectionAnimationInfo] Animation for section.
+ * @param {AnimationDefinition} [Params.standardSectionAnimationInfo] Standard info when animation for section isn't provided.
+ */
+export function createPrivacyPermissionArea({ portConnection, sectionAnimationInfo = null, standardSectionAnimationInfo = null }) {
+    if (!portConnection) {
+        portConnection = new PortConnection();
+    }
+    if (!sectionAnimationInfo) {
+        sectionAnimationInfo = createSectionAnimationInfo(standardSectionAnimationInfo);
+    }
+
+    const onHasErrorChanged = new EventManager();
+
+
+    const section = createCollapsableArea(sectionAnimationInfo);
+    section.area.classList.add('standardFormat');
+    section.title.classList.add('center');
+    section.title.classList.add('enablable');
+    section.content.classList.add('privacyPermissionsArea');
+    document.body.appendChild(section.area);
+
+    const header = document.createElement('div');
+    header.classList.add(messagePrefix + 'privacyPermissions_Header');
+    section.title.appendChild(header);
+
+    const infoText = document.createElement('div');
+    infoText.classList.add(messagePrefix + 'privacyPermissions_Info');
+    section.content.appendChild(infoText);
+
+
+    section.content.appendChild(document.createElement('br'));
+
+    const warnAboutMisconfiguration = createCheckBox('warnAboutMisconfiguredPrivacySettings', 'options_warnAboutMisconfiguredPrivacySettings');
+    section.content.appendChild(warnAboutMisconfiguration.area);
+
+    section.content.appendChild(document.createElement('br'));
+
+
+    const statusArea = document.createElement('div');
+    statusArea.classList.add('privacyPermissionsStatusArea');
+    section.content.appendChild(statusArea);
+
+    const hasPrivacyPermission = createStatusIndicator({
+        headerMessage: 'privacyPermissions_hasPrivacyPermission_Header',
+        enabledMessage: 'optionalPermissions_Granted',
+        disabledMessage: 'optionalPermissions_NotGranted',
+        errorMessage: 'privacyPermissions_hasPrivacyPermission_Error',
+    });
+    statusArea.appendChild(hasPrivacyPermission.area);
+
+    const hasTreeStyleTabPermission = createStatusIndicator({
+        headerMessage: 'privacyPermissions_hasTreeStyleTabPrivacyPermission_Header',
+        enabledMessage: 'optionalPermissions_Granted',
+        disabledMessage: 'optionalPermissions_NotGranted',
+        errorMessage: 'privacyPermissions_hasTreeStyleTabPrivacyPermission_Error',
+    });
+    statusArea.appendChild(hasTreeStyleTabPermission.area);
+
+
+    // Update UI based on permissions info:
+
+    let latestInfo = null;
+    let hasError = false;
+    function check() {
+        let foundIssue = false;
+        if (latestInfo) {
+            if (!latestInfo.hasPrivacyPermission && latestInfo.tstNotifiedAboutPrivateWindow) {
+                // Not allowed in private windows
+                foundIssue = true;
+            }
+            if (latestInfo.hasPrivacyPermission && latestInfo.tstPermission === false) {
+                // Missing tst permission.
+                foundIssue = true;
+            }
+
+            hasTreeStyleTabPermission.hasError = latestInfo.tstPermission === undefined;
+            hasTreeStyleTabPermission.isEnabled = latestInfo.tstPermission === true || latestInfo.tstPermission === null;
+
+            hasPrivacyPermission.isEnabled = latestInfo.hasPrivacyPermission;
+            hasPrivacyPermission.hasError = !latestInfo.hasPrivacyPermission && !latestInfo.tstNotifiedAboutPrivateWindow;
+        }
+        if (foundIssue !== hasError) {
+            hasError = foundIssue;
+            onHasErrorChanged.fire();
+        }
+        toggleClass(section.title, 'enabled', hasError || (!latestInfo ? false : (latestInfo.hasPrivacyPermission && (latestInfo.tstPermission === true || latestInfo.tstPermission === null))));
+        toggleClass(section.title, 'error', hasError);
+    }
+
+
+    // Get permissions info from background page:
+
+    const permissionsEvent = portConnection.getEvent(messageTypes.privacyPermissionChanged);
+    permissionsEvent.addListener(info => {
+        latestInfo = info;
+        check();
+    });
+    browser.runtime.sendMessage({ type: messageTypes.privacyPermission })
+        .then(info => {
+            latestInfo = info;
+            check();
+        })
+        .catch(error => console.error('Failed to get privacy permissions info.\nError: ', error));
+
+
+    return {
+        area: section.area,
+        section,
+        get hasError() {
+            return hasError;
+        },
+        onHasErrorChanged,
+    };
+}
+
+// eslint-disable-next-line valid-jsdoc
+/**
+ * Create an area that controls optional permissions.
+ *
+ * @export
+ * @param {Object} Params Parameters
+ * @param {PortConnection} [Params.portConnection] Port to use for talking to background page.
+ * @param {(permission: Object) => any} [Params.requestFailedCallback] Gets called if we fail to request a permission. (Mostly for legacy support, older Firefox required user interaction to update permissions but it didn't work on the options page.)
+ * @param {AnimationInfo} [Params.sectionAnimationInfo] Animation for section.
+ * @param {AnimationDefinition} [Params.standardSectionAnimationInfo] Standard info when animation for section isn't provided.
+ */
 export function createPermissionsArea({ portConnection, requestFailedCallback, sectionAnimationInfo = null, standardSectionAnimationInfo = null } = {}) {
     const area = document.createElement('div');
 
@@ -59,27 +228,7 @@ export function createPermissionsArea({ portConnection, requestFailedCallback, s
         portConnection = new PortConnection();
     }
     if (!sectionAnimationInfo) {
-        sectionAnimationInfo = {};
-
-        settingsTracker.start.then(() => {
-            const animationUpdate = () => {
-                try {
-                    if (settings.disableOptionsPageAnimations) {
-                        sectionAnimationInfo.update({ reset: true });
-                    } else if (!standardSectionAnimationInfo) {
-                        sectionAnimationInfo.update({ standard: true });
-                    } else {
-                        sectionAnimationInfo.update(Object.assign({}, standardSectionAnimationInfo));
-                    }
-                } catch (error) { }
-            };
-            new EventListener(settingsTracker.onChange, (changes) => {
-                if (changes.disableOptionsPageAnimations) {
-                    animationUpdate();
-                }
-            });
-            animationUpdate();
-        });
+        sectionAnimationInfo = createSectionAnimationInfo(standardSectionAnimationInfo);
     }
     const pagePermissionChanged = portConnection.getEvent(messageTypes.permissionsChanged);
     const tabHideAPIChanged = portConnection.getEvent(messageTypes.tabHideAPIChanged);
@@ -185,9 +334,14 @@ export function createPermissionsArea({ portConnection, requestFailedCallback, s
 
         onHasAnyValueChanged: onHasAnyChanged.subscriber,
         onControllerValueChanged: onControllerChanged.subscriber,
+
+        get hasAnyPermissions() {
+            return hasAnyPermissions;
+        },
+        get hasAnyError() {
+            return hasAnyError;
+        },
     };
-    defineProperty(obj, 'hasAnyPermissions', () => hasAnyPermissions);
-    defineProperty(obj, 'hasAnyError', () => hasAnyError);
     return obj;
 }
 

@@ -32,6 +32,7 @@ import {
 import {
     createMouseClickArea,
     createPermissionsArea,
+    createPrivacyPermissionArea,
 } from '../ui/common.js';
 
 import {
@@ -841,21 +842,21 @@ async function initiatePage() {
     // #region Permissions
 
     {
-        let optionalPermissionsArea = createCollapsableArea(sectionAnimationInfo);
+        const optionalPermissionsArea = createCollapsableArea(sectionAnimationInfo);
         optionalPermissionsArea.area.classList.add('standardFormat');
         optionalPermissionsArea.title.classList.add('center');
         optionalPermissionsArea.title.classList.add('enablable');
         optionalPermissionsArea.content.classList.add('optionalPermissionArea');
         document.body.appendChild(optionalPermissionsArea.area);
 
-        let header = document.createElement('div');
+        const header = document.createElement('div');
         header.classList.add(messagePrefix + 'options_OptionalPermissions_Header');
         optionalPermissionsArea.title.appendChild(header);
 
         permissionsArea = createPermissionsArea({
             sectionAnimationInfo,
             requestFailedCallback: async (permission) => {
-                let currentTab = await browser.tabs.getCurrent();
+                const currentTab = await browser.tabs.getCurrent();
                 browser.tabs.create({
                     windowId: currentTab.windowId,
                     url: browser.runtime.getURL('resources/permissions.html'),
@@ -867,10 +868,16 @@ async function initiatePage() {
             portConnection: pagePort,
         });
         optionalPermissionsArea.content.appendChild(permissionsArea.area);
+
         permissionsArea.onHasAnyValueChanged.addListener(() => {
             toggleClass(optionalPermissionsArea.title, 'enabled', permissionsArea.hasAnyPermissions);
             toggleClass(optionalPermissionsArea.title, 'error', permissionsArea.hasAnyError);
         });
+    }
+
+    {
+        const privacyArea = createPrivacyPermissionArea({ portConnection: pagePort, sectionAnimationInfo });
+        document.body.appendChild(privacyArea.area);
     }
 
     // #endregion Permissions

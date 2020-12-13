@@ -25,6 +25,14 @@ import {
 
 
 /**
+ * Information about Tree Style Tab Permissions. Only available for TST 3.0.12 or later.
+ * @typedef {Object} TreeStyleTabPermissions
+ * @property {string[]} grantedPermissions Currently granted permissions.
+ * @property {boolean} privateWindowAllowed A boolean, indicating allowed (or not) to be notified messages from private windows.
+ */
+null;
+
+/**
  * Registration details for Tree Style Tab.
  *
  * @export
@@ -290,10 +298,19 @@ export class TSTManager {
 
         this._onMessage = new EventManager();
         this._onRegistrationChanged = new EventManager();
+        this._onNewRegistrationInfo = new EventManager();
+        /** @type {EventManager<[{oldPermissions: TreeStyleTabPermissions, newPermissions: TreeStyleTabPermissions}]>} */
+        this._onPermissionsChanged = new EventManager();
 
         this._resetData = null;
         this._currentState = new TSTState();
         this._wantedState = (state && state instanceof TSTState) ? state : new TSTState();
+
+        /** @type {RegistrationInfo | null} */
+        this._latestRegistrationInfo = null;
+        /** @type {TreeStyleTabPermissions | null} */
+        this._trackedPermissions = null;
+        this._isRegistered = false;
 
         this._externalMessageListener = null;
         this._registrationUpdater = null;
@@ -335,6 +352,14 @@ export class TSTManager {
                 // 'permissions-changed': If your addon injects additional style rules
                 //      to TST's sidebar, you may need to re-inject it when permissions
                 //      are changed
+                if (message.type === 'permissions-changed') {
+                    const oldPermissions = this._trackedPermissions;
+                    this._trackedPermissions = {
+                        grantedPermissions: message.grantedPermissions,
+                        privateWindowAllowed: message.privateWindowAllowed,
+                    };
+                    this._onPermissionsChanged.fire({ oldPermissions: oldPermissions, newPermissions: this._trackedPermissions });
+                }
                 this.invalidateTST(true);
                 return Promise.resolve(true);
             } else if (message.type == 'wait-for-shutdown') {
@@ -384,9 +409,12 @@ export class TSTManager {
             const currentState = this._currentState;
             const targetState = this._wantedState ? this._wantedState.clone() : new TSTState();
             let newState = targetState.clone();
+            let newRegistrationInfo = false;
+            const oldPermissions = this._trackedPermissions;
 
             if (targetState.hasStyle || targetState.listeningTypes.length > 0 || targetState.contextMenuItems.length > 0) {
                 const styleChange = !TSTState.isStyleEqual(currentState, targetState);
+
                 // Remove old style:
                 if (
                     // The new style might not override the old style:
@@ -399,11 +427,20 @@ export class TSTManager {
                     // But newer TST versions also require this:
                     await registerToTST({ style: ' ' });
                 }
+
                 // Update listening types and/or register new style:
                 let success = true;
                 if (styleChange || !TSTState.isListeningTypesEqual(currentState, targetState) || reset[TSTManager.resetTypes.style] || reset[TSTManager.resetTypes.listeningTypes]) {
-                    success = await registerToTST({ listeningTypes: targetState.listeningTypes, style: targetState.style });
+                    const registrationInfo = await registerToTST({ listeningTypes: targetState.listeningTypes, style: targetState.style });
+                    if (typeof registrationInfo === 'object') {
+                        this._latestRegistrationInfo = registrationInfo;
+                        this._trackedPermissions = registrationInfo;
+                        newRegistrationInfo = true;
+                    }
+                    success = Boolean(registrationInfo);
                 }
+                this._isRegistered = success;
+
                 if (!success) {
                     newState = new TSTState();
                 } else if (!TSTState.isContextMenuItemsEqual(currentState, targetState) || reset[TSTManager.resetTypes.contextMenu]) {
@@ -436,6 +473,7 @@ export class TSTManager {
                 // Unregister:
                 await removeAllTSTContextMenuItems();
                 await unregisterFromTST();
+                this._isRegistered = false;
             }
 
             this._currentState = newState;
@@ -454,6 +492,10 @@ export class TSTManager {
                     }
                 };
                 this._onRegistrationChanged.fire(eventObj);
+            }
+            if (newRegistrationInfo) {
+                this._onNewRegistrationInfo.fire();
+                this._onPermissionsChanged.fire({ oldPermissions, newPermissions: this._trackedPermissions });
             }
         } else {
             return true;
@@ -524,6 +566,33 @@ export class TSTManager {
         return this._currentState.clone();
     }
 
+
+    /**
+     * Permissions granted to this extension by Tree Style Tab.
+     *
+     * @readonly
+     * @memberof TSTManager
+     */
+    get trackedPermissions() {
+        return this._trackedPermissions;
+    }
+
+    /**
+     * The latest information about the Tree Style Tab registration.
+     *
+     * Note that this can have a value even if we are currently unregistered.
+     *
+     * @readonly
+     * @memberof TSTManager
+     */
+    get latestRegistrationInfo() {
+        return this._latestRegistrationInfo;
+    }
+
+    get isRegistered() {
+        return this._isRegistered;
+    }
+
     // #endregion State Info
 
 
@@ -546,6 +615,26 @@ export class TSTManager {
      */
     get onRegistrationChanged() {
         return this._onRegistrationChanged.subscriber;
+    }
+
+    /**
+     * Notified when `latestRegistrationInfo` is changed.
+     *
+     * @readonly
+     * @memberof TSTManager
+     */
+    get onNewRegistrationInfo() {
+        return this._onNewRegistrationInfo.subscriber;
+    }
+
+    /**
+     * Notified when `trackedPermissions` is changed.
+     *
+     * @readonly
+     * @memberof TSTManager
+     */
+    get onPermissionsChanged() {
+        return this._onPermissionsChanged.subscriber;
     }
 
     // #endregion Events
@@ -586,6 +675,13 @@ TSTManager.resetTypes = Object.freeze({
     contextMenu: (/** @type { 'contextMenu' } */ ('contextMenu')),
 });
 
+/**
+ * Registration info from Tree Style Tab. Only available for Tree Style Tab version 3.0.12 or later.
+ * @typedef {Object} RegistrationInfo
+ * @property {string[]} grantedPermissions Currently granted permissions.
+ * @property {boolean} privateWindowAllowed A boolean, indicating allowed (or not) to be notified messages from private windows.
+ */
+null;
 
 /**
  * Register to Tree Style Tab.
@@ -595,7 +691,7 @@ TSTManager.resetTypes = Object.freeze({
  * @param {null | string[]} [Params.listeningTypes] Events that should be listened to.
  * @param {null | string} [Params.style] Custom CSS stylesheet that Tree Style Tab should apply to its sidebar page and in later versions also its "group" tabs.
  * @param {null | string} [Params.name] The name of this extension. If not specified then this will be retrieved from the extension's manifest.
- * @returns {Promise<boolean>} `true` if the registration was successful; otherwise `false`.
+ * @returns {Promise<boolean | RegistrationInfo>} An object with information or `true` if the registration was successful; otherwise `false`.
  */
 export async function registerToTST({ listeningTypes = [], style = null, name = null } = {}) {
     try {
@@ -609,11 +705,10 @@ export async function registerToTST({ listeningTypes = [], style = null, name = 
         if (style && typeof style === "string") {
             message.style = style;
         }
-        await browser.runtime.sendMessage(kTST_ID, message);
+        return (await browser.runtime.sendMessage(kTST_ID, message)) || true;
     }
     catch (e) {
         // TST is not available
         return false;
     }
-    return true;
 }

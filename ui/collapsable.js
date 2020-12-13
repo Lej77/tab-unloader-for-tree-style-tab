@@ -40,6 +40,7 @@ null;
  * @property {HTMLDivElement} Info.area The div that represent the whole collapsable area.
  * @property {HTMLDivElement} Info.title The div that represent the sections header.
  * @property {HTMLDivElement} Info.content The div that represent the sections content. This can be collapsed to become hidden.
+ * @property {(value: boolean) => void} Info.setCollapsedWithoutAnimation Set the `isCollapsed` property without using any animations.
  * @property {boolean} Info.isButton Determines if the title area can be navigated to with the tab key.
  * @property {boolean} Info.isCollapsed Determines if the content area is hidden/collapsed.
  * @property {AnimationInfo} Info.animationInfo Determines the animation that is used to collapse and expand the content area.
@@ -479,6 +480,7 @@ export function createCollapsableArea(animationInfo = {}) {
    * @param {boolean} value `true` if the section should be collapsed; otherwise `false`.
    */
   const setCollapsed = (value) => {
+    value = Boolean(value);
     if (isCollapsed === value) {
       return;
     }
@@ -568,6 +570,13 @@ export function createCollapsableArea(animationInfo = {}) {
     area: area,
     title: headerArea,
     content: contentArea,
+    setCollapsedWithoutAnimation: (value) => {
+      if (isCollapsed === Boolean(value)) return;
+      const actualAnimation = animationInfo;
+      animationInfo = new AnimationInfo({ reset: true, standard: false });
+      setCollapsed(value);
+      animationInfo = actualAnimation;
+    },
   };
   defineProperty(obj, 'isButton', () => isButton, setIsButton);
   defineProperty(obj, 'isCollapsed', () => isCollapsed, setCollapsed);

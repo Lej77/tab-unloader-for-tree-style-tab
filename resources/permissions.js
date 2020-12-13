@@ -14,7 +14,9 @@ async function initiatePage() {
 
     try {
         document.title = browser.i18n.getMessage('permissionsPage_Title');
-    } catch (error) { }
+    } catch (error) {
+        console.error('Failed to set tab title.\nError: ', error);
+    }
 
 
     setTextMessages();

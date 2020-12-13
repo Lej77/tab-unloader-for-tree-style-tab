@@ -14,6 +14,7 @@ import {
 } from '../common/events.js';
 
 import {
+    deepCopyCompare,
     defineProperty,
 } from '../common/utilities.js';
 
@@ -427,6 +428,9 @@ class MouseButtonManager {
 
 
 async function start() {
+    /** @type {EventManager<[{origins?: string[], permissions?: string[]}, boolean]>} */
+    const onPermissionChanged = new EventManager();
+
 
     // #region Browser Version
 
@@ -477,6 +481,7 @@ async function start() {
     // #region Detect Private Permission
 
     const privatePermission = new PrivatePermissionDetector();
+    let tstNotifiedAboutPrivateWindow = false;
 
     // #endregion Detect Private Permission
 
@@ -790,9 +795,13 @@ async function start() {
             return;
         }
         if (message.tab) {
+            if (message.tab.incognito && !tstNotifiedAboutPrivateWindow) {
+                tstNotifiedAboutPrivateWindow = true;
+                notifyPrivacyInfo();
+            }
             if (message.tab.incognito && !privatePermission.hasPermission) {
                 // Extension isn't granted permission to access private windows.
-                console.warn('Can\'t handle tab in private window because Firefox haven\'t granted the extension access to private windows.');
+                console.warn('Can\'t handle tab in private window because Firefox hasn\'t granted the extension access to private windows.');
                 return;
             }
             const tstDiscarded = message.tab.discarded;
@@ -987,16 +996,14 @@ async function start() {
 
     // #region Messaging
 
-    var portManager = new PortManager();
+    const portManager = new PortManager();
     portManager.onMessage.addListener(async (message, sender, disposables) => {
         if (!message.type) {
             return;
         }
         switch (message.type) {
             case messageTypes.permissionsChanged: {
-                portManager.fireEvent(messageTypes.permissionsChanged, [message.permission, message.value]);
-                checkTabHiding();
-                checkTabFixing();
+                onPermissionChanged.fire(message.permission, message.value);
             } break;
             case messageTypes.tabHideAPIChanged: {
                 portManager.fireEvent(messageTypes.tabHideAPIChanged, [message.value, sender.tab ? sender.tab.id : null]);
@@ -1014,17 +1021,174 @@ async function start() {
             } break;
             case messageTypes.getActiveStyle: {
                 return wantedTSTStyle;
-            } break;
+            }
+            case messageTypes.privacyPermission: {
+                return getPrivacyInfo();
+            }
         }
     });
+
     const notifyStyle = (oldStyle, newStyle) => {
         portManager.fireEvent(messageTypes.styleChanged, [oldStyle, newStyle]);
     };
     onTSTStyleChanged.addListener(notifyStyle);
     notifyStyle('', wantedTSTStyle);
 
+    const getPrivacyInfo = () => {
+        return {
+            hasPrivacyPermission: privatePermission.hasPermission,
+            tstNotifiedAboutPrivateWindow,
+            tstPermission: tstManager.trackedPermissions ?
+                /* Known for certain (boolean): */ tstManager.trackedPermissions.privateWindowAllowed :
+                (tstManager.isRegistered ?
+                    /* Legacy?: */ null :
+                    /* Unregistered: */ undefined
+                ),
+        };
+    };
+    let previousPrivacyInfo = getPrivacyInfo();
+    const notifyPrivacyInfo = () => {
+        const info = getPrivacyInfo();
+        if (deepCopyCompare(previousPrivacyInfo, info)) {
+            // No change.
+            return;
+        }
+        previousPrivacyInfo = info;
+        portManager.fireEvent(messageTypes.privacyPermissionChanged, [info]);
+        checkPrivacyPermissions();
+    };
+    privatePermission.promise.then(() => {
+        notifyPrivacyInfo();
+    });
+    tstManager.onPermissionsChanged.addListener(() => {
+        notifyPrivacyInfo();
+    });
+
     // #endregion Messaging
 
+
+    // #region Handle misconfigured privacy permissions
+
+    /** @type { {close: () => void, } | null} The tab id for the popup that informs the user about misconfigured privacy settings. */
+    let privacyPopupInfo = null;
+    let haveWarnedAboutPrivacyPermissions = false;
+    let haveHadTstPrivacyPermission = false;
+
+    /** Try to warn the user when they don't grant access to private windows correctly (both to the extension and via Tree Style Tab). */
+    function checkPrivacyPermissions() {
+        let foundIssue = false;
+        if (settings.warnAboutMisconfiguredPrivacySettings) {
+            const info = getPrivacyInfo();
+            if (info.tstNotifiedAboutPrivateWindow && !info.hasPrivacyPermission) {
+                // Extension isn't granted permission to access private windows.
+                // We can only know this after a private window has been opened and the user tried to interact with it via Tree Style Tab.
+                foundIssue = true;
+            }
+            if (info.hasPrivacyPermission && info.tstPermission === false) {
+                // Extension is granted permission to private windows but Tree Style Tab won't send notifications about them.
+
+                if (haveHadTstPrivacyPermission) {
+                    // The user probably just removed the permission for Tree Style Tab to send notifications for private windows.
+                    // Don't warn about this since the user is obviously aware that Tree Style Tab has permissions.
+                } else {
+                    foundIssue = true;
+                }
+            }
+            if (info.tstPermission === true) {
+                // Don't warn if the user later removes this permission.
+                haveHadTstPrivacyPermission = true;
+            }
+        }
+
+        if (foundIssue) {
+            // Don't open the popup more than once.
+            if (haveWarnedAboutPrivacyPermissions) return;
+
+            (async () => {
+                const info = {
+                    window: null,
+                    _isClosed: false,
+                    async close() {
+                        try {
+                            if (this.window === null) {
+                                // Window is still being opened.
+                                return;
+                            }
+
+                            // Ensure we only try to close once:
+                            if (this._isClosed) return;
+                            this._isClosed = true;
+
+                            /** @type {any[]} */
+                            const query = await browser.tabs.query({ windowId: this.window.id });
+                            if (query.length <= 1) {
+                                // Close window
+                                await browser.windows.remove(this.window.id);
+                            } else {
+                                // Avoid closing user tabs => only close the tab with the warning message.
+                                const warningTab = this.window.tabs[0];
+                                await browser.tabs.remove(warningTab.id);
+                            }
+                        } catch (error) {
+                            console.warn('Failed to close misconfigured privacy permissions popup.\nError: ', error);
+                        }
+                    }
+                };
+                try {
+                    if (privacyPopupInfo != null) {
+                        // Already have a popup open.
+                        return;
+                    }
+                    privacyPopupInfo = info;
+                    haveWarnedAboutPrivacyPermissions = true;
+
+                    info.window = await browser.windows.create({
+                        type: 'popup',
+                        url: browser.runtime.getURL('resources/private-permissions.html'),
+                    });
+                } catch (error) {
+                    console.error('Failed to open popup to warn about misconfigured privacy permissions.\nError: ', error);
+                } finally {
+                    if (info !== privacyPopupInfo) {
+                        // A new popup has been opened or this one has already been closed.
+                        info.close();
+                    }
+                }
+            })();
+        } else if (settings.warnAboutMisconfiguredPrivacySettings) {
+            // No privacy configuration issues could be detected.
+            if (privacyPopupInfo != null) {
+                // Close the popup => the user probably fixed their issues.
+                privacyPopupInfo.close();
+                privacyPopupInfo = null;
+            }
+        }
+    }
+    settingsTracker.onChange.addListener(changes => {
+        if (changes.warnAboutMisconfiguredPrivacySettings) {
+            checkPrivacyPermissions();
+        }
+    });
+
+    // #endregion Handle misconfigured privacy permissions
+
+
+    // #region Permissions
+
+    onPermissionChanged.addListener((permissions, enabled) => {
+        portManager.fireEvent(messageTypes.permissionsChanged, [permissions, enabled]);
+        checkTabHiding();
+        checkTabFixing();
+    });
+
+    try {
+        browser.permissions.onAdded.addListener(permissions => onPermissionChanged.fire(permissions, true));
+        browser.permissions.onRemoved.addListener(permissions => onPermissionChanged.fire(permissions, false));
+    } catch (error) {
+        // Not Firefox 77 or later.
+    }
+
+    // #endregion Permissions
 }
 
 

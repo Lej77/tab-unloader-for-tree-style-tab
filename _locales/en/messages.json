@@ -325,6 +325,27 @@
     "optionalPermissions_Tabs_Explanation": {
         "message": "The \"tabs\" permission is needed to access a tab's title or URL. \n\nThis is needed to fix tabs that don't restore correctly since they need to have their URL set again."
     },
+    "options_warnAboutMisconfiguredPrivacySettings": {
+        "message": "Open a popup window with a warning when misconfigured privacy permissions are detected. (When one of the bellow permissions is granted while the other isn't.)"
+    },
+    "privacyPermissions_Header": {
+        "message": "Access to private windows"
+    },
+    "privacyPermissions_Info": {
+        "message": "For this extension to work with private windows it is not enough to just grant it permission from Firefox. Instead you must also change the settings for Tree Style Tab so that it allows this extension to control and get notified about private windows via its APIs. To do this open up Tree Style Tab's option page and expand the \"Extra Features via Other Addons\" section. Inside it you must enabled the checkbox to \"Notify Messages from Private Windows\" for \"Tab Unloader for Tree Style Tab\"."
+    },
+    "privacyPermissions_hasPrivacyPermission_Header": {
+        "message": "Has privacy permission:"
+    },
+    "privacyPermissions_hasPrivacyPermission_Error": {
+        "message": "Waiting for a private window to be opened"
+    },
+    "privacyPermissions_hasTreeStyleTabPrivacyPermission_Header": {
+        "message": "Tree Style Tab is allowed to send messages for private windows:"
+    },
+    "privacyPermissions_hasTreeStyleTabPrivacyPermission_Error": {
+        "message": "Not registered with Tree Style Tab yet"
+    },
     "permissionsPage_Title": {
         "message": "Permissions"
     },
@@ -336,6 +357,12 @@
     },
     "permissionsPage_Info_End": {
         "message": " it is currently not possible to request optional permission from the options page. As a workaround request permissions from this page instead."
+    },
+    "privatePermissionPage_Title": {
+        "message": "Misconfigured Permissions for Private Windows - Tab Unloader for Tree Style Tabs"
+    },
+    "privatePermissionPage_Info": {
+        "message": "The addon \"Tab Unloader for Tree Style Tab\" detected that you might want to give it access to private windows but privacy permissions were not configured correctly. To do this correctly you need to grant the extension access to private windows and also change the options for \"Tree Style Tab\" so that it sends notifications for private windows."
     },
     "contextMenu_unloadTab": {
         "message": "Suspend T&ab(s)",

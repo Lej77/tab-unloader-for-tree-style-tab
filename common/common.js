@@ -30,6 +30,8 @@ export const messageTypes = Object.freeze({
     permissionsChanged: 'permissionsChanged',
     styleChanged: 'styleChanged',
     getActiveStyle: 'getActiveStyle',
+    privacyPermissionChanged: 'privacyPermissionChanged',
+    privacyPermission: 'privacyPermission',
 });
 export const defaultValues = Object.freeze({
     get Settings() {
@@ -153,6 +155,8 @@ export const defaultValues = Object.freeze({
 
 
             dimUnloadedTabs: true,
+
+            warnAboutMisconfiguredPrivacySettings: true,
 
             unloadAgainAfterDelay: -1,
             unloadViaAutoTabDiscard: false,

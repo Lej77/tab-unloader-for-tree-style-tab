@@ -1,0 +1,24 @@
+@import "../ui/collapsable.css";
+@import "../ui/status-indicator.css";
+@import "../ui/screen-block.css";
+@import "../ui/utilities.css";
+@import "../ui/permissions.css";
+
+html {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+
+.privacyPermissionsArea > .privacyPermissionsStatusArea {
+    margin: 4px;
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+.privacyPermissionsArea > .privacyPermissionsStatusArea > * {
+    margin: 4px;
+}
+

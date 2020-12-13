@@ -168,7 +168,7 @@ export function deepCopy(value) {
  */
 export function deepCopyCompare(a, b) {
   if (a === b) return true;
-  // The only way the two values can be equal after the above check is if they are both objects.  
+  // The only way the two values can be equal after the above check is if they are both objects.
 
   // `null` counts as an `object` so remove that possibility:
   if (!a || !b) return false;

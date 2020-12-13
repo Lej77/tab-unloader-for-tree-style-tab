@@ -30,7 +30,7 @@ export class PortManager {
   }
 
   getPortById(portId) {
-    for (let port of this.openPorts) {
+    for (const port of this.openPorts) {
       if (port.id === portId) {
         return port;
       }
@@ -39,7 +39,7 @@ export class PortManager {
   }
 
   fireEvent(eventName, args = []) {
-    for (let port of this.openPorts) {
+    for (const port of this.openPorts) {
       port.fireEvent(eventName, args);
     }
   }
