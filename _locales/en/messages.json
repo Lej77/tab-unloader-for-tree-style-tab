@@ -260,7 +260,7 @@
         "message": "Keyboard shortcuts"
     },
     "options_Commands_Info": {
-        "message": "Select one of the text inputs bellow and then make a keyboard combination such as \"Alt+X\" to bind the keyboard shortcut to the selected text box. You can also press the \"Prompt\" button and manually write down a keyboard shortcut if you prefer. (Keyboard shortcuts require Firefox 60 or later)"
+        "message": "Select one of the text inputs below and then make a keyboard combination such as \"Alt+X\" to bind the keyboard shortcut to the selected text box. You can also press the \"Prompt\" button and manually write down a keyboard shortcut if you prefer. (Keyboard shortcuts require Firefox 60 or later)"
     },
     "options_Commands_ResetButton": {
         "message": "Reset"
@@ -326,7 +326,7 @@
         "message": "The \"tabs\" permission is needed to access a tab's title or URL. \n\nThis is needed to fix tabs that don't restore correctly since they need to have their URL set again."
     },
     "options_warnAboutMisconfiguredPrivacySettings": {
-        "message": "Open a popup window with a warning when misconfigured privacy permissions are detected. (When one of the bellow permissions is granted while the other isn't.)"
+        "message": "Open a popup window with a warning when misconfigured privacy permissions are detected. (When one of the below permissions is granted while the other isn't.)"
     },
     "privacyPermissions_Header": {
         "message": "Access to private windows"

@@ -34,7 +34,7 @@ null;
 null;
 
 /**
- * A collapsable section that has a title that can be clicked to collapse/expand an area bellow it.
+ * A collapsable section that has a title that can be clicked to collapse/expand an area below it.
  *
  * @typedef {Object} CollapsableAreaInfo
  * @property {HTMLDivElement} Info.area The div that represent the whole collapsable area.

@@ -12,9 +12,9 @@
  *  The active tab is usually the selected one. However, on Firefox for Android, extension popups open in a new tab. When this popup tab is selected, the active tab will instead be the one in which the popup opened.
  * @property {boolean} Info.attention Indicates whether the tab is drawing attention. For example, when the tab displays a modal dialog, attention will be true.
  * @property {boolean} Info.audible If the tab is not muted: whether the tab is producing sound. If the tab is muted: whether the tab would be producing sound, if it were not muted.
- * @property {string} Info.cookieStoreId The cookie store of the tab. If different tabs can have different cookie stores (for example, to support contextual identity), you can pass this as the storeId option into various methods of the cookies API, to set and get cookies associated with this tab's cookie store. Only present if the extension has the "cookies" permission.
+ * @property {string} [Info.cookieStoreId] The cookie store of the tab. If different tabs can have different cookie stores (for example, to support contextual identity), you can pass this as the storeId option into various methods of the cookies API, to set and get cookies associated with this tab's cookie store. Only present if the extension has the "cookies" permission.
  * @property {boolean} Info.discarded Whether the tab is discarded. A discarded tab is one whose content has been unloaded from memory, but is still visible in the tab strip. Its content gets reloaded the next time it's activated.
- * @property {string} Info.favIconUrl The URL of the tab's favicon. Only present if the extension has the "tabs" permission. It may also be an empty string if the tab is loading.
+ * @property {string} [Info.favIconUrl] The URL of the tab's favicon. Only present if the extension has the "tabs" permission. It may also be an empty string if the tab is loading.
  * @property {number} Info.height The height of the tab in pixels.
  * @property {boolean} Info.hidden Whether the tab is hidden.
  * @property {boolean} Info.highlighted Whether the tab is highlighted. An active tab is always highlighted, but some browsers may allow additional tabs to be highlighted, for example by clicking them while holding Ctrl or ⌘ Command keys.
@@ -27,14 +27,14 @@
  * @property {boolean} Info.isInReaderMode True if the tab is currently being rendered in Reader Mode, false otherwise.
  * @property {number} Info.lastAccessed Time at which the tab was last accessed, in milliseconds since the epoch.
  * @property {Object} Info.mutedInfo The current muted state for the tab and the reason for the last state change.
- * @property {number} Info.openerTabId The ID of the tab that opened this tab, if any. This property is only present if the opener tab still exists.
+ * @property {number} [Info.openerTabId] The ID of the tab that opened this tab, if any. This property is only present if the opener tab still exists.
  * @property {boolean} Info.pinned Whether the tab is pinned.
  * @property {boolean} Info.selected Whether the tab is selected.
  * @property {string} Info.sessionId The session ID used to uniquely identify a Tab obtained from the sessions API.
  * @property {string} Info.status Either loading or complete.
  * @property {number} Info.successorId The ID of the tab's successor.
- * @property {string} Info.title The title of the tab. Only present if the extension has the "tabs" permission.
- * @property {string} Info.url The URL of the document that the tab is displaying. Only present if the extension has the "tabs" permission.
+ * @property {string} [Info.title] The title of the tab. Only present if the extension has the "tabs" permission.
+ * @property {string} [Info.url] The URL of the document that the tab is displaying. Only present if the extension has the "tabs" permission.
  * @property {number} Info.width The width of the tab in pixels.
  * @property {number} Info.windowId The ID of the window that hosts this tab.
  */
