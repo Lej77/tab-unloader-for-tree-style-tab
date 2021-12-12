@@ -329,6 +329,9 @@ async function initiatePage() {
             enabledKey,
             enabledMessage,
             useSelectedTabs_key = null,
+            useSelectedTabs_message,
+            ignorePinnedTabs_key = null,
+            ignorePinnedTabs_message,
             fallback_lastSelected_key,
             fallback_ignoreHidden_key,
             fallback_wrapAround_key,
@@ -371,8 +374,14 @@ async function initiatePage() {
 
 
             if (useSelectedTabs_key) {
-                let useSelected = createCheckBox(useSelectedTabs_key, 'options_useSelectedTabs');
+                let useSelected = createCheckBox(useSelectedTabs_key, useSelectedTabs_message);
                 fallbackOptions.appendChild(useSelected.area);
+                if (ignorePinnedTabs_key) {
+                    fallbackOptions.appendChild(document.createElement('br'));
+
+                    let ignorePinned = createCheckBox(ignorePinnedTabs_key, ignorePinnedTabs_message);
+                    fallbackOptions.appendChild(ignorePinned.area);
+                }
 
                 fallbackOptions.appendChild(document.createElement('br'));
                 fallbackOptions.appendChild(document.createElement('br'));
@@ -409,24 +418,52 @@ async function initiatePage() {
         const unloadTab = createContextMenuItemSection({
             id: tstContextMenuItemIds.unloadTab,
             title: 'options_unloadInTSTContextMenu_Title',
+
             enabledKey: 'unloadInTSTContextMenu',
             enabledMessage: 'options_unloadInTSTContextMenu',
+
             useSelectedTabs_key: 'unloadInTSTContextMenu_useSelectedTabs',
+            useSelectedTabs_message: 'options_useSelectedTabs',
+
             fallback_lastSelected_key: 'unloadInTSTContextMenu_fallbackToLastSelected',
             fallback_ignoreHidden_key: 'unloadInTSTContextMenu_ignoreHiddenTabs',
             fallback_wrapAround_key: 'unloadInTSTContextMenu_wrapAround',
+
             customLabelKey: 'unloadInTSTContextMenu_CustomLabel',
         });
 
         const unloadTree = createContextMenuItemSection({
             id: tstContextMenuItemIds.unloadTree,
             title: 'options_unloadTreeInTSTContextMenu_Title',
+
             enabledKey: 'unloadTreeInTSTContextMenu',
             enabledMessage: 'options_unloadTreeInTSTContextMenu',
+
             fallback_lastSelected_key: 'unloadTreeInTSTContextMenu_fallbackToLastSelected',
             fallback_ignoreHidden_key: 'unloadTreeInTSTContextMenu_ignoreHiddenTabs',
             fallback_wrapAround_key: 'unloadTreeInTSTContextMenu_wrapAround',
+
             customLabelKey: 'unloadTreeInTSTContextMenu_CustomLabel',
+        });
+
+        const unloadOther = createContextMenuItemSection({
+            id: tstContextMenuItemIds.unloadOther,
+            title: 'options_unloadOtherInTSTContextMenu_Title',
+
+            enabledKey: 'unloadOtherInTSTContextMenu',
+            enabledMessage: 'options_unloadOtherInTSTContextMenu',
+
+            useSelectedTabs_key: 'unloadOtherInTSTContextMenu_ignoreSelectedTabs',
+            useSelectedTabs_message: 'options_unloadOthers_ignoreSelectedTabs',
+
+            ignorePinnedTabs_key: 'unloadOtherInTSTContextMenu_ignorePinnedTabs',
+            ignorePinnedTabs_message: 'options_unloadOthers_ignorePinnedTabs',
+
+            fallback_lastSelected_key: 'unloadOtherInTSTContextMenu_fallbackToLastSelected',
+            fallback_ignoreHidden_key: 'unloadOtherInTSTContextMenu_ignoreHiddenTabs',
+            fallback_wrapAround_key: 'unloadOtherInTSTContextMenu_wrapAround',
+
+            customLabelKey: 'unloadOtherInTSTContextMenu_CustomLabel',
         });
 
     } catch (error) {
@@ -488,6 +525,39 @@ async function initiatePage() {
                         area.appendChild(document.createElement('br'));
 
                         const wrapAround = createCheckBox('command_unloadTree_wrapAround', 'options_wrapAround');
+                        area.appendChild(wrapAround.area);
+
+                        return area;
+                    },
+                },
+                'unload-other': {
+                    description: 'options_Commands_UnloadOther',
+                    createContent: () => {
+                        const area = document.createElement('div');
+
+                        const ignoreSelectedTabs = createCheckBox('command_unloadOther_ignoreSelectedTabs', 'options_unloadOthers_ignoreSelectedTabs');
+                        area.appendChild(ignoreSelectedTabs.area);
+
+                        area.appendChild(document.createElement('br'));
+
+                        const ignorePinnedTabs = createCheckBox('command_unloadOther_ignorePinnedTabs', 'options_unloadOthers_ignorePinnedTabs');
+                        area.appendChild(ignorePinnedTabs.area);
+
+                        area.appendChild(document.createElement('br'));
+                        area.appendChild(document.createElement('br'));
+
+
+                        const fallbackToLastSelected = createCheckBox('command_unloadOther_fallbackToLastSelected', 'options_fallbackToLastSelected');
+                        area.appendChild(fallbackToLastSelected.area);
+
+                        area.appendChild(document.createElement('br'));
+
+                        const ignoreHiddenTabs = createCheckBox('command_unloadOther_ignoreHiddenTabs', 'options_ignoreHiddenTabs');
+                        area.appendChild(ignoreHiddenTabs.area);
+
+                        area.appendChild(document.createElement('br'));
+
+                        const wrapAround = createCheckBox('command_unloadOther_wrapAround', 'options_wrapAround');
                         area.appendChild(wrapAround.area);
 
                         return area;

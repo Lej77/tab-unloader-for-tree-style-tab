@@ -93,7 +93,7 @@ export class SettingsTracker {
 
         /**
          * This object will be modified based on changes notified via events so that it is always up to date with the latest changes.
-         * @type {T}
+         * @type {Readonly<T>}
          */
         this.settings = fallbackToDefault && defaultValues ? Object.assign({}, (typeof defaultValues === 'function' ? defaultValues() : defaultValues)) : {};
 
@@ -181,6 +181,10 @@ export class SettingsTracker {
     }
     onDisposed() {
         return this._changeListener.onDisposed;
+    }
+
+    get storageArea() {
+        return this._storageArea;
     }
 
     /**

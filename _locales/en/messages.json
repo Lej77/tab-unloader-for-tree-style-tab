@@ -113,6 +113,12 @@
     "options_useSelectedTabs": {
         "message": "Unload selected tabs: if multiple tabs are selected then unload all of them."
     },
+    "options_unloadOthers_ignoreSelectedTabs": {
+        "message": "Ignore selected tabs: if multiple tabs are selected then none of them will be unloaded. If this is unchecked then all tabs except the current tab will be unloaded even if multiple tabs are selected."
+    },
+    "options_unloadOthers_ignorePinnedTabs": {
+        "message": "Ignore pinned tabs: don't unload any tabs that are pinned."
+    },
     "options_fallbackToLastSelected": {
         "message": "Select last focused: If tab is active then select the last focused tab. If this is not checked then the closest tab is selected."
     },
@@ -143,11 +149,17 @@
     "options_unloadTreeInTSTContextMenu_Title": {
         "message": "Unload tree"
     },
+    "options_unloadOtherInTSTContextMenu_Title": {
+        "message": "Unload other tabs"
+    },
     "options_unloadInTSTContextMenu": {
         "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab."
     },
     "options_unloadTreeInTSTContextMenu": {
         "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab tree."
+    },
+    "options_unloadOtherInTSTContextMenu": {
+        "message": "Add a context menu item in Tree Style Tab's context menu to unload all tabs except the currently selected ones."
     },
     "options_contextMenu_customLabel": {
         "message": "Custom context menu item label (place a \"&\" symbol before the letter that should be used as the keyboard shortcut) (empty to use default label):"
@@ -277,6 +289,9 @@
     "options_Commands_UnloadTree": {
         "message": "Unload tree"
     },
+    "options_Commands_UnloadOther": {
+        "message": "Unload other tabs"
+    },
     "options_Commands_SelectPreviousTab": {
         "message": "Select previous loaded tab"
     },
@@ -370,6 +385,10 @@
     },
     "contextMenu_unloadTree": {
         "message": "Suspend Tree",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
+    },
+    "contextMenu_unloadOther": {
+        "message": "Suspend Other Tab(s)",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
     },
     "contextMenu_rootItemTitle": {

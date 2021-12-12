@@ -22,6 +22,7 @@ export const kATD_ID = '{c2c003ee-bd69-42a2-b0e9-6f34222cb046}';
 export const tstContextMenuItemIds = Object.freeze({
     unloadTab: 'unload-tab',
     unloadTree: 'unload-tree',
+    unloadOther: 'unload-other',
 });
 /** The values that the `type` property can have for this extension's internal messages. */
 export const messageTypes = Object.freeze({
@@ -124,6 +125,13 @@ export const defaultValues = Object.freeze({
             command_unloadTree_ignoreHiddenTabs: false,
             command_unloadTree_wrapAround: false,
 
+            /** If this is `false` then only the current tab won't be unloaded; otherwise all selected tabs would be left active. */
+            command_unloadOther_ignoreSelectedTabs: true,
+            command_unloadOther_ignorePinnedTabs: true,
+            command_unloadOther_fallbackToLastSelected: false,
+            command_unloadOther_ignoreHiddenTabs: false,
+            command_unloadOther_wrapAround: false,
+
             command_selectPreviousTab_ignoreHiddenTabs: false,
             command_selectPreviousTab_wrapAround: true,
 
@@ -144,11 +152,21 @@ export const defaultValues = Object.freeze({
             unloadTreeInTSTContextMenu_ignoreHiddenTabs: false,
             unloadTreeInTSTContextMenu_wrapAround: false,
 
+            unloadOtherInTSTContextMenu: false,
+            unloadOtherInTSTContextMenu_CustomLabel: '',
+            /** If this is `false` then only the current tab won't be unloaded; otherwise all selected tabs would be left active. */
+            unloadOtherInTSTContextMenu_ignoreSelectedTabs: true,
+            unloadOtherInTSTContextMenu_ignorePinnedTabs: true,
+            unloadOtherInTSTContextMenu_fallbackToLastSelected: false,
+            unloadOtherInTSTContextMenu_ignoreHiddenTabs: false,
+            unloadOtherInTSTContextMenu_wrapAround: false,
+
             contextMenu_in_tab_bar: true,
             tstContextMenu_CustomRootLabel: '',
             tstContextMenuOrder: [
                 tstContextMenuItemIds.unloadTab,
-                tstContextMenuItemIds.unloadTree
+                tstContextMenuItemIds.unloadTree,
+                tstContextMenuItemIds.unloadOther,
             ],
 
             delayedTSTRegistrationTimeInMilliseconds: 4000,

@@ -548,6 +548,29 @@ async function start() {
                     }
                 ));
             } break;
+            case tstContextMenuItemIds.unloadOther: {
+                const selectedTabs = settings.unloadOtherInTSTContextMenu_ignoreSelectedTabs ? await getSelectedTabs({ tab: tab, majorBrowserVersion, }) : [tab];
+                const allTabs = await browser.tabs.query({ windowId: tab.windowId });
+                await unloadTabs(Object.assign(
+                    getUnloadInfo(),
+                    {
+                        tabs: allTabs.filter(aTab => {
+                            if (selectedTabs.some(selected => selected.id === aTab.id)) {
+                                return false;
+                            }
+                            if (settings.unloadOtherInTSTContextMenu_ignorePinnedTabs && aTab.pinned) {
+                                return false;
+                            }
+                            return true;
+                        }),
+                        fallbackOptions: {
+                            fallbackToLastSelectedTab: settings.unloadOtherInTSTContextMenu_fallbackToLastSelected,
+                            ignoreHiddenTabs: settings.unloadOtherInTSTContextMenu_ignoreHiddenTabs,
+                            wrapAround: settings.unloadOtherInTSTContextMenu_wrapAround,
+                        }
+                    }
+                ));
+            } break;
         }
     };
     browser.menus.onClicked.addListener(onMenuItemClick);
@@ -579,6 +602,30 @@ async function start() {
                             fallbackToLastSelectedTab: settings.command_unloadTree_fallbackToLastSelected,
                             ignoreHiddenTabs: settings.command_unloadTree_ignoreHiddenTabs,
                             wrapAround: settings.command_unloadTree_wrapAround,
+                        }
+                    }
+                ));
+            } break;
+
+            case 'unload-other': {
+                const selectedTabs = settings.command_unloadOther_ignoreSelectedTabs ? await getSelectedTabs({ tab: activeTab, majorBrowserVersion, }) : [activeTab];
+                const allTabs = await browser.tabs.query({ windowId: activeTab.windowId });
+                await unloadTabs(Object.assign(
+                    getUnloadInfo(),
+                    {
+                        tabs: allTabs.filter(aTab => {
+                            if (selectedTabs.some(selected => selected.id === aTab.id)) {
+                                return false;
+                            }
+                            if (settings.command_unloadOther_ignorePinnedTabs && aTab.pinned) {
+                                return false;
+                            }
+                            return true;
+                        }),
+                        fallbackOptions: {
+                            fallbackToLastSelectedTab: settings.command_unloadOther_fallbackToLastSelected,
+                            ignoreHiddenTabs: settings.command_unloadOther_ignoreHiddenTabs,
+                            wrapAround: settings.command_unloadOther_wrapAround,
                         }
                     }
                 ));
@@ -625,6 +672,13 @@ async function start() {
                 id: tstContextMenuItemIds.unloadTree,
                 contexts: ['tab'],
                 title: settings.unloadTreeInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadTree')
+            },
+            // Unload other tabs:
+            {
+                enabled: settings.unloadOtherInTSTContextMenu,
+                id: tstContextMenuItemIds.unloadOther,
+                contexts: ['tab'],
+                title: settings.unloadOtherInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadOther')
             },
             // Dummy root item to customize title:
             {
