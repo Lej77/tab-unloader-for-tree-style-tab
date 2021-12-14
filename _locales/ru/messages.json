@@ -113,6 +113,12 @@
     "options_useSelectedTabs": {
         "message": "Выгрузка выбранных вкладок: если выбрано несколько вкладок, то выгрузить их все."
     },
+    "options_unloadOthers_ignoreSelectedTabs": {
+        "message": "Игнорировать выбор вкладок: если выбрано несколько вкладок, то ни одна из них не будет выгружена. Если флажок снят, то все вкладки, кроме текущей, будут выгружены, независимо от выбора."
+    },
+    "options_unloadOthers_ignorePinnedTabs": {
+        "message": "Игнорировать закрепленные вкладки: не выгружать закрепленные вкладки."
+    },
     "options_fallbackToLastSelected": {
         "message": "Выбрать предыдущую активную: если выгружаемая вкладка активна,то фокус переместится на предыдущую активную, иначе выбирается ближайшая."
     },
@@ -143,11 +149,17 @@
     "options_unloadTreeInTSTContextMenu_Title": {
         "message": "Выгрузить дерево"
     },
+    "options_unloadOtherInTSTContextMenu_Title": {
+        "message": "Выгрузить другие вкладки"
+    },
     "options_unloadInTSTContextMenu": {
         "message": "Добавить пункт в контекстное меню TST для выгрузки вкладки."
     },
     "options_unloadTreeInTSTContextMenu": {
         "message": "Добавить пункт в контекстное меню TST для выгрузки дерева."
+    },
+    "options_unloadOtherInTSTContextMenu": {
+        "message": "Добавить пункт в контекстное меню вкладок TST для выгрузки всех вкладок, кроме текущей."
     },
     "options_contextMenu_customLabel": {
         "message": "Свои клавиши доступа (поместите символ \"&\" перед буквой, которую хотите использовать) (пусто = по умолчанию):"
@@ -277,6 +289,9 @@
     "options_Commands_UnloadTree": {
         "message": "Выгрузить дерево"
     },
+    "options_Commands_UnloadOther": {
+        "message": "Выгрузить другие вкладки"
+    },
     "options_Commands_SelectPreviousTab": {
         "message": "Выбрать предыдущую загруженную вкладку"
     },
@@ -365,15 +380,19 @@
         "message": "Аддон  \"Tab Unloader for Tree Style Tab\" обнаружил, что вы хотите предоставить ему доступ к приватным окнам, но разрешения не настроены правильно. Чтобы сделать это правильно, вам необходимо предоставить расширению доступ к приватным окнам, а также изменить параметры TST, чтобы оно передавало команды для приватных окон через в свои API."
     },
     "contextMenu_unloadTab": {
-        "message": "Suspend T&ab(s)",
+        "message": "Выгрузить &вкладку",
         "description": "Заголовок пункта контекстного меню TST. Вы можете поставить '&' перед символом, который будет клавишей вызова."
     },
     "contextMenu_unloadTree": {
-        "message": "Suspend Tree",
+        "message": "Выгрузить &дерево",
         "description": "Заголовок пункта контекстного меню TST. Вы можете поставить '&' перед символом, который будет клавишей вызова."
     },
+    "contextMenu_unloadOther": {
+        "message": "Выгрузить &остальные",
+        "description": "Название пункта контекстного меню вкладок TST. Вы можете поставить '&' перед символом, который будет клавишей вызова."
+    },
     "contextMenu_rootItemTitle": {
-        "message": "Tab Unloader"
+        "message": "Выгрузить вкладки"
     },
     "treeStyleTabStyle_dimUnloadedTabs": {
         "message": "Затенить выгруженные вкладки"
