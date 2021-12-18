@@ -72,6 +72,25 @@ import {
 
 // #region Tab Operations
 
+/** Tracks what tabs we are currently attempting to unload.
+ *
+ * Keys are tab ids (note that these are strings, since that is the only thing
+ * that objects support) and values are numbers that specify how many unload
+ * operations are in progress for the specified tab id (these should always be
+ * integers larger than 0).
+ *
+ * This is needed since selecting a tab (making a tab active) while we are
+ * unloading it can cause the whole browser window to become unresponsive due to
+ * a Firefox bug.
+ *
+ * Inspired by code in "Auto Tab Discard":
+ * https://github.com/rNeomy/auto-tab-discard/blob/2c5527fce288439d44d5b0909656d719da1e81b6/background.js#L116-L117
+ *
+ * Also see the issue that was filed for "Auto Tab Discard":
+ * https://github.com/rNeomy/auto-tab-discard/issues/248
+ */
+const unloadsInProgress = {};
+
 async function unloadTabs({ tabs, fallbackOptions = {}, discardAgainAfterDelay = -1, disposables = null, useAutoTabDiscard = false } = {}) {
     try {
         tabs = await tabs;
@@ -87,34 +106,56 @@ async function unloadTabs({ tabs, fallbackOptions = {}, discardAgainAfterDelay =
             return;
         }
 
-        // Select another tab if a tab is selected:
-        await ensureTabsArentActive(tabs, fallbackOptions);
+        const tabIds = tabs.map(tab => tab.id);
 
-        // Unload tabs:
-        const discard = async () => {
-            if (useAutoTabDiscard) {
-                try {
-                    await Promise.all(tabs.map(async (tab) => {
-                        await browser.runtime.sendMessage(kATD_ID, {
-                            method: 'discard',
-                            query: {
-                                windowId: tab.windowId,
-                                index: tab.index
-                            } // a query object that is passed to chrome.tabs.query
-                        });
-                    }));
-                } catch (error) {
-                    console.error('Failed to unload tab via Auto Tab Discard extension.\nError:', error);
+        for (const tabId of tabIds) {
+            unloadsInProgress[tabId] = (unloadsInProgress[tabId] || 0) + 1;
+        }
+        try {
+            // Select another tab if a tab is selected:
+            await ensureTabsArentActive(tabs, fallbackOptions);
+
+            // Unload tabs:
+            const discard = async () => {
+                if (useAutoTabDiscard) {
+                    try {
+                        await Promise.all(tabs.map(async (tab) => {
+                            await browser.runtime.sendMessage(kATD_ID, {
+                                method: 'discard',
+                                query: {
+                                    windowId: tab.windowId,
+                                    index: tab.index
+                                } // a query object that is passed to chrome.tabs.query
+                            });
+                        }));
+                    } catch (error) {
+                        console.error('Failed to unload tab via Auto Tab Discard extension.\nError:', error);
+                    }
+                } else {
+                    await browser.tabs.discard(tabIds);
                 }
-            } else {
-                await browser.tabs.discard(tabs.map(tab => tab.id));
-            }
-        };
-        await discard();
-
-        if (discardAgainAfterDelay >= 0) {
-            await boundDelay(discardAgainAfterDelay, disposables);
+            };
             await discard();
+
+            if (discardAgainAfterDelay >= 0) {
+                await boundDelay(discardAgainAfterDelay, disposables);
+                await discard();
+            }
+
+            // Wait a little while to ensure that the tabs has been marked as
+            // unloaded before we remove them from `unloadsInProgress`:
+            await delay(400);
+        } finally {
+            for (const tabId of tabIds) {
+                const newValue = (unloadsInProgress[tabId] || 1) - 1;
+                if (newValue === 0) {
+                    // No unloads in progress for this tab, so we don't need to
+                    // keep track of it anymore:
+                    delete unloadsInProgress[tabId];
+                } else {
+                    unloadsInProgress[tabId] = newValue;
+                }
+            }
         }
     } catch (error) {
         console.error('Failed to unload tab' + (tabs && Array.isArray(tabs) && tabs.length > 1 ? '(s)' : '') + '!\n', error);
@@ -182,10 +223,16 @@ async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, 
         queryDetails.hidden = false;
     }
     const allTabs = await browser.tabs.query(queryDetails);
+
+    const ignoredTabIds = tabs.map(t => t.id);
+    // Do NOT try to select any tabs that are in the process of being unloaded:
+    for (const key of Object.keys(unloadsInProgress)) {
+        ignoredTabIds.push(parseInt(key));
+    }
+
     if (fallbackToLastSelectedTab) {
-        closestTab = await findLastFocusedLoadedTab(allTabs, tabs);
+        closestTab = await findLastFocusedLoadedTab(allTabs, ignoredTabIds);
     } else {
-        const ignoredTabIds = tabs.map(t => t.id);
         closestTab = await findClosestTab({
             tab: activeTabs[0],
             searchTabs: allTabs,
@@ -254,12 +301,11 @@ async function findClosestTab({ tab, searchTabs, checkTab, checkBeforeActiveTab 
 }
 
 
-async function findLastFocusedLoadedTab(searchTabs, ignoredTabs = []) {
+async function findLastFocusedLoadedTab(searchTabs, ignoredTabIds = []) {
     const tabs = searchTabs;
     if (tabs.length <= 1) {
         return null;
     }
-    const ignoredTabIds = ignoredTabs.map(t => t.id);
 
     tabs.sort((a, b) => b.lastAccessed - a.lastAccessed);
     let lastFocusedNotLoaded = null;
