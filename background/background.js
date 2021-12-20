@@ -203,6 +203,7 @@ async function getLatestTabs(tabs) {
  * @param {boolean} [Params.ignoreHiddenTabs] If a tab is active then this determines the preference to use when selecting another tab. If true then all hidden tabs will be ignored when searching for another tab.
  * @param {boolean} [Params.checkBeforeActiveTab] Allowed to select a tab before (to the left of) the currently active tab.
  * @param {boolean} [Params.checkAfterActiveTab] Allowed to select a tab after (to the right of) the currently active tab.
+ * @param {boolean} [Params.wrapAround] If `true` then after reaching the end of the tab list a cursor/scan will continue from the start of the tab list and the same would happen when scanning past the start of the tab list.
  * @returns {Promise<boolean>} Indicates if the operations was successful. If true then none of the provided tabs are selected.
  */
 async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, ignoreHiddenTabs = false, checkBeforeActiveTab = true, checkAfterActiveTab = true, wrapAround = false } = {}) {
@@ -224,10 +225,10 @@ async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, 
     }
     const allTabs = await browser.tabs.query(queryDetails);
 
-    const ignoredTabIds = tabs.map(t => t.id);
+    const ignoredTabIds = new Set(tabs.map(t => t.id));
     // Do NOT try to select any tabs that are in the process of being unloaded:
     for (const key of Object.keys(unloadsInProgress)) {
-        ignoredTabIds.push(parseInt(key));
+        ignoredTabIds.add(parseInt(key));
     }
 
     if (fallbackToLastSelectedTab) {
@@ -236,7 +237,7 @@ async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, 
         closestTab = await findClosestTab({
             tab: activeTabs[0],
             searchTabs: allTabs,
-            checkTab: t => !t.discarded && !ignoredTabIds.includes(t.id),
+            checkTab: t => !t.discarded && !ignoredTabIds.has(t.id),
             checkBeforeActiveTab,
             checkAfterActiveTab,
             wrapAround,
@@ -246,7 +247,7 @@ async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, 
             closestTab = await findClosestTab({
                 tab: activeTabs[0],
                 searchTabs: allTabs,
-                checkTab: t => !ignoredTabIds.includes(t.id),
+                checkTab: t => !ignoredTabIds.has(t.id),
                 checkBeforeActiveTab,
                 checkAfterActiveTab,
                 wrapAround,
@@ -301,7 +302,7 @@ async function findClosestTab({ tab, searchTabs, checkTab, checkBeforeActiveTab 
 }
 
 
-async function findLastFocusedLoadedTab(searchTabs, ignoredTabIds = []) {
+async function findLastFocusedLoadedTab(searchTabs, ignoredTabIds = new Set()) {
     const tabs = searchTabs;
     if (tabs.length <= 1) {
         return null;
@@ -310,7 +311,9 @@ async function findLastFocusedLoadedTab(searchTabs, ignoredTabIds = []) {
     tabs.sort((a, b) => b.lastAccessed - a.lastAccessed);
     let lastFocusedNotLoaded = null;
     for (const focusedTab of tabs) {
-        if (!ignoredTabIds.includes(focusedTab.id)) {
+        if (focusedTab.discarded && lastFocusedNotLoaded) continue;
+
+        if (!ignoredTabIds.has(focusedTab.id)) {
             if (!focusedTab.discarded) {
                 return focusedTab;
             }
