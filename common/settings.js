@@ -122,14 +122,36 @@ export class SettingsTracker {
             }
         }
 
-        /** If values are removed and fallback to their default values then the provided changes won't reflect
-         *  the changes to the tracked settings so we keep track of what keys in the changes that need to be fixed.
-         */
-        let fixedNewValues = null;
+        /** If values are removed and fallback to their default values then the
+         *  provided changes won't reflect the changes to the tracked settings
+         *  so we copy the change data and update it. (We don't want to modify
+         *  it in place since there could be other event listeners which would
+         *  be surprised by that) */
+        let clonedChanges = null;
 
         let defaultSettings;
         for (const [key, value] of entries) {
             if ('newValue' in value) {
+                if (
+                    // Changed from no data
+                    !('oldValue' in value) &&
+                    // When no data implies using fallback values
+                    this.fallbackToDefault &&
+                    // And this key was actually using a fallback value:
+                    (key in this.settings)
+                ) {
+                    // Changed from default value, so fix event data:
+                    if (!clonedChanges) clonedChanges = Object.assign({}, changes);
+
+                    if (this.settings[key] === value.newValue) {
+                        // The old fallback value is the same as our new explicit value:
+                        delete clonedChanges[key];
+                    } else {
+                        const newChange = Object.assign({}, value);
+                        newChange.oldValue = this.settings[key];
+                        clonedChanges[key] = newChange;
+                    }
+                }
                 this.settings[key] = value.newValue;
             } else {
                 if (this.fallbackToDefault && !defaultSettings) {
@@ -139,9 +161,17 @@ export class SettingsTracker {
                     const defaultValue = defaultSettings[key];
                     this.settings[key] = defaultValue;
 
-                    // Info to fix event data:
-                    if (!fixedNewValues) fixedNewValues = {};
-                    fixedNewValues[key] = defaultValue;  // Change event to include new info.
+                    // Fix event data:
+                    if (!clonedChanges) clonedChanges = Object.assign({}, changes);
+
+                    if (!('oldValue' in value) || value.oldValue === defaultValue) {
+                        // Were already using default value (so actually no change):
+                        delete clonedChanges[key];
+                    } else {
+                        const newChange = Object.assign({}, value);
+                        newChange.newValue = defaultValue;
+                        clonedChanges[key] = newChange;
+                    }
                 } else {
                     delete this.settings[key];
                 }
@@ -149,15 +179,8 @@ export class SettingsTracker {
         }
 
         // If falling back to defaults values then change the event data to reflect that.
-        if (fixedNewValues) {
-            changes = Object.assign({}, changes);
-            for (const [key, fixedValue] of Object.entries(fixedNewValues)) {
-                const oldChange = changes[key];
-                if (!oldChange) continue;
-                const newChange = Object.assign({}, oldChange);
-                newChange.newValue = fixedValue;
-                changes[key] = newChange;
-            }
+        if (clonedChanges) {
+            changes = clonedChanges;
         }
 
         this._onChange.fire(changes, areaName);

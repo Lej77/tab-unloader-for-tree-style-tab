@@ -63,14 +63,15 @@ export async function boundDelay(timeInMilliseconds, disposables = null) {
  * @export
  * @template T
  * @param {Promise<T>[]} array Promises to await for values.
- * @returns {T|false} Value of the promise that first resolved to a true value. Otherwise false.
+ * @returns {T | false | Promise<T | false>} Value of the promise that first resolved to a true value. Otherwise false.
  */
 export function checkAny(array) {
-    array = array.filter(value => value);
-    if (array.length === 0) {
+    if (!array.some(value => Boolean(value))) {
+        // Only false values:
         return false;
     }
 
+    /** @type {PromiseWrapper<T | false>} */
     const promiseWrapper = new PromiseWrapper();
 
     let promises = 0;
@@ -89,13 +90,19 @@ export function checkAny(array) {
         }
     };
 
+    // Don't resolve anything until we have queued all promises:
     promises++;
+    // Start queuing promises:
     for (const value of array) {
-        promises++;
-        waitForValue(value);
+        if (value) {
+            promises++;
+            waitForValue(value);
+        }
     }
+    // Okay, now we can resolve to a value:
     promises--;
 
+    // Check if all promises were already resolved:
     if (promises <= 0) {
         promiseWrapper.resolve(false);
     }
@@ -103,8 +110,10 @@ export function checkAny(array) {
 }
 
 /**
- * Allows synchronous access to a Promise's resolve and reject functions.
+ * Allows synchronous access to a Promise's result and ot its resolve and reject
+ * functions.
  *
+ * @template T
  * @class PromiseWrapper
  */
 export class PromiseWrapper {
@@ -115,14 +124,16 @@ export class PromiseWrapper {
      * @memberof PromiseWrapper
      */
     constructor(createPromise = true) {
-        Object.assign(this, {
-            _resolve: null,
-            _reject: null,
-            _value: null,
-            _isError: false,
-            _set: false,
-            _promise: null,
-        });
+        /** @type {null | function(T): void} */
+        this._resolve = null;
+        /** @type {null | function(Error): void} */
+        this._reject = null;
+        /** @type {T | Error | null} */
+        this._value = null;
+        this._isError = false;
+        this._set = false;
+        /** @type {Promise<T>} */
+        this._promise = null;
 
         if (createPromise) {
             this.createPromise();
@@ -130,6 +141,12 @@ export class PromiseWrapper {
     }
 
 
+    /**
+     * Resolve the promise.
+     *
+     * @param {T} value The value to resolve the promise with.
+     * @memberof PromiseWrapper
+     */
     resolve(value) {
         this.setValue(value, false);
     }
@@ -138,6 +155,13 @@ export class PromiseWrapper {
         this.setValue(error, true);
     }
 
+    /**
+     * Resolve or reject the promise.
+     *
+     * @param {T | Error} value The value to resolve the promise with or the error to reject it with.
+     * @param {boolean} [isError=false] `true` to resolve the promise or `false` to reject it.
+     * @memberof PromiseWrapper
+     */
     setValue(value, isError = false) {
         if (this._set) {
             return;
@@ -148,11 +172,11 @@ export class PromiseWrapper {
 
         if (isError) {
             if (this._reject) {
-                this._reject(value);
+                this._reject(/**@type {Error}*/(value));
             }
         } else {
             if (this._resolve) {
-                this._resolve(value);
+                this._resolve(/**@type {T}*/(value));
             }
         }
     }
@@ -161,30 +185,39 @@ export class PromiseWrapper {
         if (this.isPromiseCreated) {
             return;
         }
-        this._promise = new Promise((resolve, reject) => {
-            if (this._set) {
-                if (this._isError) {
-                    reject(this._value);
-                } else {
-                    resolve(this._value);
-                }
+        if (this._set) {
+            if (this._isError) {
+                this._promise = Promise.reject(this._value);
+            } else {
+                this._promise = Promise.resolve(/**@type {T}*/(this._value));
             }
-            this._resolve = resolve;
-            this._reject = reject;
-        });
+        } else {
+            this._promise = new Promise((resolve, reject) => {
+                if (this._set) {
+                    if (this._isError) {
+                        reject(this._value);
+                    } else {
+                        resolve(/**@type {T}*/(this._value));
+                    }
+                } else {
+                    this._resolve = resolve;
+                    this._reject = reject;
+                }
+            });
+        }
     }
 
     /**
      * Returns a promise if it is available or if it is the only way to provide the results.
      *
-     * @returns {any} Either a promise that will be resolved to the correct value or the value that the promise would have been resolved to.
+     * @returns {Promise<T> | T} Either a promise that will be resolved to the correct value or the value that the promise would have been resolved to.
      * @memberof PromiseWrapper
      */
     getValue() {
         if (this.isPromiseCreated || !this.done || this.isError) {
             return this.promise;
         }
-        return this.value;
+        return /**@type {T}*/(this.value);
     }
 
     get promise() {
@@ -225,7 +258,6 @@ export class PromiseWrapper {
     get value() {
         return this._value;
     }
-
 }
 
 
@@ -380,6 +412,7 @@ export class RequestManager {
         this._invalidated = false;
         /** @type {A | []} The arguments to use for the next update. */
         this._lastArgs = [];
+        /** @type {PromiseWrapper<boolean>} Resolved when the next update (which is not currently started) completes. */
         this._confirmPromiseWrapper = new PromiseWrapper();
 
         this._simultaneousUpdates = simultaneousUpdates;
@@ -439,50 +472,55 @@ export class RequestManager {
      * Unblock and update. Forces an update now and block after it.
      *
      * @param {A} args Arguments to use when starting the next update.
+     * @returns {Promise<boolean>} A promise that resolves to `true` if the started update is completed.
      * @memberof RequestManager
      */
-    async forceUpdate(...args) {
+    forceUpdate(...args) {
         this._lastArgs = args;
-        await this._update(true);
+        const affectedPromise = this._confirmPromiseWrapper;
+        this._update();
+        return affectedPromise.promise;
     }
 
-    async _update(external = false) {
-        if (this.isDisposed) {
-            return;
-        }
-        if (!this._simultaneousUpdates && this.updateInProgress) {
-            // Unblocked but last update has yet to complete.
-            this._invalidated = true;
-            if (external) {
-                await this._confirmPromiseWrapper.getValue();
+    async _update() {
+        let doMoreUpdates = true;
+        while (doMoreUpdates) {
+            doMoreUpdates = false;
+            if (this.isDisposed) {
+                return;
             }
-            return;
-        }
+            if (!this._simultaneousUpdates && this.updateInProgress) {
+                // Unblocked but last update has yet to complete.
+                this._invalidated = true;
+                return;
+            }
 
-        const currentUpdateBlock = this.block();
-        this._invalidated = false;
+            const currentUpdateBlock = this.block();
+            this._invalidated = false;
 
-        const args = this._lastArgs;
-        this._lastArgs = [];
+            const args = this._lastArgs;
+            this._lastArgs = [];
 
-        const affectedConfirmPromise = this._confirmPromiseWrapper;
-        this._confirmPromiseWrapper = new PromiseWrapper();
-        this._confirmPromiseWrapper.promise.then((value) => affectedConfirmPromise.resolve(value));
+            const affectedConfirmPromise = this._confirmPromiseWrapper;
+            this._confirmPromiseWrapper = new PromiseWrapper();
+            // If the next update completes before the current one, then that should
+            // be enough for anyone waiting:
+            this._confirmPromiseWrapper.promise.then((value) => affectedConfirmPromise.resolve(value));
 
-        let releaseBlock = false;
-        try {
             this._updates++;
-            releaseBlock = await checkAny(this._onUpdate.fire.apply(this._onUpdate, args));
+            try {
+                const releaseBlock = await checkAny(this._onUpdate.fire.apply(this._onUpdate, args));
 
-            if (releaseBlock && currentUpdateBlock === this._blockTimeout) {
-                this.unblock();
-            }
-        } finally {
-            this._updates--;
-            affectedConfirmPromise.resolve(true);
-            if (!this.isBlocked && this.isInvalidated) {
-                if (this._simultaneousUpdates || !this.updateInProgress) {
-                    this._update();
+                if (releaseBlock && currentUpdateBlock === this._blockTimeout) {
+                    if (this._blockTimeout) {
+                        this._blockTimeout.dispose();
+                    }
+                }
+            } finally {
+                this._updates--;
+                affectedConfirmPromise.resolve(true);
+                if (!this.isBlocked && this.isInvalidated) {
+                    doMoreUpdates = true;
                 }
             }
         }
@@ -495,17 +533,33 @@ export class RequestManager {
      * @returns {Promise<boolean>} True if update was successful.
      * @memberof RequestManager
      */
-    async invalidate(...args) {
+    invalidate(...args) {
         if (this.isDisposed) {
-            return false;
+            // Promise should resolve to `false` when we are disposed:
+            return this._confirmPromiseWrapper.promise;
         }
         this._invalidated = true;
         this._lastArgs = args;
-        const updatePromise = this._confirmPromiseWrapper.getValue();
+        const updatePromise = this._confirmPromiseWrapper.promise;
         if (!this.isBlocked) {
             this._update();
         }
         return updatePromise;
+    }
+
+    /**
+     * Cancel any queued updates but not any that are currently in progress.
+     *
+     * Blocks are not affected and will not be released.
+     *
+     * @memberof RequestManager
+     */
+    validate() {
+        if (this.isDisposed) {
+            return;
+        }
+        this._invalidated = false;
+        this._lastArgs = [];
     }
 
 
