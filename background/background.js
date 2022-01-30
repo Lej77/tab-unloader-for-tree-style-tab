@@ -129,18 +129,12 @@ async function unloadTabs({ tabs, fallbackOptions = {}, discardAgainAfterDelay =
                             });
                             const success = Array.isArray(discardedTabIds) && discardedTabIds.includes(tab.id);
                             if (!success) {
-                                // This will run for tabs such as `about:newtab`
-                                // since Auto Tab Discard will only unload tabs
-                                // that start with `http` or `ftp`, see:
+                                // This will run for tabs such as `about:newtab` since Auto Tab Discard will only unload
+                                // tabs that start with `http` or `ftp`, see:
                                 // https://github.com/rNeomy/auto-tab-discard/blob/5388d50d2cfc948af4b6efcd5fd385c7c3af359c/background.js#L260-L261
                                 //
-                                // This will also happen if we try to unload a
-                                // private tab when Auto Tab Discard doesn't
-                                // have access to private windows (since the
-                                // query we send then returns no tabs).
-                                console.warn('The Auto Tab Discard extension choose to not unload a tab ' +
-                                    '(maybe it was a URL like `about:newtab` or maybe it was located in a private window?), ' +
-                                    'so unloading it directly instead.\nTab info:', tab, '\nAuto Tab Discard returned:', discardedTabIds);
+                                // This will also happen if we try to unload a private tab when Auto Tab Discard doesn't
+                                // have access to private windows (since the query we send then returns no tabs).
                                 try {
                                     await browser.tabs.discard(tab.id);
                                 } catch (error) {
