@@ -87,7 +87,7 @@
         "message": "Долгое нажатие без перетаскивания. Это специальный сигнал, отправляемый TST, при долгом нажатии ЛКМ на вкладке. Используется что бы не мешать перетаскиванию вкладок."
     },
     "options_onDrag_cancel": {
-        "message": "Если чекбокс отмечен - отмена, при регистрации события; иначе - разрешить, при регистрации события."
+        "message": "Если чекбокс отмечен - отмена, при регистрации события; иначе - разрешить, при регистрации события. If this is checked then the tab must NOT be long pressed in order for this condition to be met, so it can be clicked on quickly or it can be dragged and dropped. (If the \"also register mouse up events\" checkbox is checked then \"clicked on quickly\" is no longer an option and so this means that a drag and drop operation must be started for the clicked tab in order for the condition to be met.)"
     },
     "options_onDrag_mouseUpTigger": {
         "message": "Если этот чекбокс отмечен, то события 'mouse up' также будут регистрироваться как события длительного нажатия. В настоящее время TST не отправляет события 'mouse up' после операций перетаскивания, поэтому если отправляется событие 'mouse up', значит перетаскивание не использовалось. Это означает, что если этот чекбокс отмечен, то событие будет зарегистрировано, только если перетаскивание не используется."
@@ -96,7 +96,7 @@
         "message": "Время ожидания длительного нажатия в миллисекундах (должно быть 400 миллисекунд, если вкладка не перетаскивается) (в современном режиме это должно быть время ожидания до предотвращения перетаскивания): "
     },
     "options_onDrag_Modern": {
-        "message": "API перетаскивания TST был изменен в TST v2.7.8. Отметьте этот параметр, если вы используете версию TST 2.7.8 или выше. (Современный API имеет новый тип события, который отправляется в начале перетаскивания в боковой панели. Поэтому, вместо ожидания события \"долгое нажатие\" до тайм-аута, мы ждем тайм-аут и отменяем событие \"перетаскивания \".)"
+        "message": "API перетаскивания TST был изменен в TST v2.7.8. Отметьте этот параметр, если вы используете версию TST 2.7.8 или выше. (Современный API имеет новый тип события, который отправляется в начале перетаскивания в боковой панели. Поэтому, вместо ожидания события \"долгое нажатие\" до тайм-аута, мы ждем тайм-аут и отменяем событие \"перетаскивания \".) (This doesn't change the behavior of the settings above this one, instead it only decreases the risk of race conditions if the timeout is too low and allows delaying the start of a drag and drop operations for longer than the default 400ms.)"
     },
     "options_onDrag_Modern_PreventDragAndDrop": {
         "message": "Современный API перетаскивания не переключается в режим \"долгого нажатия\" автоматически, теперь он требует сообщения в TST, если мы хотим это сделать. Установите этот флажок, чтобы отправлять такое сообщение по истечении тайм-аута. Это будет имитировать работу TST и предотвратит запуск операций перетаскивания по истечении определенного времени (указанного тайм-аутом)."
@@ -241,21 +241,6 @@
     "options_TreeStyleTabStyle_Info": {
         "message": "Изменение стиля боковой панели TST, для этого расширения (активируется в секции 'Другие настройки'):"
     },
-    "options_unloadAgainAfterDelay": {
-        "message": "После выгрузки вкладок повторить метод выгрузки снова, после небольшой задержки (в миллисекундах) (-1 для отключения):"
-    },
-    "options_unloadViaAutoTabDiscard_Prefix": {
-        "message": "Выгрузка вкладок посредством расширения "
-    },
-    "options_unloadViaAutoTabDiscard_Name": {
-        "message": "Auto Tab Discard"
-    },
-    "options_unloadViaAutoTabDiscard_URL": {
-        "message": "https://addons.mozilla.org/firefox/addon/auto-tab-discard/"
-    },
-    "options_unloadViaAutoTabDiscard_Suffix": {
-        "message": "."
-    },
     "options_OptionalPermissions_Header": {
         "message": "Дополнительные разрешения"
     },
@@ -399,5 +384,11 @@
     },
     "treeStyleTabStyle_showHiddenTabs": {
         "message": "Показать скрытые вкладки"
+    },
+    "html-options_TabRestoreFix_unloadAgainAfterDelay": {
+        "message": "После выгрузки вкладок повторить метод выгрузки снова, после небольшой задержки (в миллисекундах) (this fixes an issue where sometimes when unloading a tab it fails to be marked as unloaded, see <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/3#issuecomment-391998967\">issue 3</a> for more info) (-1 для отключения):"
+    },
+    "html-options_unloadViaAutoTabDiscard": {
+        "message": "Выгрузка вкладок посредством расширения <a href=\"https://addons.mozilla.org/firefox/addon/auto-tab-discard/\">Auto Tab Discard</a>. (This can allow for more advanced features such as dimming the favicon of unloaded tabs.) (See <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/13\">issue 13</a> on this extension's issue tracker for more info.)"
     }
 }

@@ -17,6 +17,18 @@
     "options_openInSeparateTab": {
         "message": "Open this options page in a separate tab"
     },
+    "options_category_mouseEvents_Title": {
+        "message": "Mouse Events (from Tree Style Tab)"
+    },
+    "options_category_mouseEvents_Explanation": {
+        "message": "Each section in this area represents an action that can be taken in response to a mouse button being pressed while the mouse is over the Tree Style Tab sidebar. Inside each section are settings to configure what conditions must be met for an action to be taken. If not ALL of the enabled conditions are met then no action will be taken and Tree Style Tab will preform its default action. (A section's action is sometimes referred to as \"the operation\" inside the sections' settings.)"
+    },
+    "options_category_commands_Title": {
+        "message": "Commands"
+    },
+    "options_category_permissions_Title": {
+        "message": "Permissions"
+    },
     "options_unloadOnLeftClick": {
         "message": "Left click tabs to unload them."
     },
@@ -87,7 +99,7 @@
         "message": "Wait for long press without drag and drop. This is a special notification sent by Tree Style Tab when a tab is long pressed with the left mouse button. The notification is not sent if the tab is dragged. This can be used to allow the operation with long press but cancel when using drag and drop with tabs."
     },
     "options_onDrag_cancel": {
-        "message": "If checked then cancel if an event is registered; otherwise only allow if an event is registered."
+        "message": "Invert the check. If this is checked then the tab must NOT be long pressed in order for this condition to be met, so it can be clicked on quickly or it can be dragged and dropped. (If the \"also register mouse up events\" checkbox is checked then \"clicked on quickly\" is no longer an option and so this means that a drag and drop operation must be started for the clicked tab in order for the condition to be met.)"
     },
     "options_onDrag_mouseUpTigger": {
         "message": "If checked then mouse up events will also register as long-press events. Currently Tree Style Tab doesn't send mouse up events after drag and drop operations so if a mouse up event is sent then drag and drop wasn't used. In other words this option changes the check from \"long press tabs\" to \"any click that doesn't start a drag and drop operation\" (as long as Tree Style Tab doesn't change its strange behavior around this)."
@@ -96,7 +108,7 @@
         "message": "Time in milliseconds to wait for long press (in legacy mode we should be notified after 400 milliseconds if the tab isn't dragged so keep it slightly above that) (in modern mode this should be how long we want to wait before preventing/ignoring drag and drop): "
     },
     "options_onDrag_Modern": {
-        "message": "Tree Style Tab's drag API was changed and is slightly different in Tree Style Tab v2.7.8 and later then it was previously. Check this setting if you are using a more modern Tree Style Tab version. (The more modern API has a new event type that is sent when a drag and drop operation is started in the sidebar. So instead of waiting for a \"long press\" event before a timeout we instead wait for a timeout and cancel on a \"drag and drop\" event.)"
+        "message": "Tree Style Tab's drag API was changed and is slightly different in Tree Style Tab v2.7.8 and later then it was previously. Check this setting if you are using a more modern Tree Style Tab version. (The more modern API has a new event type that is sent when a drag and drop operation is started in the sidebar. So instead of waiting for a \"long press\" event before a timeout we instead wait for a \"drag and drop\" event before a timeout.) (This doesn't change the behavior of the settings above this one, instead it only decreases the risk of race conditions if the timeout is too low and allows delaying the start of a drag and drop operations for longer than the default 400ms.)"
     },
     "options_onDrag_Modern_PreventDragAndDrop": {
         "message": "The more modern drag API doesn't switch into the special \"long press\" mode automatically, instead it requires that we send a message to Tree Style Tab when we want to do so. Check this setting to send such a message after the timeout has expired. This will mimic how Tree Style Tab used to work and prevent drag and drop operations from being started after a certain time (specified by the timeout)."
@@ -230,7 +242,7 @@
         "message": "If the tab is incorrectly marked as loaded by Firefox then unload it again after a delay to mark it as unloaded (time in milliseconds) (-1 to disable):"
     },
     "options_TabRestoreFix_permissionWarning": {
-        "message": "Note: requires the \"tabs\" permission. (Can work partially without the permission if Tree Style Tab is installed.)"
+        "message": "Note: the above features requires the \"tabs\" permission. (Can work partially without the permission if Tree Style Tab is installed.)"
     },
     "options_TabRestoreFix_deprecatedWarning": {
         "message": "This section is a workaround for a Firefox bug that was fixed in Firefox 62."
@@ -240,21 +252,6 @@
     },
     "options_TreeStyleTabStyle_Info": {
         "message": "This is the style changes made to Tree Style Tab's sidebar by this extension:"
-    },
-    "options_unloadAgainAfterDelay": {
-        "message": "When unloading tabs use the unload method again after a slight delay (time in milliseconds) (-1 to disable):"
-    },
-    "options_unloadViaAutoTabDiscard_Prefix": {
-        "message": "Unload tabs via the "
-    },
-    "options_unloadViaAutoTabDiscard_Name": {
-        "message": "Auto Tab Discard"
-    },
-    "options_unloadViaAutoTabDiscard_URL": {
-        "message": "https://addons.mozilla.org/firefox/addon/auto-tab-discard/"
-    },
-    "options_unloadViaAutoTabDiscard_Suffix": {
-        "message": " extension."
     },
     "options_OptionalPermissions_Header": {
         "message": "Optional Permissions"
@@ -380,15 +377,15 @@
         "message": "The addon \"Tab Unloader for Tree Style Tab\" detected that you might want to give it access to private windows but privacy permissions were not configured correctly. To do this correctly you need to grant the extension access to private windows and also change the options for \"Tree Style Tab\" so that it sends notifications for private windows."
     },
     "contextMenu_unloadTab": {
-        "message": "Suspend T&ab(s)",
+        "message": "Unload Tab(s)",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
     },
     "contextMenu_unloadTree": {
-        "message": "Suspend Tree",
+        "message": "Unload Tree",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
     },
     "contextMenu_unloadOther": {
-        "message": "Suspend Other Tab(s)",
+        "message": "Unload Other Tab(s)",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
     },
     "contextMenu_rootItemTitle": {
@@ -399,5 +396,11 @@
     },
     "treeStyleTabStyle_showHiddenTabs": {
         "message": "Show hidden tabs"
+    },
+    "html-options_TabRestoreFix_unloadAgainAfterDelay": {
+        "message": "When unloading tabs use the unload method again after a slight delay (this fixes an issue where sometimes when unloading a tab it fails to be marked as unloaded, see <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/3#issuecomment-391998967\">issue 3</a> for more info) (time in milliseconds) (-1 to disable):"
+    },
+    "html-options_unloadViaAutoTabDiscard": {
+        "message": "Unload tabs via the <a href=\"https://addons.mozilla.org/firefox/addon/auto-tab-discard/\">Auto Tab Discard</a> extension. (This can allow for more advanced features such as dimming the favicon of unloaded tabs.) (See <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/13\">issue 13</a> on this extension's issue tracker for more info.)"
     }
 }

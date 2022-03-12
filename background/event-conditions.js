@@ -79,12 +79,11 @@ export class DragMonitor extends Monitor {
             onDragModern_PreventDragAndDrop,
         } = data;
 
-        const onDragOnly = !onDragCancel;
         const hasOnDragTimeout = onDragTimeout && onDragTimeout > 0;
         onDragEnabled = onDragEnabled && hasOnDragTimeout;
 
-        const setLongPress = (dragged) => {
-            op.resolve(dragged ? !onDragCancel : !onDragOnly);
+        const setLongPress = (longPress) => {
+            op.resolve(longPress ? !onDragCancel : onDragCancel);
         };
 
         if (!onDragEnabled) {

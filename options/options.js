@@ -88,6 +88,12 @@ quickLoadSetting('disableOptionsPageDarkTheme')
     }
 }
 
+
+/** DANGEROUS, allows i18n messages to inject HTML. Should be used sparingly to
+ * make it harder for translators to sneak in malicious code. */
+const messageAsHtml = 'message-as-html';
+
+
 async function initiatePage() {
     let starters = new DisposableCreators();
     let pagePort = new PortConnection();
@@ -204,52 +210,83 @@ async function initiatePage() {
 
     // #region Mouse Events
 
-    let mouseAreas = MouseClickComboCollection.createStandard().combos.map(combo => createMouseClickArea(combo, sectionAnimationInfo));
-    for (let mouseArea of mouseAreas) {
-        document.body.appendChild(mouseArea.area);
-    }
-    starters.createDisposable(() => {
-        let listeners = [];
-        for (let area of mouseAreas) {
-            let obj = area.combo;
-            let key = area.settingKey;
+    {
+        const mouseAreas = MouseClickComboCollection.createStandard().combos.map(combo => createMouseClickArea(combo, sectionAnimationInfo));
 
-            // Apply settings data to document:
-            obj.update(settings[key]);
-            area.settingsLoaded.fire();
+        const mouseEventCategory = document.createElement('fieldset');
+        mouseEventCategory.classList.add('mouseEventsCategory');
+        mouseEventCategory.classList.add('category');
+        document.body.appendChild(mouseEventCategory);
 
-            // Track document changes and save to settings:
-            listeners.push(new EventListener(obj.onChange, () => {
-                SettingsTracker.set(key, obj.data);
-            }));
+        const legend = document.createElement('legend');
+        legend.classList.add(messagePrefix + 'options_category_mouseEvents_Title');
+        mouseEventCategory.appendChild(legend);
+
+        const explanation = document.createElement('label');
+        explanation.classList.add(messagePrefix + 'options_category_mouseEvents_Explanation');
+        mouseEventCategory.appendChild(explanation);
+
+        mouseEventCategory.appendChild(document.createElement('br'));
+        mouseEventCategory.appendChild(document.createElement('br'));
+
+        for (const mouseArea of mouseAreas) {
+            mouseEventCategory.appendChild(mouseArea.area);
         }
-        return listeners;
-    });
+        starters.createDisposable(() => {
+            const listeners = [];
+            for (const area of mouseAreas) {
+                const obj = area.combo;
+                const key = area.settingKey;
+
+                // Apply settings data to document:
+                obj.update(settings[key]);
+                area.settingsLoaded.fire();
+
+                // Track document changes and save to settings:
+                listeners.push(new EventListener(obj.onChange, () => {
+                    SettingsTracker.set(key, obj.data);
+                }));
+            }
+            return listeners;
+        });
+    }
 
     // #endregion Mouse Events
+
+
+    const commandsCategory = document.createElement('fieldset');
+    commandsCategory.classList.add('commandsCategory');
+    commandsCategory.classList.add('category');
+    document.body.appendChild(commandsCategory);
+    {
+        const legend = document.createElement('legend');
+        legend.classList.add(messagePrefix + 'options_category_commands_Title');
+        commandsCategory.appendChild(legend);
+    }
 
 
     // #region Context Menu Item
 
     try {
-        let section = createCollapsableArea(sectionAnimationInfo);
+        const section = createCollapsableArea(sectionAnimationInfo);
         section.area.classList.add('standardFormat');
         section.title.classList.add('center');
         section.title.classList.add('enablable');
-        document.body.appendChild(section.area);
+        commandsCategory.appendChild(section.area);
 
-        let header = document.createElement('div');
+        const header = document.createElement('div');
         header.classList.add(messagePrefix + 'options_contextMenuItems_Title');
         section.title.appendChild(header);
 
 
-        let rootItemLabel_Description = document.createElement('label');
+        const rootItemLabel_Description = document.createElement('label');
         rootItemLabel_Description.classList.add(messagePrefix + 'options_tstContextMenu_CustomRootLabel');
         section.content.appendChild(rootItemLabel_Description);
 
-        let rootItemLabel = document.createElement('input');
+        const rootItemLabel = document.createElement('input');
         rootItemLabel.type = 'text';
         rootItemLabel.id = 'tstContextMenu_CustomRootLabel';
+        rootItemLabel.placeholder = browser.i18n.getMessage('contextMenu_rootItemTitle');
         section.content.appendChild(rootItemLabel);
 
 
@@ -257,7 +294,7 @@ async function initiatePage() {
         section.content.appendChild(document.createElement('br'));
 
 
-        let delayedRegistration = createNumberInput('options_unloadInTSTContextMenu_DelayedRegistration', 0, false);
+        const delayedRegistration = createNumberInput('options_unloadInTSTContextMenu_DelayedRegistration', 0, false);
         delayedRegistration.input.id = 'delayedTSTRegistrationTimeInMilliseconds';
         section.content.appendChild(delayedRegistration.area);
 
@@ -265,7 +302,7 @@ async function initiatePage() {
         section.content.appendChild(document.createElement('br'));
 
 
-        let tabbarCheckbox = createCheckBox('contextMenu_in_tab_bar', 'options_contextMenu_in_tab_bar');
+        const tabbarCheckbox = createCheckBox('contextMenu_in_tab_bar', 'options_contextMenu_in_tab_bar');
         section.content.appendChild(tabbarCheckbox.area);
 
 
@@ -273,13 +310,13 @@ async function initiatePage() {
         section.content.appendChild(document.createElement('br'));
 
 
-        let list = createListArea();
+        const list = createListArea();
         section.content.appendChild(list.area);
 
         let listItemEnabled = new Map();
         let listItemToId = new Map();
         let idToListItem = new Map();
-        let checkListEnabled = () => {
+        const checkListEnabled = () => {
             toggleClass(section.title, 'enabled', delayedRegistration.input.value > 0 || Array.from(listItemEnabled.values()).some(value => value));
         };
         starters.createDisposable(() => {
@@ -289,7 +326,7 @@ async function initiatePage() {
                 new EventListener(delayedRegistration.input, 'input', checkListEnabled),
             ];
         });
-        let setItemEnabled = (item, isEnabled) => {
+        const setItemEnabled = (item, isEnabled) => {
             listItemEnabled.set(item, isEnabled);
             checkListEnabled();
         };
@@ -300,13 +337,13 @@ async function initiatePage() {
             return false;
         });
 
-        let saveOrder = () => {
+        const saveOrder = () => {
             SettingsTracker.set('tstContextMenuOrder', list.items.map(item => listItemToId.get(item)));
         };
-        let loadOrder = () => {
-            let orderIds = settings.tstContextMenuOrder;
-            for (let id of orderIds) {
-                let item = idToListItem.get(id);
+        const loadOrder = () => {
+            const orderIds = settings.tstContextMenuOrder;
+            for (const id of orderIds) {
+                const item = idToListItem.get(id);
                 if (item) {
                     list.addItem(item);
                 }
@@ -323,6 +360,25 @@ async function initiatePage() {
             }));
         });
 
+        // eslint-disable-next-line valid-jsdoc
+        /**
+         * Create a section that configures a context menu item.
+         *
+         * @param {Object} Param Parameters
+         * @param {string} Param.id The id of the context menu item.
+         * @param {string} Param.title The i18n message id for the section's title.
+         * @param {keyof settings} Param.enabledKey The setting key that enables this item.
+         * @param {string} Param.enabledMessage The i18n message id for the enable checkbox.
+         * @param {null | keyof settings} [Param.useSelectedTabs_key] The setting key for the use selected tabs checkbox.
+         * @param {string} Param.useSelectedTabs_message The i18n message id for the use selected tabs checkbox.
+         * @param {null | keyof settings} [Param.ignorePinnedTabs_key] The setting key for the ignore pinned tabs checkbox.
+         * @param {string} Param.ignorePinnedTabs_message The i18n message id for the ignore pinned tabs checkbox.
+         * @param {keyof settings} Param.fallback_lastSelected_key A settings key for this option.
+         * @param {keyof settings} Param.fallback_ignoreHidden_key A settings key for this option.
+         * @param {keyof settings} Param.fallback_wrapAround_key A settings key for this option.
+         * @param {keyof settings} Param.customLabelKey A settings key for this option.
+         * @param {string} Param.defaultCustomLabelMessage The i18n message id for the placeholder text to show inside the custom label input.
+         */
         const createContextMenuItemSection = ({
             id,
             title,
@@ -336,23 +392,24 @@ async function initiatePage() {
             fallback_ignoreHidden_key,
             fallback_wrapAround_key,
             customLabelKey,
+            defaultCustomLabelMessage,
         }) => {
-            let listItem = list.createItem(sectionAnimationInfo);
+            const listItem = list.createItem(sectionAnimationInfo);
             listItemToId.set(listItem, id);
             idToListItem.set(id, listItem);
 
-            let section = listItem.section;
+            const section = listItem.section;
             section.content.classList.add('standardFormat');
             section.title.classList.add('enablable');
             section.content.classList.add('contextMenuItemArea');
 
-            let header = document.createElement('div');
+            const header = document.createElement('div');
             header.classList.add('center');
             header.classList.add(messagePrefix + title);
             section.title.appendChild(header);
 
-            let enabledCheckbox = createCheckBox(enabledKey, enabledMessage);
-            let check = () => {
+            const enabledCheckbox = createCheckBox(enabledKey, enabledMessage);
+            const check = () => {
                 let enabled = enabledCheckbox.checkbox.checked;
                 toggleClass(section.title, 'enabled', enabled);
                 toggleClass(section.content, 'enabled', enabled);
@@ -367,19 +424,19 @@ async function initiatePage() {
             section.content.appendChild(document.createElement('br'));
 
 
-            let fallbackOptions = document.createElement('div');
+            const fallbackOptions = document.createElement('div');
             fallbackOptions.classList.add('area');
             fallbackOptions.classList.add('enabled');
             section.content.appendChild(fallbackOptions);
 
 
             if (useSelectedTabs_key) {
-                let useSelected = createCheckBox(useSelectedTabs_key, useSelectedTabs_message);
+                const useSelected = createCheckBox(useSelectedTabs_key, useSelectedTabs_message);
                 fallbackOptions.appendChild(useSelected.area);
                 if (ignorePinnedTabs_key) {
                     fallbackOptions.appendChild(document.createElement('br'));
 
-                    let ignorePinned = createCheckBox(ignorePinnedTabs_key, ignorePinnedTabs_message);
+                    const ignorePinned = createCheckBox(ignorePinnedTabs_key, ignorePinnedTabs_message);
                     fallbackOptions.appendChild(ignorePinned.area);
                 }
 
@@ -388,12 +445,12 @@ async function initiatePage() {
             }
 
 
-            let fallbackToLastSelected = createCheckBox(fallback_lastSelected_key, 'options_fallbackToLastSelected');
+            const fallbackToLastSelected = createCheckBox(fallback_lastSelected_key, 'options_fallbackToLastSelected');
             fallbackOptions.appendChild(fallbackToLastSelected.area);
 
             fallbackOptions.appendChild(document.createElement('br'));
 
-            let ignoreHiddenTabs = createCheckBox(fallback_ignoreHidden_key, 'options_ignoreHiddenTabs');
+            const ignoreHiddenTabs = createCheckBox(fallback_ignoreHidden_key, 'options_ignoreHiddenTabs');
             fallbackOptions.appendChild(ignoreHiddenTabs.area);
 
             fallbackOptions.appendChild(document.createElement('br'));
@@ -405,13 +462,16 @@ async function initiatePage() {
             section.content.appendChild(document.createElement('br'));
 
 
-            let customLabelDescription = document.createElement('label');
+            const customLabelDescription = document.createElement('label');
             customLabelDescription.classList.add(messagePrefix + 'options_contextMenu_customLabel');
             section.content.appendChild(customLabelDescription);
 
-            let customLabel = document.createElement('input');
+            const customLabel = document.createElement('input');
             customLabel.type = 'text';
             customLabel.id = customLabelKey;
+            if (defaultCustomLabelMessage) {
+                customLabel.placeholder = browser.i18n.getMessage(defaultCustomLabelMessage);
+            }
             section.content.appendChild(customLabel);
         };
 
@@ -430,6 +490,7 @@ async function initiatePage() {
             fallback_wrapAround_key: 'unloadInTSTContextMenu_wrapAround',
 
             customLabelKey: 'unloadInTSTContextMenu_CustomLabel',
+            defaultCustomLabelMessage: 'contextMenu_unloadTab',
         });
 
         const unloadTree = createContextMenuItemSection({
@@ -444,6 +505,7 @@ async function initiatePage() {
             fallback_wrapAround_key: 'unloadTreeInTSTContextMenu_wrapAround',
 
             customLabelKey: 'unloadTreeInTSTContextMenu_CustomLabel',
+            defaultCustomLabelMessage: 'contextMenu_unloadTree',
         });
 
         const unloadOther = createContextMenuItemSection({
@@ -464,6 +526,7 @@ async function initiatePage() {
             fallback_wrapAround_key: 'unloadOtherInTSTContextMenu_wrapAround',
 
             customLabelKey: 'unloadOtherInTSTContextMenu_CustomLabel',
+            defaultCustomLabelMessage: 'contextMenu_unloadOther',
         });
 
     } catch (error) {
@@ -606,10 +669,12 @@ async function initiatePage() {
         starters.createDisposable(() => {
             shortcutsInfo.update();
         });
-        document.body.appendChild(shortcutsInfo.area);
+        commandsCategory.appendChild(shortcutsInfo.area);
     }
 
     // #endregion Commands
+
+
 
 
     // #region Tab Hiding
@@ -690,20 +755,20 @@ async function initiatePage() {
     // #region Tab Restore Fix
 
     {
-        let section = createCollapsableArea(sectionAnimationInfo);
+        const section = createCollapsableArea(sectionAnimationInfo);
         section.area.classList.add('standardFormat');
         section.title.classList.add('center');
         section.title.classList.add('enablable');
         document.body.appendChild(section.area);
 
 
-        let header = document.createElement('div');
+        const header = document.createElement('div');
         header.classList.add(messagePrefix + 'options_TabRestoreFix_Header');
         section.title.appendChild(header);
 
 
 
-        let deprecatedWarning = document.createElement('div');
+        const deprecatedWarning = document.createElement('div');
         deprecatedWarning.classList.add(messagePrefix + 'options_TabRestoreFix_deprecatedWarning');
         section.content.appendChild(deprecatedWarning);
 
@@ -711,22 +776,22 @@ async function initiatePage() {
 
 
 
-        let reloadBrokenTabsArea = document.createElement('div');
+        const reloadBrokenTabsArea = document.createElement('div');
         reloadBrokenTabsArea.classList.add('area');
         section.content.appendChild(reloadBrokenTabsArea);
 
-        let reloadBrokenTabs_info = document.createElement('div');
+        const reloadBrokenTabs_info = document.createElement('div');
         reloadBrokenTabs_info.classList.add(messagePrefix + 'options_TabRestoreFix_reloadBrokenTabs');
         reloadBrokenTabsArea.appendChild(reloadBrokenTabs_info);
 
 
         reloadBrokenTabsArea.appendChild(document.createElement('br'));
 
-        let reloadBrokenTabs_Normal = createCheckBox('fixTabRestore_reloadBrokenTabs', 'options_TabRestoreFix_reloadBrokenTabs_Normal');
+        const reloadBrokenTabs_Normal = createCheckBox('fixTabRestore_reloadBrokenTabs', 'options_TabRestoreFix_reloadBrokenTabs_Normal');
         reloadBrokenTabsArea.appendChild(reloadBrokenTabs_Normal.area);
         reloadBrokenTabsArea.appendChild(document.createElement('br'));
 
-        let reloadBrokenTabs_Private = createCheckBox('fixTabRestore_reloadBrokenTabs_private', 'options_TabRestoreFix_reloadBrokenTabs_Private');
+        const reloadBrokenTabs_Private = createCheckBox('fixTabRestore_reloadBrokenTabs_private', 'options_TabRestoreFix_reloadBrokenTabs_Private');
         reloadBrokenTabsArea.appendChild(reloadBrokenTabs_Private.area);
         reloadBrokenTabsArea.appendChild(document.createElement('br'));
 
@@ -734,22 +799,22 @@ async function initiatePage() {
         reloadBrokenTabsArea.appendChild(document.createElement('br'));
 
 
-        let quickUnloadArea = document.createElement('div');
+        const quickUnloadArea = document.createElement('div');
         quickUnloadArea.classList.add('area');
         reloadBrokenTabsArea.appendChild(quickUnloadArea);
 
-        let quickUnload_info = document.createElement('div');
+        const quickUnload_info = document.createElement('div');
         quickUnload_info.classList.add(messagePrefix + 'options_TabRestoreFix_reloadBrokenTabs_QuickUnload');
         quickUnloadArea.appendChild(quickUnload_info);
 
 
         quickUnloadArea.appendChild(document.createElement('br'));
 
-        let quickUnload_Normal = createCheckBox('fixTabRestore_reloadBrokenTabs_quickUnload', 'options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Normal');
+        const quickUnload_Normal = createCheckBox('fixTabRestore_reloadBrokenTabs_quickUnload', 'options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Normal');
         quickUnloadArea.appendChild(quickUnload_Normal.area);
         quickUnloadArea.appendChild(document.createElement('br'));
 
-        let quickUnload_Private = createCheckBox('fixTabRestore_reloadBrokenTabs_private_quickUnload', 'options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Private');
+        const quickUnload_Private = createCheckBox('fixTabRestore_reloadBrokenTabs_private_quickUnload', 'options_TabRestoreFix_reloadBrokenTabs_QuickUnload_Private');
         quickUnloadArea.appendChild(quickUnload_Private.area);
         quickUnloadArea.appendChild(document.createElement('br'));
 
@@ -761,13 +826,13 @@ async function initiatePage() {
         section.content.appendChild(document.createElement('br'));
 
 
-        let ensureLoadArea = document.createElement('div');
+        const ensureLoadArea = document.createElement('div');
         ensureLoadArea.classList.add('ensureCorrectLoad');
         ensureLoadArea.classList.add('area');
         section.content.appendChild(ensureLoadArea);
 
 
-        let waitForUrl = createNumberInput('options_TabRestoreFix_waitForUrlInMilliseconds', -1, true);
+        const waitForUrl = createNumberInput('options_TabRestoreFix_waitForUrlInMilliseconds', -1, true);
         waitForUrl.input.id = 'fixTabRestore_waitForUrlInMilliseconds';
         ensureLoadArea.appendChild(waitForUrl.area);
 
@@ -776,12 +841,12 @@ async function initiatePage() {
         ensureLoadArea.appendChild(document.createElement('br'));
 
 
-        let fixIncorrectLoadArea = document.createElement('div');
+        const fixIncorrectLoadArea = document.createElement('div');
         fixIncorrectLoadArea.classList.add('area');
         ensureLoadArea.appendChild(fixIncorrectLoadArea);
 
 
-        let waitForIncorrectLoad = createNumberInput('options_TabRestoreFix_waitForIncorrectLoad', -1, true);
+        const waitForIncorrectLoad = createNumberInput('options_TabRestoreFix_waitForIncorrectLoad', -1, true);
         waitForIncorrectLoad.input.id = 'fixTabRestore_waitForIncorrectLoad';
         fixIncorrectLoadArea.appendChild(waitForIncorrectLoad.area);
 
@@ -790,7 +855,7 @@ async function initiatePage() {
         fixIncorrectLoadArea.appendChild(document.createElement('br'));
 
 
-        let fixIncorrectLoadAfter = createNumberInput('options_TabRestoreFix_fixIncorrectLoadAfter', -1, true);
+        const fixIncorrectLoadAfter = createNumberInput('options_TabRestoreFix_fixIncorrectLoadAfter', -1, true);
         fixIncorrectLoadAfter.input.id = 'fixTabRestore_fixIncorrectLoadAfter';
         fixIncorrectLoadArea.appendChild(fixIncorrectLoadAfter.area);
 
@@ -801,17 +866,27 @@ async function initiatePage() {
         section.content.appendChild(document.createElement('br'));
 
 
-        let permissionWarning = document.createElement('div');
+        const permissionWarning = document.createElement('div');
         permissionWarning.classList.add(messagePrefix + 'options_TabRestoreFix_permissionWarning');
         section.content.appendChild(permissionWarning);
 
 
 
+        section.content.appendChild(document.createElement('br'));
+        section.content.appendChild(document.createElement('br'));
 
-        let check = () => {
-            let ensureLoadEnabled = waitForUrl.input.value >= 0;
-            let enabled = ensureLoadEnabled || reloadBrokenTabs_Normal.checkbox.checked || reloadBrokenTabs_Private.checkbox.checked;
-            toggleClass(section.title, 'enabled', enabled);
+
+
+        const unloadAgain = createNumberInput('html-options_TabRestoreFix_unloadAgainAfterDelay', -1, true);
+        unloadAgain.input.id = 'unloadAgainAfterDelay';
+        unloadAgain.text.classList.add(messageAsHtml);
+        section.content.appendChild(unloadAgain.area);
+
+
+        const check = () => {
+            const ensureLoadEnabled = waitForUrl.input.value >= 0;
+            const enabled = ensureLoadEnabled || reloadBrokenTabs_Normal.checkbox.checked || reloadBrokenTabs_Private.checkbox.checked;
+            toggleClass(section.title, 'enabled', enabled || unloadAgain.input.value >= 0);
             toggleClass(ensureLoadArea, 'enabled', ensureLoadEnabled);
             toggleClass(section.title, 'error', enabled && !permissionsArea.checkControllerAvailable(permissionsArea.tabsPermissionController));
 
@@ -828,6 +903,7 @@ async function initiatePage() {
                 new EventListener(waitForIncorrectLoad.input, 'input', check),
                 new EventListener(reloadBrokenTabs_Normal.checkbox, 'input', check),
                 new EventListener(reloadBrokenTabs_Private.checkbox, 'input', check),
+                new EventListener(unloadAgain.input, 'input', check),
                 new EventListener(permissionsArea.onControllerValueChanged, (controller) => {
                     if (permissionsArea.tabsPermissionController === controller) {
                         check();
@@ -909,7 +985,19 @@ async function initiatePage() {
     // #endregion Tree Style Tab Style
 
 
+
+
     // #region Permissions
+
+    const permissionsCategory = document.createElement('fieldset');
+    permissionsCategory.classList.add('permissionsCategory');
+    permissionsCategory.classList.add('category');
+    document.body.appendChild(permissionsCategory);
+    {
+        const legend = document.createElement('legend');
+        legend.classList.add(messagePrefix + 'options_category_permissions_Title');
+        permissionsCategory.appendChild(legend);
+    }
 
     {
         const optionalPermissionsArea = createCollapsableArea(sectionAnimationInfo);
@@ -917,7 +1005,7 @@ async function initiatePage() {
         optionalPermissionsArea.title.classList.add('center');
         optionalPermissionsArea.title.classList.add('enablable');
         optionalPermissionsArea.content.classList.add('optionalPermissionArea');
-        document.body.appendChild(optionalPermissionsArea.area);
+        permissionsCategory.appendChild(optionalPermissionsArea.area);
 
         const header = document.createElement('div');
         header.classList.add(messagePrefix + 'options_OptionalPermissions_Header');
@@ -947,7 +1035,7 @@ async function initiatePage() {
 
     {
         const privacyArea = createPrivacyPermissionArea({ portConnection: pagePort, sectionAnimationInfo });
-        document.body.appendChild(privacyArea.area);
+        permissionsCategory.appendChild(privacyArea.area);
     }
 
     // #endregion Permissions
@@ -956,46 +1044,23 @@ async function initiatePage() {
     // #region Other Options
 
     {
-        let section = createCollapsableArea(sectionAnimationInfo);
+        const section = createCollapsableArea(sectionAnimationInfo);
         section.area.classList.add('standardFormat');
         section.title.classList.add('center');
         section.title.classList.add('enablable');
         document.body.appendChild(section.area);
 
-        let header = document.createElement('div');
+        const header = document.createElement('div');
         header.classList.add(messagePrefix + 'options_OtherSettings_Header');
         section.title.appendChild(header);
 
-        let area = document.createElement('div');
+        const area = document.createElement('div');
         area.classList.add('otherSettingsArea');
         section.content.appendChild(area);
 
 
-        let unloadAgain = createNumberInput('options_unloadAgainAfterDelay', -1, true);
-        unloadAgain.input.id = 'unloadAgainAfterDelay';
-        area.appendChild(unloadAgain.area);
-
-
-        area.appendChild(document.createElement('br'));
-
-
-        let unloadViaAutoTabDiscard = createCheckBox('unloadViaAutoTabDiscard', '');
-        {
-            let { label } = unloadViaAutoTabDiscard;
-
-            let prefix = document.createElement('text');
-            prefix.classList.add(messagePrefix + 'options_unloadViaAutoTabDiscard_Prefix');
-            label.appendChild(prefix);
-
-            let url = document.createElement('a');
-            url.classList.add(messagePrefix + 'options_unloadViaAutoTabDiscard_Name');
-            url.href = browser.i18n.getMessage('options_unloadViaAutoTabDiscard_URL');
-            label.appendChild(url);
-
-            let suffix = document.createElement('text');
-            suffix.classList.add(messagePrefix + 'options_unloadViaAutoTabDiscard_Suffix');
-            label.appendChild(suffix);
-        }
+        const unloadViaAutoTabDiscard = createCheckBox('unloadViaAutoTabDiscard', 'html-options_unloadViaAutoTabDiscard');
+        unloadViaAutoTabDiscard.label.classList.add(messageAsHtml);
         area.appendChild(unloadViaAutoTabDiscard.area);
 
 
@@ -1022,12 +1087,11 @@ async function initiatePage() {
 
 
         const checkSection = () => {
-            toggleClass(section.title, 'enabled', unloadAgain.input.value >= 0 || disableOptionAnimations.checkbox.checked || unloadViaAutoTabDiscard.checkbox.checked || disableOptionsDarkTheme.checkbox.checked);
+            toggleClass(section.title, 'enabled', disableOptionAnimations.checkbox.checked || unloadViaAutoTabDiscard.checkbox.checked || disableOptionsDarkTheme.checkbox.checked);
         };
         starters.createDisposable((delayed) => {
             checkSection();
             return [
-                new EventListener(unloadAgain.input, 'input', checkSection),
                 new EventListener(disableOptionAnimations.checkbox, 'input', checkSection),
                 new EventListener(disableOptionsDarkTheme.checkbox, 'input', checkSection),
                 new EventListener(unloadViaAutoTabDiscard.checkbox, 'input', checkSection),
@@ -1074,7 +1138,7 @@ async function initiatePage() {
     // #endregion Reset Button
 
 
-    setTextMessages();
+    setTextMessages(null, { specialHtmlClass: messageAsHtml, });
     await settingsTracker.start;
     starters.start();
 }

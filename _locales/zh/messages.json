@@ -116,8 +116,7 @@
         "hash": "a5ec83872d5206ebcbd7d904dff93556"
     },
     "options_onDrag_cancel": {
-        "message": "一个事件被触发时，如果此项被勾选，则取消相应操作；反之，则允许相应操作。",
-        "hash": "7e56907f7a4daed41418328b9e02f3b3"
+        "message": "一个事件被触发时，如果此项被勾选，则取消相应操作；反之，则允许相应操作。 If this is checked then the tab must NOT be long pressed in order for this condition to be met, so it can be clicked on quickly or it can be dragged and dropped. (If the \"also register mouse up events\" checkbox is checked then \"clicked on quickly\" is no longer an option and so this means that a drag and drop operation must be started for the clicked tab in order for the condition to be met.)"
     },
     "options_onDrag_mouseUpTigger": {
         "message": "如果此项被勾选，那么鼠标松开事件会被当做长按事件来触发相应操作。目前 Tree Style Tab 不会在拖放操作后发送鼠标松开事件，所以如果一个鼠标松开事件被发送，那么拖放动作就不会生效。这意味着，此选项将事件检测从 \"长按标签页\" 更改成了 \"不进行拖放操作的任意点击\" （只要 Tree Style Tab 不会更改它本身与此相关的奇怪行为）。",
@@ -128,8 +127,7 @@
         "hash": "f6867e31cc7ca5d4984be9301a85c20f"
     },
     "options_onDrag_Modern": {
-        "message": "Tree Style Tab 的拖放 API 发生了更改，在 Tree Style Tab v2.7.8 及之后的版本中较之前的版本有轻微的差别。如果您正在使用 Tree Style Tab 一个相对较新的版本，请勾选此项。（相对较新的 API 拥有一个全新的事件类型，会在拖放操作开始于侧栏时被发送。所以，相较于在一个时限前等待 \"长按\" 事件，我们现在会等待一个时限长度然后取消 \"拖放\" 事件。）",
-        "hash": "b026da70e5a8044070e356ff10dcf91c"
+        "message": "Tree Style Tab 的拖放 API 发生了更改，在 Tree Style Tab v2.7.8 及之后的版本中较之前的版本有轻微的差别。如果您正在使用 Tree Style Tab 一个相对较新的版本，请勾选此项。（相对较新的 API 拥有一个全新的事件类型，会在拖放操作开始于侧栏时被发送。所以，相较于在一个时限前等待 \"长按\" 事件，我们现在会等待一个时限长度然后取消 \"拖放\" 事件。） (This doesn't change the behavior of the settings above this one, instead it only decreases the risk of race conditions if the timeout is too low and allows delaying the start of a drag and drop operations for longer than the default 400ms.)"
     },
     "options_onDrag_Modern_PreventDragAndDrop": {
         "message": "相对较新的拖放 API 不会自动切换到特殊的 \"长按\" 模式，相反，当我们想要这么做时，它需要我们给 Tree Style Tab 发送一个消息。勾选此设置，以在时限被超过后发送这样一个消息。这样将会模仿 Tree Style Tab 以前的工作方式，并防止拖放操作在一定时间（由该时限指定）后被触发。",
@@ -298,26 +296,6 @@
     "options_TreeStyleTabStyle_Info": {
         "message": "这里就是此扩展对 Tree Style Tab 侧栏所做的样式更改：",
         "hash": "65a3e86ca827c4743996ed9d0a2d00bb"
-    },
-    "options_unloadAgainAfterDelay": {
-        "message": "在休眠多个标签页时，间隔一个短暂延迟（以毫秒为单位）后再进行下一次休眠。该延迟大小为（-1 代表禁用）：",
-        "hash": "f545d1213903115101330c00d3f039db"
-    },
-    "options_unloadViaAutoTabDiscard_Prefix": {
-        "message": "通过",
-        "hash": "ac94ae03e6a14bc15ecdb2084dc56822"
-    },
-    "options_unloadViaAutoTabDiscard_Name": {
-        "message": "Auto Tab Discard",
-        "hash": "e7698a4f219f82720687a412ed05bf19"
-    },
-    "options_unloadViaAutoTabDiscard_URL": {
-        "message": "https://addons.mozilla.org/firefox/addon/auto-tab-discard/",
-        "hash": "2aa03c4fb60ac23be5010dd2c0dbab11"
-    },
-    "options_unloadViaAutoTabDiscard_Suffix": {
-        "message": "扩展来休眠标签页",
-        "hash": "6bd7d33da5e74b6eec55d27f93675a1e"
     },
     "options_OptionalPermissions_Header": {
         "message": "可选权限",
@@ -500,6 +478,12 @@
     "treeStyleTabStyle_showHiddenTabs": {
         "message": "显示隐藏标签页",
         "hash": "ccbcfd4478b2e97d6d7d4a8378227dc0"
+    },
+    "html-options_TabRestoreFix_unloadAgainAfterDelay": {
+        "message": "在休眠多个标签页时，间隔一个短暂延迟（以毫秒为单位）后再进行下一次休眠。该延迟大小为 (this fixes an issue where sometimes when unloading a tab it fails to be marked as unloaded, see <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/3#issuecomment-391998967\">issue 3</a> for more info) （-1 代表禁用）："
+    },
+    "html-options_unloadViaAutoTabDiscard": {
+        "message": "通过<a href=\"https://addons.mozilla.org/firefox/addon/auto-tab-discard/\">Auto Tab Discard</a>扩展来休眠标签页 (This can allow for more advanced features such as dimming the favicon of unloaded tabs.) (See <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/13\">issue 13</a> on this extension's issue tracker for more info.)"
     },
 
     "__WET_LOCALE__": { "message": "zh" }

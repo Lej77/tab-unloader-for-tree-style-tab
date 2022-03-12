@@ -84,7 +84,7 @@
         "message": "Чекати довгого натискання без перетягування. Це спеціальне повідомлення, що відправляється TST, коли на вкладці довго затиснута ЛКМ. При перетягуванні вкладки повідомлення не відправляється. Це можна використати, щоб дозволяти операцію з довгим натисканням, але скасовувати при перетягуванні вкладок."
     },
     "options_onDrag_cancel": {
-        "message": "Якщо чекбокс включений - скасувати, якщо подія зареєстрована; в іншому випадку - дозволити, якщо подія зареєстрована."
+        "message": "Якщо чекбокс включений - скасувати, якщо подія зареєстрована; в іншому випадку - дозволити, якщо подія зареєстрована. If this is checked then the tab must NOT be long pressed in order for this condition to be met, so it can be clicked on quickly or it can be dragged and dropped. (If the \"also register mouse up events\" checkbox is checked then \"clicked on quickly\" is no longer an option and so this means that a drag and drop operation must be started for the clicked tab in order for the condition to be met.)"
     },
     "options_onDrag_mouseUpTigger": {
         "message": "Якщо чекбокс включений, відпускання Кнопки Миші буде також реєструватися як тривале натискання. Наразі TST не відправляє відпускання КМ після перетягування, тому, якщо відпускання КМ відправляється, перетягування не використовується. Т.ч. якщо чекбокс включений, подія буде реєструватися тільки якщо НЕ використовується перетягування."
@@ -180,21 +180,6 @@
     },
     "options_TreeStyleTabStyle_Info": {
         "message": "Це зміни стилю бічної панелі TST, внесені цим розширенням:"
-    },
-    "options_unloadAgainAfterDelay": {
-        "message": "Після вивантаження вкладок повторити метод вивантаження знову, після невеликої затримки (час в мілісекундах) (-1 = вимкнено):"
-    },
-    "options_unloadViaAutoTabDiscard_Prefix": {
-        "message": "Вивантаження вкладок за допомогою "
-    },
-    "options_unloadViaAutoTabDiscard_Name": {
-        "message": "Auto Tab Discard"
-    },
-    "options_unloadViaAutoTabDiscard_URL": {
-        "message": "https://addons.mozilla.org/firefox/addon/auto-tab-discard/"
-    },
-    "options_unloadViaAutoTabDiscard_Suffix": {
-        "message": " додатку."
     },
     "options_OptionalPermissions_Header": {
         "message": "Додаткові дозволи"
@@ -299,5 +284,11 @@
     },
     "treeStyleTabStyle_showHiddenTabs": {
         "message": "Показати приховані вкладки"
+    },
+    "html-options_TabRestoreFix_unloadAgainAfterDelay": {
+        "message": "Після вивантаження вкладок повторити метод вивантаження знову, після невеликої затримки (this fixes an issue where sometimes when unloading a tab it fails to be marked as unloaded, see <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/3#issuecomment-391998967\">issue 3</a> for more info) (час в мілісекундах) (-1 = вимкнено):"
+    },
+    "html-options_unloadViaAutoTabDiscard": {
+        "message": "Вивантаження вкладок за допомогою <a href=\"https://addons.mozilla.org/firefox/addon/auto-tab-discard/\">Auto Tab Discard</a> додатку. (This can allow for more advanced features such as dimming the favicon of unloaded tabs.) (See <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/13\">issue 13</a> on this extension's issue tracker for more info.)"
     }
 }

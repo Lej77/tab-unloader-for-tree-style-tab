@@ -6,16 +6,16 @@ import {
 
 
 export function createCheckBox(id, message) {
-  let ele = document.createElement('label');
+  const ele = document.createElement('label');
 
-  let checkbox = document.createElement('input');
+  const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   if (id) {
     checkbox.id = id;
   }
   ele.appendChild(checkbox);
 
-  let label = document.createElement('text');
+  const label = document.createElement('text');
   if (message) {
     label.classList.add(messagePrefix + message);
   }
@@ -26,9 +26,9 @@ export function createCheckBox(id, message) {
 
 
 export function createNumberInput(message, min = 0, newLine = false) {
-  let timeoutArea = document.createElement('div');
+  const timeoutArea = document.createElement('div');
 
-  let timeoutText = document.createElement('text');
+  const timeoutText = document.createElement('text');
   timeoutText.classList.add(messagePrefix + message);
   timeoutArea.appendChild(timeoutText);
 
@@ -36,7 +36,7 @@ export function createNumberInput(message, min = 0, newLine = false) {
     timeoutArea.appendChild(document.createElement('br'));
   }
 
-  let timeoutInput = document.createElement('input');
+  const timeoutInput = document.createElement('input');
   timeoutInput.type = 'number';
   if (min || min === 0) {
     timeoutInput.min = String(min);

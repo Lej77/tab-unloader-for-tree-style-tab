@@ -45,6 +45,16 @@
     margin-bottom: 0px;
 }
 
+
+.category {
+    margin-bottom: 50px;
+    padding-bottom: 0;
+}
+.permissionsCategory {
+    margin-top: 30px;
+}
+
+
 .mouseClickArea:not(.enabled) > *:not(:first-child),
 .mouseClickArea.enabled .area:not(.enabled) > *:not(:first-child),
 .contextMenuItemArea:not(.enabled) > *:not(:first-child),
