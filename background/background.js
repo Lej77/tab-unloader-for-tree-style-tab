@@ -23,6 +23,7 @@ import {
     boundDelay,
     checkAny,
     Timeout,
+    waitForAll,
 } from '../common/delays.js';
 
 import {
@@ -70,6 +71,13 @@ import {
 } from '../tree-style-tab/utilities.js';
 
 
+/**
+ * @typedef {import('../common/utilities').KeysWithSuffix<T, Suffix>} KeysWithSuffix
+ * @template {{}} T
+ * @template {string} Suffix
+ */
+
+
 // #region Tab Operations
 
 /** Tracks what tabs we are currently attempting to unload.
@@ -91,7 +99,7 @@ import {
  */
 const unloadsInProgress = {};
 
-async function unloadTabs({ tabs, fallbackOptions = {}, discardAgainAfterDelay = -1, disposables = null, useAutoTabDiscard = false } = {}) {
+async function unloadTabs({ tabs = [], fallbackOptions = {}, discardAgainAfterDelay = -1, disposables = null, useAutoTabDiscard = false } = {}) {
     try {
         tabs = await tabs;
         if (!tabs) {
@@ -342,17 +350,23 @@ async function findLastFocusedLoadedTab(searchTabs, ignoredTabIds = new Set()) {
 // #endregion Tab Operations
 
 
+/** @typedef { { [P in 'onTabDown' | 'onTabUp' | 'onDrag' | 'onNativeDrag']: EventManager<[any, number]> } } MouseButtonManagerEventManagers */
+
+/** @typedef { { [P in 'onTabDown' | 'onTabUp' | 'onDrag' | 'onNativeDrag']: import('../common/events').EventSubscriber<[any, number]> } } MouseButtonManagerEvents */
 
 class MouseButtonManager {
     constructor({ mouseClickCombo, getUnloadInfo = null }) {
+        /** @type {import('../common/common').MouseClickComboWithProps} */
         let combo = mouseClickCombo;
         let info = combo.info;
-        this.combo = mouseClickCombo;
+        this.combo = combo;
 
         defineProperty(this, 'getUnloadInfo', () => getUnloadInfo, (value) => { getUnloadInfo = value; });
 
-        const eventManagers = {};
-        const events = {};
+        /** @type {MouseButtonManagerEventManagers} */
+        const eventManagers = /** @type {any} */ ({});
+        /** @type {MouseButtonManagerEvents} */
+        const events = /** @type {any} */ ({});
         const eventNames = [
             'onTabDown',
             'onTabUp',
@@ -444,7 +458,26 @@ class MouseButtonManager {
                         let affectedTabs = message.tab;
                         if (combo.applyToTstTree) {
                             try {
-                                affectedTabs = await getTreeTabs(affectedTabs);
+                                let treeTabs = await getTreeTabs(message.tab.id);
+                                if (combo.applyToTstTree_notRoot) {
+                                    // Don't unload the first tab:
+                                    const firstTab = treeTabs.shift();
+                                    // ...unless certain conditions are met:
+                                    if (combo.applyToTstTree_notRoot_unloadRootTabIf_NoDescendants) {
+                                        if (
+                                            treeTabs.length === 0 || (
+                                                combo.applyToTstTree_notRoot_unloadRootTabIf_UnloadedDescendants &&
+                                                treeTabs.every(tab => tab.discarded)
+                                            )
+                                        ) {
+                                            treeTabs.unshift(firstTab);
+                                        }
+                                    }
+                                }
+                                if (combo.applyToTstTree_notActiveTab) {
+                                    treeTabs = treeTabs.filter(tab => !tab.active);
+                                }
+                                affectedTabs = treeTabs;
                             } catch (error) {
                                 console.error('Failed to get Tree Style Tab tree that should be unloaded.\nTab: ', affectedTabs, '\nError: ', error);
                             }
@@ -473,16 +506,16 @@ class MouseButtonManager {
             if (message.button !== info.button) {
                 return;
             }
-            let value = onMouseDown(message);
+            const value = onMouseDown(message);
             lastMouseDownValue = value;
             return value;
         };
         this.onDrag = (message) => {
-            let time = Date.now();
+            const time = Date.now();
             return checkAny(eventManagers.onDrag.fire(message, time));
         };
         this.onNativeDrag = (message) => {
-            let time = Date.now();
+            const time = Date.now();
             return checkAny(eventManagers.onNativeDrag.fire(message, time));
         };
     }
@@ -502,7 +535,9 @@ async function start() {
     try {
         browserInfo = await browser.runtime.getBrowserInfo();
         majorBrowserVersion = browserInfo.version.split('.')[0];
-    } catch (error) { }
+    } catch (error) {
+        console.error('Failed to detect the current major browser version, falling back to oldest supported backwards compatibility mode: ', error);
+    }
 
     // #endregion Browser Version
 
@@ -537,6 +572,18 @@ async function start() {
             useAutoTabDiscard: settings.unloadViaAutoTabDiscard,
         };
     };
+    // eslint-disable-next-line valid-jsdoc
+    /** Get fallback options info from default setting keys names with a certain prefix.
+     *
+     * @param {KeysWithSuffix<typeof settings, 'fallbackToLastSelected'>} keyPrefix The prefix for the settings keys related to fallback options.
+     */
+    const getUnloadFallbackOptions = (keyPrefix) => {
+        return {
+            fallbackToLastSelectedTab: settings[keyPrefix + 'fallbackToLastSelected'],
+            ignoreHiddenTabs: settings[keyPrefix + 'ignoreHiddenTabs'],
+            wrapAround: settings[keyPrefix + 'wrapAround'],
+        };
+    };
 
     // #endregion Settings
 
@@ -561,6 +608,15 @@ async function start() {
         }
         return mouseButtonManagers[index];
     };
+    // eslint-disable-next-line valid-jsdoc
+    /**
+     * Preform some work with each button manager.
+     *
+     * @template T
+     * @param {null | number} index The index of the affected button manager.
+     * @param {(manager: MouseButtonManager) => T} callback Queue up work for each affected manager.
+     * @returns {false | T | T[]} The queued up work.
+     */
     const managerCallback = (index, callback) => {
         if (!callback || typeof callback !== 'function') {
             return false;
@@ -589,28 +645,53 @@ async function start() {
                     getUnloadInfo(),
                     {
                         tabs: settings.unloadInTSTContextMenu_useSelectedTabs ? getSelectedTabs({ tab: tab, majorBrowserVersion, }) : tab,
-                        fallbackOptions: {
-                            fallbackToLastSelectedTab: settings.unloadInTSTContextMenu_fallbackToLastSelected,
-                            ignoreHiddenTabs: settings.unloadInTSTContextMenu_ignoreHiddenTabs,
-                            wrapAround: settings.unloadInTSTContextMenu_wrapAround,
-                        }
+                        fallbackOptions: getUnloadFallbackOptions('unloadInTSTContextMenu_'),
                     }
                 ));
             } break;
+
             case tstContextMenuItemIds.unloadTree: {
-                const treeTabs = await getTreeTabs(tab.id);
+                let treeTabs = await getTreeTabs(tab.id);
+                if (settings.unloadTreeInTSTContextMenu_notActiveTab) {
+                    treeTabs = treeTabs.filter(tab => !tab.active);
+                }
                 await unloadTabs(Object.assign(
                     getUnloadInfo(),
                     {
                         tabs: treeTabs,
-                        fallbackOptions: {
-                            fallbackToLastSelectedTab: settings.unloadTreeInTSTContextMenu_fallbackToLastSelected,
-                            ignoreHiddenTabs: settings.unloadTreeInTSTContextMenu_ignoreHiddenTabs,
-                            wrapAround: settings.unloadTreeInTSTContextMenu_wrapAround,
-                        }
+                        fallbackOptions: getUnloadFallbackOptions('unloadTreeInTSTContextMenu_'),
                     }
                 ));
             } break;
+
+            case tstContextMenuItemIds.unloadTreeDescendants: {
+                let treeTabs = await getTreeTabs(tab.id);
+                // Don't unload the first tab:
+                const firstTab = treeTabs.shift();
+                // ...unless certain conditions are met:
+                if (settings.unloadTreeDescendantsInTSTContextMenu_unloadRootTabIf_NoDescendants) {
+                    if (
+                        treeTabs.length === 0 || (
+                            settings.unloadTreeDescendantsInTSTContextMenu_unloadRootTabIf_UnloadedDescendants &&
+                            treeTabs.every(tab => tab.discarded)
+                        )
+                    ) {
+                        treeTabs.unshift(firstTab);
+                    }
+                }
+                // Might not be allowed to unload the currently active tab:
+                if (settings.unloadTreeDescendantsInTSTContextMenu_notActiveTab) {
+                    treeTabs = treeTabs.filter(tab => !tab.active);
+                }
+                await unloadTabs(Object.assign(
+                    getUnloadInfo(),
+                    {
+                        tabs: treeTabs,
+                        fallbackOptions: getUnloadFallbackOptions('unloadTreeDescendantsInTSTContextMenu_'),
+                    }
+                ));
+            } break;
+
             case tstContextMenuItemIds.unloadOther: {
                 const selectedTabs = settings.unloadOtherInTSTContextMenu_ignoreSelectedTabs ? await getSelectedTabs({ tab: tab, majorBrowserVersion, }) : [tab];
                 const allTabs = await browser.tabs.query({ windowId: tab.windowId });
@@ -626,11 +707,7 @@ async function start() {
                             }
                             return true;
                         }),
-                        fallbackOptions: {
-                            fallbackToLastSelectedTab: settings.unloadOtherInTSTContextMenu_fallbackToLastSelected,
-                            ignoreHiddenTabs: settings.unloadOtherInTSTContextMenu_ignoreHiddenTabs,
-                            wrapAround: settings.unloadOtherInTSTContextMenu_wrapAround,
-                        }
+                        fallbackOptions: getUnloadFallbackOptions('unloadOtherInTSTContextMenu_'),
                     }
                 ));
             } break;
@@ -646,11 +723,7 @@ async function start() {
                     getUnloadInfo(),
                     {
                         tabs: settings.command_unloadTab_useSelectedTabs ? getSelectedTabs({ tab: activeTab, majorBrowserVersion, }) : activeTab,
-                        fallbackOptions: {
-                            fallbackToLastSelectedTab: settings.command_unloadTab_fallbackToLastSelected,
-                            ignoreHiddenTabs: settings.command_unloadTab_ignoreHiddenTabs,
-                            wrapAround: settings.command_unloadTab_wrapAround,
-                        }
+                        fallbackOptions: getUnloadFallbackOptions('command_unloadTab_'),
                     }
                 ));
             } break;
@@ -661,11 +734,32 @@ async function start() {
                     getUnloadInfo(),
                     {
                         tabs: treeTabs,
-                        fallbackOptions: {
-                            fallbackToLastSelectedTab: settings.command_unloadTree_fallbackToLastSelected,
-                            ignoreHiddenTabs: settings.command_unloadTree_ignoreHiddenTabs,
-                            wrapAround: settings.command_unloadTree_wrapAround,
-                        }
+                        fallbackOptions: getUnloadFallbackOptions('command_unloadTree_'),
+                    }
+                ));
+            } break;
+
+            case 'unload-tree-descendants': {
+                const treeTabs = await getTreeTabs(activeTab.id);
+                // Don't unload the first tab:
+                const firstTab = treeTabs.shift();
+                // ...unless certain conditions are met:
+                if (settings.command_unloadTreeDescendants_unloadRootTabIf_NoDescendants) {
+                    if (
+                        treeTabs.length === 0 || (
+                            settings.command_unloadTreeDescendants_unloadRootTabIf_UnloadedDescendants &&
+                            treeTabs.every(tab => tab.discarded)
+                        )
+                    ) {
+                        treeTabs.unshift(firstTab);
+                    }
+                }
+
+                await unloadTabs(Object.assign(
+                    getUnloadInfo(),
+                    {
+                        tabs: treeTabs,
+                        fallbackOptions: getUnloadFallbackOptions('command_unloadTreeDescendants_'),
                     }
                 ));
             } break;
@@ -685,11 +779,7 @@ async function start() {
                             }
                             return true;
                         }),
-                        fallbackOptions: {
-                            fallbackToLastSelectedTab: settings.command_unloadOther_fallbackToLastSelected,
-                            ignoreHiddenTabs: settings.command_unloadOther_ignoreHiddenTabs,
-                            wrapAround: settings.command_unloadOther_wrapAround,
-                        }
+                        fallbackOptions: getUnloadFallbackOptions('command_unloadOther_'),
                     }
                 ));
             } break;
@@ -735,6 +825,13 @@ async function start() {
                 id: tstContextMenuItemIds.unloadTree,
                 contexts: ['tab'],
                 title: settings.unloadTreeInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadTree')
+            },
+            // Unload tree descendants:
+            {
+                enabled: settings.unloadTreeDescendantsInTSTContextMenu,
+                id: tstContextMenuItemIds.unloadTreeDescendants,
+                contexts: ['tab'],
+                title: settings.unloadTreeDescendantsInTSTContextMenu_CustomLabel || browser.i18n.getMessage('contextMenu_unloadTreeDescendants')
             },
             // Unload other tabs:
             {
@@ -887,7 +984,8 @@ async function start() {
     const delayedRegistration = () => {
         isFirstTSTRegistration = false;
         let time = settings.delayedTSTRegistrationTimeInMilliseconds;
-        time = parseInt(time);
+        if (typeof time !== 'number')
+            time = parseInt(time);
         if (!time || time <= 0) {
             return;
         }
@@ -906,6 +1004,20 @@ async function start() {
     });
     delayedRegistration();
 
+    /** Wait for all promises in an array to complete and return the first that
+     * was "truthy" or `false` if no such value exists.
+     *
+     * @param {any} array An array of values that can be promises.
+     * @returns {false | Promise<any>} `false` if all values are "falsy" or a
+     * promise that awaits on all "truthy" values in the array. */
+    const waitForTruthy = (array) => {
+        const finalValue = checkAny(array);
+        if (!finalValue) return finalValue;
+        // Wait for all operations to finish since preventing Tree Style Tab's
+        // default action can cause later messages related to the mouse click to
+        // not be sent:
+        return waitForAll(array).then(() => finalValue);
+    };
 
     const tstMessageListener = new EventListener(tstManager.onMessage, (message) => {
         if (!settings.isEnabled) {
@@ -943,11 +1055,11 @@ async function start() {
 
             case 'tab-clicked':
             case 'tab-mousedown': {
-                return checkAny(managerCallback(null, (manager) => manager.onMouseDown(message)));
+                return waitForTruthy(managerCallback(null, (manager) => manager.onMouseDown(message)));
             } break;
 
             case 'tab-mouseup': {
-                return checkAny(managerCallback(null, (manager) => manager.onMouseUp(message)));
+                return waitForTruthy(managerCallback(null, (manager) => manager.onMouseUp(message)));
             } break;
 
             case 'tab-dragready':
@@ -956,11 +1068,11 @@ async function start() {
             case 'tab-dragenter':
             case 'tab-dragexit':
             case 'tab-dragend': {
-                return checkAny(managerCallback(null, (manager) => manager.onDrag(message)));
+                return waitForTruthy(managerCallback(null, (manager) => manager.onDrag(message)));
             } break;
 
             case 'native-tab-dragstart': {
-                return checkAny(managerCallback(null, (manager) => manager.onNativeDrag(message)));
+                return waitForTruthy(managerCallback(null, (manager) => manager.onNativeDrag(message)));
             } break;
 
             case 'fake-contextMenu-click': {
@@ -1037,14 +1149,14 @@ async function start() {
     let tabRestoreFixer = null;
 
     let lastTabFixCheck = null;
-    let checkTabFixing = async () => {
+    const checkTabFixing = async () => {
         let waiting = lastTabFixCheck;
         await waiting;
         if (waiting === lastTabFixCheck || !lastTabFixCheck) {
             lastTabFixCheck = (async () => {
-                let hasPermission = await TabRestoreFixer.checkPermission();
-                let reloadBrokenTabs = settings.fixTabRestore_reloadBrokenTabs || settings.fixTabRestore_reloadBrokenTabs_private;
-                let wanted = settings.isEnabled && (settings.fixTabRestore_waitForUrlInMilliseconds >= 0 || (reloadBrokenTabs && hasPermission));
+                const hasPermission = await TabRestoreFixer.checkPermission();
+                const reloadBrokenTabs = settings.fixTabRestore_reloadBrokenTabs || settings.fixTabRestore_reloadBrokenTabs_private;
+                const wanted = settings.isEnabled && (settings.fixTabRestore_waitForUrlInMilliseconds >= 0 || (reloadBrokenTabs && hasPermission));
 
                 if (wanted) {
                     if (!tabRestoreFixer) {

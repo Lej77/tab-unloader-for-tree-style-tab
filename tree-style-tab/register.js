@@ -297,7 +297,9 @@ export class TSTManager {
         this._onDisposed = new EventManager();
 
         this._onMessage = new EventManager();
+        /** @type {EventManager<[{oldState: TSTState, newState: TSTState}]>} */
         this._onRegistrationChanged = new EventManager();
+        /** @type {EventManager<[]>} */
         this._onNewRegistrationInfo = new EventManager();
         /** @type {EventManager<[{oldPermissions: TreeStyleTabPermissions, newPermissions: TreeStyleTabPermissions}]>} */
         this._onPermissionsChanged = new EventManager();
@@ -312,13 +314,12 @@ export class TSTManager {
         this._trackedPermissions = null;
         this._isRegistered = false;
 
-        this._externalMessageListener = null;
-        this._registrationUpdater = null;
 
+        /** @type {RequestManager<[]>} */
+        this._registrationUpdater = new RequestManager(this._handleStateUpdate.bind(this), 500, false);
 
         this._externalMessageListener = new EventListener(browser.runtime.onMessageExternal, this._handleExternalMessage.bind(this));
 
-        this._registrationUpdater = new RequestManager(this._handleStateUpdate.bind(this), 500, false);
 
         /** @type {null | ((shouldUnregister: boolean) => void)} */
         this._lastWaitForShutdownPromiseResolve = null;
@@ -479,6 +480,7 @@ export class TSTManager {
             this._currentState = newState;
 
             if (this._onRegistrationChanged.listenersLength > 0) {
+                /** @type {TSTState | null} */
                 let eventObjCache = null;
                 const eventObj = {
                     get oldState() {
@@ -508,7 +510,7 @@ export class TSTManager {
     /**
      * Invalidate the current Tree Style Tab registration. The manager will check its registration and change it as needed.
      *
-     * @param {boolean|String|Array} [resetInfo=false] Force an update of certain parts of the registration info. True to force update everything. String value to update one registration type. Array to update several.
+     * @param {boolean | string | string[]} [resetInfo=false] Force an update of certain parts of the registration info. True to force update everything. String value to update one registration type. Array to update several.
      * @memberof TSTManager
      */
     async invalidateTST(resetInfo = false) {
@@ -670,8 +672,11 @@ export class TSTManager {
 
 }
 TSTManager.resetTypes = Object.freeze({
+    /** Ensure the injected style sheet is correctly set. */
     style: (/** @type { 'style' } */ ('style')),
+    /** Ensure all the wanted events are being listened to. */
     listeningTypes: (/** @type { 'listeningTypes' } */ ('listeningTypes')),
+    /** Ensure all context menu items are correctly registered. */
     contextMenu: (/** @type { 'contextMenu' } */ ('contextMenu')),
 });
 

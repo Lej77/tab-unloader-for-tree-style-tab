@@ -62,6 +62,14 @@ null;
 null;
 
 /**
+ * Get all keys in an object that ends with a specific suffix.
+ *
+ * @typedef { keyof { [P in keyof T as P extends `${infer Prefix}${Suffix}` ? Prefix : never]: false } } KeysWithSuffix
+ * @template {{}} T
+ * @template {string} Suffix
+ */
+
+/**
  * Get a promise and its resolve and reject functions.
  *
  * @export
@@ -179,4 +187,22 @@ export function deepCopyCompare(a, b) {
 
   // Compare both objects via JSON serialization:
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+// eslint-disable-next-line valid-jsdoc
+/** Prefix all keys in an existing object with a specified string.
+ *
+ * @template {string} K
+ * @template {{}} T
+ * @param {K} prefix The prefix to add for all keys.
+ * @param {T} object The object whose keys should be prefixed.
+ * @returns { { [P in keyof T as `${K}${P}`]: T[P]; } } An object with settings that share a prefix.
+ */
+export function prefixObjectKeys(prefix, object) {
+  /** @type {any} */
+  const obj = {};
+  for (const [key, value] of Object.entries(object)) {
+    obj[prefix + key] = value;
+  }
+  return obj;
 }

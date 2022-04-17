@@ -56,6 +56,19 @@ export async function boundDelay(timeInMilliseconds, disposables = null) {
     });
 }
 
+/**
+ * Wait for all promises to complete.
+ *
+ * @export
+ * @param {any} array Promises to wait for.
+ * @returns {Promise<void>} Finishes after all promises in the array has completed.
+ */
+export async function waitForAll(array) {
+    if (!array || !Array.isArray(array)) return;
+    for (const value of array) {
+        await value;
+    }
+}
 
 /**
  * Get the first "true" value returned from an array of promises.
@@ -66,6 +79,8 @@ export async function boundDelay(timeInMilliseconds, disposables = null) {
  * @returns {T | false | Promise<T | false>} Value of the promise that first resolved to a true value. Otherwise false.
  */
 export function checkAny(array) {
+    if (!array || !Array.isArray(array)) return false;
+
     if (!array.some(value => Boolean(value))) {
         // Only false values:
         return false;
@@ -75,32 +90,38 @@ export function checkAny(array) {
     const promiseWrapper = new PromiseWrapper();
 
     let promises = 0;
-    const waitForValue = async (value) => {
-        try {
-            value = await value;
+    try {
+        const waitForValue = async (value) => {
+            try {
+                value = await value;
+                if (value) {
+                    promiseWrapper.resolve(value);
+                }
+            } finally {
+                promises--;
+
+                if (promises <= 0) {
+                    promiseWrapper.resolve(false);
+                }
+            }
+        };
+
+        // Don't resolve anything until we have queued all promises:
+        promises++;
+        // Start queuing promises:
+        for (const value of array) {
             if (value) {
-                promiseWrapper.resolve(value);
-            }
-        } finally {
-            promises--;
-
-            if (promises <= 0) {
-                promiseWrapper.resolve(false);
+                promises++;
+                waitForValue(value);
             }
         }
-    };
-
-    // Don't resolve anything until we have queued all promises:
-    promises++;
-    // Start queuing promises:
-    for (const value of array) {
-        if (value) {
-            promises++;
-            waitForValue(value);
-        }
+    } catch (error) {
+        promiseWrapper.resolve(false);
+        throw error;
+    } finally {
+        // Okay, now we can resolve to a value:
+        promises--;
     }
-    // Okay, now we can resolve to a value:
-    promises--;
 
     // Check if all promises were already resolved:
     if (promises <= 0) {
@@ -268,31 +289,41 @@ export class PromiseWrapper {
  */
 export class OperationManager {
     constructor() {
-        var promiseWrapper = new PromiseWrapper(false);
-        let disposableCollection = new DisposableCollection();
+        this._promiseWrapper = new PromiseWrapper(false);
+        this._disposableCollection = new DisposableCollection();
 
-        let setValue = (value, isError = false) => {
-            if (isError) {
-                promiseWrapper.reject(value);
-            } else {
-                promiseWrapper.resolve(value);
-            }
-            disposableCollection.dispose();
-        };
+        this.onDisposed = this._disposableCollection.onDisposed;
+    }
 
-        this.trackDisposables = (disposables) => disposableCollection.trackDisposables(disposables);
+    _setValue(value, isError = false) {
+        if (isError) {
+            this._promiseWrapper.reject(value);
+        } else {
+            this._promiseWrapper.resolve(value);
+        }
+        this._disposableCollection.dispose();
+    }
 
-        defineProperty(this, 'done', () => promiseWrapper.done);
+    trackDisposables(disposables) {
+        this._disposableCollection.trackDisposables(disposables);
+    }
 
-        defineProperty(this, 'value',
-            () => promiseWrapper.getValue(),
-            (value) => setValue(value)
-        );
+    resolve(value) {
+        this._setValue(value);
+    }
+    reject(error) {
+        this._setValue(error, true);
+    }
 
-        this.resolve = (value) => setValue(value);
-        this.reject = (value) => setValue(value, true);
+    get done() {
+        return this._promiseWrapper.done;
+    }
 
-        this.onDisposed = disposableCollection.onDisposed;
+    get value() {
+        return this._promiseWrapper.getValue();
+    }
+    set value(value) {
+        this._setValue(value);
     }
 }
 

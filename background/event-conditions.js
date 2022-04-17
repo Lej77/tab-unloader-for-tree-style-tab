@@ -14,6 +14,28 @@ import {
 } from '../tree-style-tab/utilities.js';
 
 
+/**
+ * Parameters passed to a `Monitor`'s constructor.
+ *
+ * @typedef {Object} MonitorConstructorParams
+ * @property {typeof import('../common/common').defaultValues.MouseClickCombo} data Options for this mouse button "combination".
+ * @property {number} time The time when the monitor was created (should be when a mouse down event is received).
+ * @property { import('../background/background').MouseButtonManagerEvents } events Events that will be triggered when Tree Style Tab messages are received for this mouse button.
+ * @property {any} message The Tree Style Tab message that triggered the creation of the monitor (should be a mouse down message).
+ */
+
+
+/**
+ * Ensure the argument is an integer value.
+ *
+ * @param {number | string} value The value that should be converted to an integer.
+ * @returns {number} An integer value.
+ */
+function ensureInt(value) {
+    if (typeof value === 'number') return Math.floor(value);
+    return parseInt(value);
+}
+
 
 export class Monitor {
     constructor() {
@@ -35,12 +57,17 @@ export class Monitor {
 
 
 export class MonitorCollection {
+    /**
+     * Creates an instance of MonitorCollection.
+     * @param { Monitor[] } monitors The monitors in the collection.
+     * @memberof MonitorCollection
+     */
     constructor(monitors) {
         this.monitors = monitors;
     }
 
     cancel() {
-        for (let monitor of this.monitors) {
+        for (const monitor of this.monitors) {
             monitor.cancel();
         }
     }
@@ -64,9 +91,14 @@ export class MonitorCollection {
  * @extends {Monitor}
  */
 export class DragMonitor extends Monitor {
+    /**
+     * Creates an instance of DragMonitor.
+     * @param {MonitorConstructorParams} Params Parameters.
+     * @memberof DragMonitor
+     */
     constructor({ data, time, events, message }) {
         super();
-        var op = this.operationManager;
+        const op = this.operationManager;
 
         // this.allow.then((value) => console.log('DragMonitor: ' + value));
 
@@ -135,18 +167,22 @@ export class DragMonitor extends Monitor {
 
 
 export class DoubleClickMonitor extends Monitor {
+    /**
+     * Creates an instance of DoubleClickMonitor.
+     * @param {MonitorConstructorParams} Params Parameters
+     * @memberof DoubleClickMonitor
+     */
     constructor({ data, time, events, message }) {
         super();
-        var op = this.operationManager;
+        const op = this.operationManager;
 
         // this.allow.then((value) => console.log('DoubleClickMonitor: ' + value));
 
-        let doubleClickEnabled = data.doubleClickEnabled;
-        let doubleClickOnly = data.doubleClickOnly;
-        let doubleClickToPrevent = !doubleClickOnly;
-        let doubleClickTimeout = parseInt(data.doubleClickTimeout);
-        let hasDoubleClickTimeout = doubleClickTimeout && doubleClickTimeout > 0;
-        doubleClickEnabled = doubleClickEnabled && hasDoubleClickTimeout;
+        const doubleClickOnly = data.doubleClickOnly;
+        const doubleClickToPrevent = !doubleClickOnly;
+        const doubleClickTimeout = ensureInt(data.doubleClickTimeout);
+        const hasDoubleClickTimeout = doubleClickTimeout && doubleClickTimeout > 0;
+        const doubleClickEnabled = data.doubleClickEnabled && hasDoubleClickTimeout;
 
 
         if (!doubleClickEnabled) {
@@ -155,7 +191,7 @@ export class DoubleClickMonitor extends Monitor {
         }
 
 
-        let setDoubleClick = (doubleClick) => {
+        const setDoubleClick = (doubleClick) => {
             if (doubleClickToPrevent && doubleClick) {
                 op.resolve(false);
             }
@@ -181,16 +217,21 @@ export class DoubleClickMonitor extends Monitor {
 
 
 export class ClickDurationMonitor extends Monitor {
+    /**
+     * Creates an instance of ClickDurationMonitor.
+     * @param {MonitorConstructorParams} Params Parameters
+     * @memberof ClickDurationMonitor
+     */
     constructor({ data, time, events }) {
         super();
-        var op = this.operationManager;
+        const op = this.operationManager;
 
         // this.allow.then((value) => console.log('click duration: ' + value));
 
-        let maxTime = parseInt(data.maxTimeout);
-        let minTime = parseInt(data.minTimeout);
-        let hasMaxTime = maxTime && maxTime > 0;
-        let hasMinTime = minTime && minTime > 0;
+        const maxTime = ensureInt(data.maxTimeout);
+        const minTime = ensureInt(data.minTimeout);
+        const hasMaxTime = maxTime && maxTime > 0;
+        const hasMinTime = minTime && minTime > 0;
 
 
         if (!hasMaxTime && !hasMinTime) {

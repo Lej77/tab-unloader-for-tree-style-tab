@@ -263,7 +263,7 @@ export function createPermissionsArea({ portConnection, requestFailedCallback, s
     };
 
     const createPermissionButtonArea = function (permission, titleMessage, explanationMessage) {
-        const obj = createOptionalPermissionArea(Object.assign(areaDetails, { permission, titleMessage, explanationMessage }));
+        const obj = createOptionalPermissionArea(/** @type {any} */(Object.assign(areaDetails, { permission, titleMessage, explanationMessage })));
         permissionControllers.push(obj);
         area.appendChild(obj.area);
         return obj;
@@ -614,12 +614,58 @@ export function createMouseClickArea(combo, sectionAnimationInfo = {}) {
         effectModifiersArea.classList.add('enabled');
         area.appendChild(effectModifiersArea);
 
+
+        const treeEffectsArea = document.createElement('div');
+        treeEffectsArea.classList.add('area');
+        treeEffectsArea.classList.add('enabled');
+        effectModifiersArea.appendChild(treeEffectsArea);
+
         const applyToTstTree = createCheckBox(null, 'options_applyToTstTree');
-        bindCheckboxToObj(applyToTstTree.checkbox, 'applyToTstTree');
-        effectModifiersArea.appendChild(applyToTstTree.area);
+        bindCheckboxToObj(applyToTstTree.checkbox, 'applyToTstTree', (checked) => {
+            toggleClass(treeEffectsArea, 'enabled', checked);
+        });
+        treeEffectsArea.appendChild(applyToTstTree.area);
+
+        treeEffectsArea.appendChild(document.createElement('br'));
+        treeEffectsArea.appendChild(document.createElement('br'));
+
+
+        const tstTree_notRoot = createCheckBox(null, 'options_notRootTab');
+        treeEffectsArea.appendChild(tstTree_notRoot.area);
+
+        treeEffectsArea.appendChild(document.createElement('br'));
+
+        const tstTree_notRoot_unless_noDescendants = createCheckBox(null, 'options_unloadTreeDescendants_unloadRootTabIf_NoDescendants');
+        treeEffectsArea.appendChild(tstTree_notRoot_unless_noDescendants.area);
+
+        treeEffectsArea.appendChild(document.createElement('br'));
+
+        const tstTree_notRoot_unless_unloadedDescendants = createCheckBox(null, 'options_unloadTreeDescendants_unloadRootTabIf_UnloadedDescendants');
+        bindCheckboxToObj(tstTree_notRoot_unless_unloadedDescendants.checkbox, 'applyToTstTree_notRoot_unloadRootTabIf_UnloadedDescendants');
+        const checkUnloadedDescendants = () => {
+            toggleClass(tstTree_notRoot_unless_unloadedDescendants.area, 'disabled', !tstTree_notRoot.checkbox.checked || !tstTree_notRoot_unless_noDescendants.checkbox.checked);
+        };
+        treeEffectsArea.appendChild(tstTree_notRoot_unless_unloadedDescendants.area);
+
+        bindCheckboxToObj(tstTree_notRoot_unless_noDescendants.checkbox, 'applyToTstTree_notRoot_unloadRootTabIf_NoDescendants', (checked) => {
+            checkUnloadedDescendants();
+        });
+        bindCheckboxToObj(tstTree_notRoot.checkbox, 'applyToTstTree_notRoot', (checked) => {
+            toggleClass(tstTree_notRoot_unless_noDescendants.area, 'disabled', !checked);
+            checkUnloadedDescendants();
+        });
+
+        treeEffectsArea.appendChild(document.createElement('br'));
+        treeEffectsArea.appendChild(document.createElement('br'));
+
+
+        const tstTree_notActiveTab = createCheckBox(null, 'options_notActiveTab');
+        bindCheckboxToObj(tstTree_notActiveTab.checkbox, 'applyToTstTree_notActiveTab');
+        treeEffectsArea.appendChild(tstTree_notActiveTab.area);
+
 
         effectModifiersArea.appendChild(document.createElement('br'));
-        effectModifiersArea.appendChild(document.createElement('br'));
+
 
         const fallbackToLastSelected = createCheckBox(null, 'options_fallbackToLastSelected');
         bindCheckboxToObj(fallbackToLastSelected.checkbox, 'fallbackToLastSelected');

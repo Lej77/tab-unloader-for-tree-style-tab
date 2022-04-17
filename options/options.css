@@ -62,6 +62,10 @@
 .disabled {
     opacity: 0.6;
 }
+.mouseClickArea:not(.enabled) > *:not(:first-child)  .disabled,
+.mouseClickArea.enabled .area:not(.enabled) > *:not(:first-child)  .disabled,
+.contextMenuItemArea:not(.enabled) > *:not(:first-child)  .disabled,
+.ensureCorrectLoad:not(.enabled) > .area > *  .disabled,
 .disabled .disabled {
     opacity: 1;
 }

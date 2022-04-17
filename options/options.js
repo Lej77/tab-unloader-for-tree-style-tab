@@ -68,6 +68,13 @@ import {
 } from '../ui/shortcuts.js';
 
 
+/**
+ * @typedef {import('../common/utilities').KeysWithSuffix<T, Suffix>} KeysWithSuffix
+ * @template {{}} T
+ * @template {string} Suffix
+ */
+
+
 quickLoadSetting('disableOptionsPageDarkTheme')
     .then(disableDarkTheme => {
         if (disableDarkTheme) {
@@ -317,7 +324,7 @@ async function initiatePage() {
         let listItemToId = new Map();
         let idToListItem = new Map();
         const checkListEnabled = () => {
-            toggleClass(section.title, 'enabled', delayedRegistration.input.value > 0 || Array.from(listItemEnabled.values()).some(value => value));
+            toggleClass(section.title, 'enabled', parseInt(delayedRegistration.input.value) > 0 || Array.from(listItemEnabled.values()).some(value => value));
         };
         starters.createDisposable(() => {
             checkListEnabled();
@@ -368,11 +375,14 @@ async function initiatePage() {
          * @param {string} Param.id The id of the context menu item.
          * @param {string} Param.title The i18n message id for the section's title.
          * @param {keyof settings} Param.enabledKey The setting key that enables this item.
-         * @param {string} Param.enabledMessage The i18n message id for the enable checkbox.
-         * @param {null | keyof settings} [Param.useSelectedTabs_key] The setting key for the use selected tabs checkbox.
-         * @param {string} Param.useSelectedTabs_message The i18n message id for the use selected tabs checkbox.
-         * @param {null | keyof settings} [Param.ignorePinnedTabs_key] The setting key for the ignore pinned tabs checkbox.
-         * @param {string} Param.ignorePinnedTabs_message The i18n message id for the ignore pinned tabs checkbox.
+         * @param {string} Param.enabledMessage The i18n message id for the `enable` checkbox.
+         * @param {null | keyof settings} [Param.useSelectedTabs_key] The setting key for the `use selected tabs` checkbox.
+         * @param {string} [Param.useSelectedTabs_message] The i18n message id for the `use selected tabs` checkbox.
+         * @param {null | keyof settings} [Param.notActiveTab_key] The setting key for the `not active tab` checkbox.
+         * @param {null | keyof settings} [Param.unloadRootTabIf_NoDescendants_key] The setting key for the `unload root tab if there are no descendants` checkbox.
+         * @param {null | keyof settings} [Param.unloadRootTabIf_UnloadedDescendants_key] The setting key for the `unload root tab if there are only unloaded descendants` checkbox.
+         * @param {null | keyof settings} [Param.ignorePinnedTabs_key] The setting key for the `ignore pinned tabs` checkbox.
+         * @param {string} [Param.ignorePinnedTabs_message] The i18n message id for the `ignore pinned tabs` checkbox.
          * @param {keyof settings} Param.fallback_lastSelected_key A settings key for this option.
          * @param {keyof settings} Param.fallback_ignoreHidden_key A settings key for this option.
          * @param {keyof settings} Param.fallback_wrapAround_key A settings key for this option.
@@ -385,9 +395,12 @@ async function initiatePage() {
             enabledKey,
             enabledMessage,
             useSelectedTabs_key = null,
-            useSelectedTabs_message,
+            useSelectedTabs_message = null,
+            notActiveTab_key = null,
+            unloadRootTabIf_NoDescendants_key = null,
+            unloadRootTabIf_UnloadedDescendants_key = null,
             ignorePinnedTabs_key = null,
-            ignorePinnedTabs_message,
+            ignorePinnedTabs_message = null,
             fallback_lastSelected_key,
             fallback_ignoreHidden_key,
             fallback_wrapAround_key,
@@ -424,39 +437,87 @@ async function initiatePage() {
             section.content.appendChild(document.createElement('br'));
 
 
-            const fallbackOptions = document.createElement('div');
-            fallbackOptions.classList.add('area');
-            fallbackOptions.classList.add('enabled');
-            section.content.appendChild(fallbackOptions);
+            const effectOptions = document.createElement('div');
+            effectOptions.classList.add('area');
+            effectOptions.classList.add('enabled');
+            section.content.appendChild(effectOptions);
 
+
+            let hasEffectOptions = false;
 
             if (useSelectedTabs_key) {
+                hasEffectOptions = true;
+
                 const useSelected = createCheckBox(useSelectedTabs_key, useSelectedTabs_message);
-                fallbackOptions.appendChild(useSelected.area);
-                if (ignorePinnedTabs_key) {
-                    fallbackOptions.appendChild(document.createElement('br'));
-
-                    const ignorePinned = createCheckBox(ignorePinnedTabs_key, ignorePinnedTabs_message);
-                    fallbackOptions.appendChild(ignorePinned.area);
+                effectOptions.appendChild(useSelected.area);
+            }
+            if (ignorePinnedTabs_key) {
+                if (hasEffectOptions) {
+                    effectOptions.appendChild(document.createElement('br'));
                 }
+                hasEffectOptions = true;
 
-                fallbackOptions.appendChild(document.createElement('br'));
-                fallbackOptions.appendChild(document.createElement('br'));
+                const ignorePinned = createCheckBox(ignorePinnedTabs_key, ignorePinnedTabs_message);
+                effectOptions.appendChild(ignorePinned.area);
+            }
+            if (unloadRootTabIf_NoDescendants_key) {
+                if (hasEffectOptions) {
+                    effectOptions.appendChild(document.createElement('br'));
+                    if (unloadRootTabIf_UnloadedDescendants_key) {
+                        effectOptions.appendChild(document.createElement('br'));
+                    }
+                }
+                hasEffectOptions = true;
+
+                const noDescendants = createCheckBox(unloadRootTabIf_NoDescendants_key, 'options_unloadTreeDescendants_unloadRootTabIf_NoDescendants');
+                effectOptions.appendChild(noDescendants.area);
+
+                if (unloadRootTabIf_UnloadedDescendants_key) {
+                    effectOptions.appendChild(document.createElement('br'));
+
+                    const unloadedDescendants = createCheckBox(unloadRootTabIf_UnloadedDescendants_key, 'options_unloadTreeDescendants_unloadRootTabIf_UnloadedDescendants');
+                    effectOptions.appendChild(unloadedDescendants.area);
+
+                    const check = () => {
+                        const enabled = noDescendants.checkbox.checked;
+                        toggleClass(unloadedDescendants.area, 'disabled', !enabled);
+                    };
+                    starters.createDisposable(() => {
+                        check();
+                        return new EventListener(noDescendants.checkbox, 'input', () => check());
+                    });
+
+                    effectOptions.appendChild(document.createElement('br'));
+                }
+            }
+            if (notActiveTab_key) {
+                if (hasEffectOptions) {
+                    effectOptions.appendChild(document.createElement('br'));
+                }
+                hasEffectOptions = true;
+
+                const notActiveTab = createCheckBox(notActiveTab_key, 'options_notActiveTab');
+                effectOptions.appendChild(notActiveTab.area);
+            }
+
+            if (hasEffectOptions) {
+                effectOptions.appendChild(document.createElement('br'));
+                effectOptions.appendChild(document.createElement('br'));
             }
 
 
             const fallbackToLastSelected = createCheckBox(fallback_lastSelected_key, 'options_fallbackToLastSelected');
-            fallbackOptions.appendChild(fallbackToLastSelected.area);
+            effectOptions.appendChild(fallbackToLastSelected.area);
 
-            fallbackOptions.appendChild(document.createElement('br'));
+            effectOptions.appendChild(document.createElement('br'));
 
             const ignoreHiddenTabs = createCheckBox(fallback_ignoreHidden_key, 'options_ignoreHiddenTabs');
-            fallbackOptions.appendChild(ignoreHiddenTabs.area);
+            effectOptions.appendChild(ignoreHiddenTabs.area);
 
-            fallbackOptions.appendChild(document.createElement('br'));
+            effectOptions.appendChild(document.createElement('br'));
 
             const wrapAround = createCheckBox(fallback_wrapAround_key, 'options_wrapAround');
-            fallbackOptions.appendChild(wrapAround.area);
+            effectOptions.appendChild(wrapAround.area);
 
 
             section.content.appendChild(document.createElement('br'));
@@ -500,12 +561,33 @@ async function initiatePage() {
             enabledKey: 'unloadTreeInTSTContextMenu',
             enabledMessage: 'options_unloadTreeInTSTContextMenu',
 
+            notActiveTab_key: 'unloadTreeInTSTContextMenu_notActiveTab',
+
             fallback_lastSelected_key: 'unloadTreeInTSTContextMenu_fallbackToLastSelected',
             fallback_ignoreHidden_key: 'unloadTreeInTSTContextMenu_ignoreHiddenTabs',
             fallback_wrapAround_key: 'unloadTreeInTSTContextMenu_wrapAround',
 
             customLabelKey: 'unloadTreeInTSTContextMenu_CustomLabel',
             defaultCustomLabelMessage: 'contextMenu_unloadTree',
+        });
+
+        const unloadTreeDescendants = createContextMenuItemSection({
+            id: tstContextMenuItemIds.unloadTreeDescendants,
+            title: 'options_unloadTreeDescendantsInTSTContextMenu_Title',
+
+            enabledKey: 'unloadTreeDescendantsInTSTContextMenu',
+            enabledMessage: 'options_unloadTreeDescendantsInTSTContextMenu',
+
+            notActiveTab_key: 'unloadTreeDescendantsInTSTContextMenu_notActiveTab',
+            unloadRootTabIf_NoDescendants_key: 'unloadTreeDescendantsInTSTContextMenu_unloadRootTabIf_NoDescendants',
+            unloadRootTabIf_UnloadedDescendants_key: 'unloadTreeDescendantsInTSTContextMenu_unloadRootTabIf_UnloadedDescendants',
+
+            fallback_lastSelected_key: 'unloadTreeDescendantsInTSTContextMenu_fallbackToLastSelected',
+            fallback_ignoreHidden_key: 'unloadTreeDescendantsInTSTContextMenu_ignoreHiddenTabs',
+            fallback_wrapAround_key: 'unloadTreeDescendantsInTSTContextMenu_wrapAround',
+
+            customLabelKey: 'unloadTreeDescendantsInTSTContextMenu_CustomLabel',
+            defaultCustomLabelMessage: 'contextMenu_unloadTreeDescendants',
         });
 
         const unloadOther = createContextMenuItemSection({
@@ -540,6 +622,30 @@ async function initiatePage() {
 
 
     {
+        // eslint-disable-next-line valid-jsdoc
+        /**
+         * Create UI elements for fallback options.
+         *
+         * @param {Object} Params Keyword parameters.
+         * @param {HTMLElement} Params.area The div node to append the new UI elements to.
+         * @param { KeysWithSuffix<typeof settings, 'fallbackToLastSelected'> } Params.settingPrefix The settings keys for the fallback options should all share this prefix.
+         */
+        const createFallbackOptions = ({ area, settingPrefix }) => {
+            const fallbackToLastSelected = createCheckBox(settingPrefix + 'fallbackToLastSelected', 'options_fallbackToLastSelected');
+            area.appendChild(fallbackToLastSelected.area);
+
+            area.appendChild(document.createElement('br'));
+
+            const ignoreHiddenTabs = createCheckBox(settingPrefix + 'ignoreHiddenTabs', 'options_ignoreHiddenTabs');
+            area.appendChild(ignoreHiddenTabs.area);
+
+            area.appendChild(document.createElement('br'));
+
+            const wrapAround = createCheckBox(settingPrefix + 'wrapAround', 'options_wrapAround');
+            area.appendChild(wrapAround.area);
+        };
+
+
         const shortcutsInfo = createShortcutsArea({
             sectionAnimation: sectionAnimationInfo,
 
@@ -555,19 +661,7 @@ async function initiatePage() {
                         area.appendChild(document.createElement('br'));
                         area.appendChild(document.createElement('br'));
 
-
-                        const fallbackToLastSelected = createCheckBox('command_unloadTab_fallbackToLastSelected', 'options_fallbackToLastSelected');
-                        area.appendChild(fallbackToLastSelected.area);
-
-                        area.appendChild(document.createElement('br'));
-
-                        const ignoreHiddenTabs = createCheckBox('command_unloadTab_ignoreHiddenTabs', 'options_ignoreHiddenTabs');
-                        area.appendChild(ignoreHiddenTabs.area);
-
-                        area.appendChild(document.createElement('br'));
-
-                        const wrapAround = createCheckBox('command_unloadTab_wrapAround', 'options_wrapAround');
-                        area.appendChild(wrapAround.area);
+                        createFallbackOptions({ area, settingPrefix: 'command_unloadTab_' });
 
                         return area;
                     },
@@ -577,18 +671,38 @@ async function initiatePage() {
                     createContent: () => {
                         const area = document.createElement('div');
 
-                        const fallbackToLastSelected = createCheckBox('command_unloadTree_fallbackToLastSelected', 'options_fallbackToLastSelected');
-                        area.appendChild(fallbackToLastSelected.area);
+                        createFallbackOptions({ area, settingPrefix: 'command_unloadTree_' });
+
+                        return area;
+                    },
+                },
+                'unload-tree-descendants': {
+                    description: 'options_Commands_UnloadTreeDescendants',
+                    createContent: () => {
+                        const area = document.createElement('div');
+
+                        const unloadRootIfNoDescendants = createCheckBox('command_unloadTreeDescendants_unloadRootTabIf_NoDescendants', 'options_unloadTreeDescendants_unloadRootTabIf_NoDescendants');
+                        area.appendChild(unloadRootIfNoDescendants.area);
 
                         area.appendChild(document.createElement('br'));
 
-                        const ignoreHiddenTabs = createCheckBox('command_unloadTree_ignoreHiddenTabs', 'options_ignoreHiddenTabs');
-                        area.appendChild(ignoreHiddenTabs.area);
+                        const unloadRootIfUnloadedDescendants = createCheckBox('command_unloadTreeDescendants_unloadRootTabIf_UnloadedDescendants', 'options_unloadTreeDescendants_unloadRootTabIf_UnloadedDescendants');
+                        area.appendChild(unloadRootIfUnloadedDescendants.area);
 
                         area.appendChild(document.createElement('br'));
+                        area.appendChild(document.createElement('br'));
 
-                        const wrapAround = createCheckBox('command_unloadTree_wrapAround', 'options_wrapAround');
-                        area.appendChild(wrapAround.area);
+                        createFallbackOptions({ area, settingPrefix: 'command_unloadTreeDescendants_' });
+
+
+                        const check = () => {
+                            const enabled = unloadRootIfNoDescendants.checkbox.checked;
+                            toggleClass(unloadRootIfUnloadedDescendants.area, 'disabled', !enabled);
+                        };
+                        starters.createDisposable(() => {
+                            check();
+                            return new EventListener(unloadRootIfNoDescendants.checkbox, 'input', (e) => check());
+                        });
 
                         return area;
                     },
@@ -610,18 +724,7 @@ async function initiatePage() {
                         area.appendChild(document.createElement('br'));
 
 
-                        const fallbackToLastSelected = createCheckBox('command_unloadOther_fallbackToLastSelected', 'options_fallbackToLastSelected');
-                        area.appendChild(fallbackToLastSelected.area);
-
-                        area.appendChild(document.createElement('br'));
-
-                        const ignoreHiddenTabs = createCheckBox('command_unloadOther_ignoreHiddenTabs', 'options_ignoreHiddenTabs');
-                        area.appendChild(ignoreHiddenTabs.area);
-
-                        area.appendChild(document.createElement('br'));
-
-                        const wrapAround = createCheckBox('command_unloadOther_wrapAround', 'options_wrapAround');
-                        area.appendChild(wrapAround.area);
+                        createFallbackOptions({ area, settingPrefix: 'command_unloadOther_' });
 
                         return area;
                     },
@@ -884,13 +987,13 @@ async function initiatePage() {
 
 
         const check = () => {
-            const ensureLoadEnabled = waitForUrl.input.value >= 0;
+            const ensureLoadEnabled = parseInt(waitForUrl.input.value) >= 0;
             const enabled = ensureLoadEnabled || reloadBrokenTabs_Normal.checkbox.checked || reloadBrokenTabs_Private.checkbox.checked;
-            toggleClass(section.title, 'enabled', enabled || unloadAgain.input.value >= 0);
+            toggleClass(section.title, 'enabled', enabled || parseInt(unloadAgain.input.value) >= 0);
             toggleClass(ensureLoadArea, 'enabled', ensureLoadEnabled);
             toggleClass(section.title, 'error', enabled && !permissionsArea.checkControllerAvailable(permissionsArea.tabsPermissionController));
 
-            toggleClass(fixIncorrectLoadAfter.area, 'disabled', ensureLoadEnabled && waitForIncorrectLoad.input.value < 0);
+            toggleClass(fixIncorrectLoadAfter.area, 'disabled', ensureLoadEnabled && parseInt(waitForIncorrectLoad.input.value) < 0);
 
             toggleClass(quickUnloadArea, 'disabled', !reloadBrokenTabs_Normal.checkbox.checked && !reloadBrokenTabs_Private.checkbox.checked);
             toggleClass(quickUnload_Normal.area, 'disabled', !reloadBrokenTabs_Normal.checkbox.checked);

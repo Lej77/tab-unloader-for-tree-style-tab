@@ -146,6 +146,18 @@
     "options_applyToTstTree": {
         "message": "Unload Tree: if the tab that should be unloaded has child tabs then those will be unloaded as well."
     },
+    "options_notRootTab": {
+        "message": "Don't unload the root tab, instead unload only child tabs."
+    },
+    "options_notActiveTab": {
+        "message": "Ignore active tab: never unload the tab that is currently active."
+    },
+    "options_unloadTreeDescendants_unloadRootTabIf_NoDescendants": {
+        "message": "Unload root tab if there are no descendants."
+    },
+    "options_unloadTreeDescendants_unloadRootTabIf_UnloadedDescendants": {
+        "message": "Unload root tab if all descendants are already unloaded."
+    },
     "options_contextMenuItems_Title": {
         "message": "Context menu items"
     },
@@ -161,6 +173,9 @@
     "options_unloadTreeInTSTContextMenu_Title": {
         "message": "Unload tree"
     },
+    "options_unloadTreeDescendantsInTSTContextMenu_Title": {
+        "message": "Unload descendants"
+    },
     "options_unloadOtherInTSTContextMenu_Title": {
         "message": "Unload other tabs"
     },
@@ -169,6 +184,9 @@
     },
     "options_unloadTreeInTSTContextMenu": {
         "message": "Add a context menu item in Tree Style Tab's context menu to unload a tab tree."
+    },
+    "options_unloadTreeDescendantsInTSTContextMenu": {
+        "message": "Add a context menu item in Tree Style Tab's context menu to unload the descendants of a tab (that is to say all tabs that are nested under the targeted tab as specified by Tree Style Tab's tree structure)."
     },
     "options_unloadOtherInTSTContextMenu": {
         "message": "Add a context menu item in Tree Style Tab's context menu to unload all tabs except the currently selected ones."
@@ -286,6 +304,9 @@
     "options_Commands_UnloadTree": {
         "message": "Unload tree"
     },
+    "options_Commands_UnloadTreeDescendants": {
+        "message": "Unload tree descendants"
+    },
     "options_Commands_UnloadOther": {
         "message": "Unload other tabs"
     },
@@ -382,6 +403,10 @@
     },
     "contextMenu_unloadTree": {
         "message": "Unload Tree",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
+    },
+    "contextMenu_unloadTreeDescendants": {
+        "message": "Unload Descendants",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut."
     },
     "contextMenu_unloadOther": {

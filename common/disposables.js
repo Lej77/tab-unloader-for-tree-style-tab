@@ -16,8 +16,8 @@ null;
  *
  * @typedef {Object} IDisposable
  * @property {function(): any} Info.dispose Dispose of any resources that this object handles.
- * @property {EventSubscriber<undefined>} Info.onDisposed Notified when this object has been disposed.
- * @property {boolean} Info.isDisposed Indicates if this object has been disposed.
+ * @property {EventSubscriber<undefined>} [Info.onDisposed] Notified when this object has been disposed.
+ * @property {boolean} [Info.isDisposed] Indicates if this object has been disposed.
  * @property {boolean | undefined} [Info.isActive] Indicates if this object is still using its resources.
  */
 null;
@@ -205,10 +205,10 @@ export class DisposableCollection {
     for (let propertyName of DisposableCollection.isDisposedPropertyNames) {
       let inverted = false;
       if (propertyName.startsWith('!')) {
-        propertyName = propertyName.substr(1);
+        propertyName = propertyName.slice(1);
         inverted = true;
       }
-      let value = obj[propertyName];
+      const value = obj[propertyName];
       if (value) {
         if (inverted) {
           return false;
@@ -222,7 +222,7 @@ export class DisposableCollection {
     return false;
   }
   static disposeOfObject(obj) {
-    for (let disposeFunctionName of DisposableCollection.disposeFunctionNames) {
+    for (const disposeFunctionName of DisposableCollection.disposeFunctionNames) {
       if (DisposableCollection.callFunction(obj, disposeFunctionName)) {
         break;
       }
@@ -259,10 +259,11 @@ export class DisposableCreators {
     this.disposableCreators = [];
   }
 
+  // eslint-disable-next-line valid-jsdoc
   /**
    * Handle a disposable object returned from a callback.
    *
-   * @param {function(boolean) : void | null | IDisposable | IDisposable[]} createCallback A callback that returns a disposable object. The first arg is a Boolean that is `true` if the callback was delayed, otherwise it is `false`.
+   * @param {(delayed: boolean) => (void | null | IDisposable | IDisposable[])} createCallback A callback that returns a disposable object. The first arg is a Boolean that is `true` if the callback was delayed, otherwise it is `false`.
    * @memberof DisposableCreators
    */
   createDisposable(createCallback) {

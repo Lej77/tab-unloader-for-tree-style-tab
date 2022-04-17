@@ -9,6 +9,7 @@ import {
 
 import {
     defineProperty,
+    prefixObjectKeys,
 } from '../common/utilities.js';
 
 
@@ -22,6 +23,7 @@ export const kATD_ID = '{c2c003ee-bd69-42a2-b0e9-6f34222cb046}';
 export const tstContextMenuItemIds = Object.freeze({
     unloadTab: 'unload-tab',
     unloadTree: 'unload-tree',
+    unloadTreeDescendants: 'unload-tree-descendants',
     unloadOther: 'unload-other',
 });
 /** The values that the `type` property can have for this extension's internal messages. */
@@ -36,9 +38,49 @@ export const messageTypes = Object.freeze({
 });
 export const defaultValues = Object.freeze({
     get Settings() {
+
+        // eslint-disable-next-line valid-jsdoc
+        /** Create mouse click combination options.
+         *
+         * @param {Partial<ReturnType<MouseClickCombo.getDefaultValues>>} data Keys that should differ from their default values.
+         * @returns {ReturnType<MouseClickCombo.getDefaultValues>} The options for this mouse button.
+         */
         const createComboData = (data) => {
             return Object.assign(MouseClickCombo.getDefaultValues(), data);
         };
+
+
+        /** Options for what tab to select when the active tab is being
+         * unloaded. */
+        const commonFallbackOptions = {
+            /** Instead of closest, select the most recent tab. */
+            fallbackToLastSelected: false,
+            /** Never select hidden tabs. */
+            ignoreHiddenTabs: false,
+            /** Closest to the end might be at the beginning. */
+            wrapAround: false,
+        };
+
+
+        const unloadTreeDescendantsCommandOptions = {
+            /** Unload the root tab if it doesn't have any child tabs at all. */
+            unloadRootTabIf_NoDescendants: false,
+            /** Unload the root tab if all descendants are already unloaded. */
+            unloadRootTabIf_UnloadedDescendants: false,
+        };
+
+        const unloadOtherCommandOptions = {
+            /** If this is `false` then only the current tab won't be unloaded; otherwise all selected tabs would be left in their current state. */
+            ignoreSelectedTabs: true,
+            ignorePinnedTabs: true,
+        };
+
+        const selectCommandOptions = {
+            ignoreHiddenTabs: false,
+            wrapAround: true,
+        };
+
+
         return {
             isEnabled: true,
 
@@ -116,60 +158,81 @@ export const defaultValues = Object.freeze({
             fixTabRestore_reloadBrokenTabs_private_quickUnload: false,
 
 
-            command_unloadTab_useSelectedTabs: false,
-            command_unloadTab_fallbackToLastSelected: false,
-            command_unloadTab_ignoreHiddenTabs: false,
-            command_unloadTab_wrapAround: false,
+            // #region Commands
 
-            command_unloadTree_fallbackToLastSelected: false,
-            command_unloadTree_ignoreHiddenTabs: false,
-            command_unloadTree_wrapAround: false,
+            ...prefixObjectKeys('command_unloadTab_', {
+                useSelectedTabs: false,
+                ...commonFallbackOptions,
+            }),
 
-            /** If this is `false` then only the current tab won't be unloaded; otherwise all selected tabs would be left active. */
-            command_unloadOther_ignoreSelectedTabs: true,
-            command_unloadOther_ignorePinnedTabs: true,
-            command_unloadOther_fallbackToLastSelected: false,
-            command_unloadOther_ignoreHiddenTabs: false,
-            command_unloadOther_wrapAround: false,
+            ...prefixObjectKeys('command_unloadTree_', {
+                ...commonFallbackOptions,
+            }),
 
-            command_selectPreviousTab_ignoreHiddenTabs: false,
-            command_selectPreviousTab_wrapAround: true,
+            ...prefixObjectKeys('command_unloadTreeDescendants_', {
+                ...unloadTreeDescendantsCommandOptions,
+                ...commonFallbackOptions,
+            }),
 
-            command_selectNextTab_ignoreHiddenTabs: false,
-            command_selectNextTab_wrapAround: true,
+            ...prefixObjectKeys('command_unloadOther_', {
+                ...unloadOtherCommandOptions,
+                ...commonFallbackOptions,
+            }),
 
+            ...prefixObjectKeys('command_selectPreviousTab_', {
+                ...selectCommandOptions,
+            }),
+
+            ...prefixObjectKeys('command_selectNextTab_', {
+                ...selectCommandOptions,
+            }),
+
+            // #endregion Commands
+
+
+            // #region Context Menu
 
             unloadInTSTContextMenu: true,
-            unloadInTSTContextMenu_CustomLabel: '',
-            unloadInTSTContextMenu_useSelectedTabs: true,
-            unloadInTSTContextMenu_fallbackToLastSelected: false,
-            unloadInTSTContextMenu_ignoreHiddenTabs: false,
-            unloadInTSTContextMenu_wrapAround: false,
+            ...prefixObjectKeys('unloadInTSTContextMenu_', {
+                CustomLabel: '',
+                useSelectedTabs: true,
+                ...commonFallbackOptions,
+            }),
 
             unloadTreeInTSTContextMenu: false,
-            unloadTreeInTSTContextMenu_CustomLabel: '',
-            unloadTreeInTSTContextMenu_fallbackToLastSelected: false,
-            unloadTreeInTSTContextMenu_ignoreHiddenTabs: false,
-            unloadTreeInTSTContextMenu_wrapAround: false,
+            ...prefixObjectKeys('unloadTreeInTSTContextMenu_', {
+                CustomLabel: '',
+                notActiveTab: false,
+                ...commonFallbackOptions,
+            }),
+
+            unloadTreeDescendantsInTSTContextMenu: false,
+            ...prefixObjectKeys('unloadTreeDescendantsInTSTContextMenu_', {
+                CustomLabel: '',
+                notActiveTab: false,
+                ...unloadTreeDescendantsCommandOptions,
+                ...commonFallbackOptions,
+            }),
 
             unloadOtherInTSTContextMenu: false,
-            unloadOtherInTSTContextMenu_CustomLabel: '',
-            /** If this is `false` then only the current tab won't be unloaded; otherwise all selected tabs would be left active. */
-            unloadOtherInTSTContextMenu_ignoreSelectedTabs: true,
-            unloadOtherInTSTContextMenu_ignorePinnedTabs: true,
-            unloadOtherInTSTContextMenu_fallbackToLastSelected: false,
-            unloadOtherInTSTContextMenu_ignoreHiddenTabs: false,
-            unloadOtherInTSTContextMenu_wrapAround: false,
+            ...prefixObjectKeys('unloadOtherInTSTContextMenu_', {
+                CustomLabel: '',
+                ...unloadOtherCommandOptions,
+                ...commonFallbackOptions,
+            }),
 
             contextMenu_in_tab_bar: true,
             tstContextMenu_CustomRootLabel: '',
             tstContextMenuOrder: [
                 tstContextMenuItemIds.unloadTab,
                 tstContextMenuItemIds.unloadTree,
+                tstContextMenuItemIds.unloadTreeDescendants,
                 tstContextMenuItemIds.unloadOther,
             ],
 
             delayedTSTRegistrationTimeInMilliseconds: 4000,
+
+            // #endregion Context Menu
 
 
             dimUnloadedTabs: true,
@@ -235,6 +298,14 @@ export const defaultValues = Object.freeze({
 
             /** If this click applies an effect then that effect should be applied to the clicked Tree Style Tab tree instead of only the clicked tab. */
             applyToTstTree: false,
+            /** If the click's effect applies to a tree and the active tab is in that tree then don't apply the effect to the active tab. */
+            applyToTstTree_notActiveTab: false,
+            /** If the click's effect applies to a tree then that effect shouldn't be applied to the tree's root tab (the top most parent tab). */
+            applyToTstTree_notRoot: false,
+            /** Unload the root tab if it doesn't have any child tabs at all. */
+            applyToTstTree_notRoot_unloadRootTabIf_NoDescendants: false,
+            /** Unload the root tab if all descendants are already unloaded. */
+            applyToTstTree_notRoot_unloadRootTabIf_UnloadedDescendants: false,
         };
     },
     get MouseClickComboCollection() {
@@ -252,6 +323,14 @@ export const defaultValues = Object.freeze({
             };
             return obj;
         };
+
+        // eslint-disable-next-line valid-jsdoc
+        /**
+         * Create info for a mouse click "combo".
+         *
+         * @template T
+         * @param {T} obj Extra info.
+         */
         const createInfo = (obj) => {
             const info = Object.assign(getStandardInfo(), obj);
             info.messages = Object.assign(getStandardMessages(), info.messages);
@@ -333,70 +412,99 @@ export class MouseClickComboCollection {
     }
 }
 
+/** @typedef {typeof defaultValues.MouseClickCombo & MouseClickCombo} MouseClickComboWithProps */
+
+/**
+ * Mouse click combination info.
+ *
+ * @export
+ * @class MouseClickCombo
+ */
 export class MouseClickCombo {
     constructor(info = {}) {
-        const onChangeManager = new EventManager();
-        this.onChange = onChangeManager.subscriber;
+        /** @type {EventManager<[keyof typeof defaultValues.MouseClickCombo, any]>} */
+        this._onChangeManager = new EventManager();
+        /** Changes to the wrapped data. */
+        this.onChange = this._onChangeManager.subscriber;
 
+        this._props = MouseClickCombo.getDefaultValues();
+        this._propKeys = Object.keys(this._props);
 
-        const props = MouseClickCombo.getDefaultValues();
-        defineProperty(this, 'data',
-            function () {
-                return Object.assign({}, props);
-            }
-        );
-        const propKeys = Object.keys(props);
-
-        for (const key of propKeys) {
+        for (const key of this._propKeys) {
             defineProperty(this, key,
                 function () {
-                    return props[key];
+                    return this._props[key];
                 },
-                function (value) {
-                    if (props[key] === value) {
-                        return;
-                    }
-                    props[key] = value;
-                    onChangeManager.fire(key, value);
+                (value) => {
+                    this._updateKey(key, value);
                 }
             );
         }
 
 
+        /** @type { { [key: string]: any } } Extra info about this mouse click combo. */
         this.info = info;
+    }
 
+    _updateKey(key, value) {
+        if (this._props[key] === value) {
+            return;
+        }
+        this._props[key] = value;
+        this._onChangeManager.fire(key, value);
+    }
 
-        this.update = (newData) => {
-            for (const key of Object.keys(newData)) {
-                if (propKeys.includes(key)) {
-                    this[key] = newData[key];
-                }
+    get data() {
+        return Object.assign({}, this._props);
+    }
+
+    // eslint-disable-next-line valid-jsdoc
+    /**
+     * Update the wrapped mouse click data.
+     *
+     * @param {Partial<typeof defaultValues.MouseClickCombo>} newData The data to update.
+     * @memberof MouseClickCombo
+     */
+    update(newData) {
+        for (const key of Object.keys(newData)) {
+            if (this._propKeys.includes(key)) {
+                this._updateKey(key, newData[key]);
             }
-        };
+        }
+    }
+    /**
+     * Check if a mouse click with a certain key combination would be allowed.
+     *
+     * @param {boolean} ctrl The `ctrl` key is pressed.
+     * @param {boolean} shift The `shift` key is pressed.
+     * @param {boolean} alt The `alt` key is pressed.
+     * @param {boolean} meta The `meta` key is pressed.
+     * @returns {boolean} This mouse click should not be ignored.
+     * @memberof MouseClickCombo
+     */
+    test(ctrl, shift, alt, meta) {
+        const props = this._props;
 
+        if (!props.enabled) {
+            return false;
+        }
 
-        this.test = (ctrl, shift, alt, meta) => {
-            if (!props.enabled) {
-                return false;
-            }
-
-            if (props.anyKeyMode) {
-                return (
-                    ctrl && props.ctrl ||
-                    shift && props.shift ||
-                    alt && props.alt ||
-                    meta && props.meta ||
-                    (!props.ctrl && !props.shift && !props.alt && !props.meta)
-                );
-            } else {
-                return (
-                    ctrl == props.ctrl &&
-                    shift == props.shift &&
-                    alt == props.alt &&
-                    meta == props.meta
-                );
-            }
-        };
+        if (props.anyKeyMode) {
+            return (
+                ctrl && props.ctrl ||
+                shift && props.shift ||
+                alt && props.alt ||
+                meta && props.meta ||
+                (!props.ctrl && !props.shift && !props.alt && !props.meta)
+            );
+        } else {
+            return (
+                ctrl == props.ctrl &&
+                shift == props.shift &&
+                alt == props.alt &&
+                meta == props.meta
+            );
+        }
     }
 
     static getDefaultValues() {
@@ -419,7 +527,7 @@ export const settings = settingsTracker.settings;
  *
  * @template {keyof typeof defaultValues.Settings} K
  * @param {K} key The key of the setting that should be loaded.
- * @returns {Promise<(ReturnType<typeof getDefaultSettings>[K])>} The value for the loaded setting.
+ * @returns {Promise<((typeof defaultValues.Settings)[K])>} The value for the loaded setting.
  */
 export function quickLoadSetting(key) {
     // @ts-ignore
