@@ -16,10 +16,9 @@ export function setMessagePrefix(value) {
  * elements.
  * @returns {Element[]} The elements that we can load i18n message for. */
 export function getMessageElements(rootElement = null) {
-  if (!rootElement)
-    rootElement = document;
-  const messageElements = Array.from(rootElement.querySelectorAll(`*[class*='${messagePrefix}']`));
-  if (rootElement !== document && Array.from(rootElement.classList).some(c => c.startsWith(messagePrefix)))
+  const searchFrom = rootElement ? rootElement : document;
+  const messageElements = Array.from(searchFrom.querySelectorAll(`*[class*='${messagePrefix}']`));
+  if (rootElement && Array.from(rootElement.classList).some(c => c.startsWith(messagePrefix)))
     messageElements.push(rootElement);
   return messageElements;
 }
