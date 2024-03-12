@@ -23,6 +23,22 @@
         "message": "在一个独立标签页打开此选项页面",
         "hash": "f727577074941d5cf253d4b814395d6e"
     },
+    "options_category_mouseEvents_Title": {
+        "message": "鼠标事件（来自 Tree Style Tab）",
+        "hash": "a945f40a47d6be263432a91bd68b919d"
+    },
+    "options_category_mouseEvents_Explanation": {
+        "message": "此区域中的每一节都代表了一个动作，分别对应在 Tree Style Tab 侧栏上点击不同鼠标按钮。每一节中都是相关设置项，用于配置执行某个动作所需要满足的条件。如果没有满足 全部 的启用条件，就不会执行相应动作，此时 Tree Style Tab 将会执行其默认动作。（在每一节的设置项中，该节的动作有时会被简称为“操作”。）",
+        "hash": "917d0a36cf62f1a78775ca1e07e78b8d"
+    },
+    "options_category_commands_Title": {
+        "message": "命令",
+        "hash": "4ef02b012ff2bdea920af9e55e2701a9"
+    },
+    "options_category_permissions_Title": {
+        "message": "权限",
+        "hash": "29dcac1ee5e888f5435ab6fc809cdc4b"
+    },
     "options_unloadOnLeftClick": {
         "message": "左键点击标签页使其休眠。",
         "hash": "8be2de96c9e51a9e56ef5da305c3330a"
@@ -116,7 +132,8 @@
         "hash": "a5ec83872d5206ebcbd7d904dff93556"
     },
     "options_onDrag_cancel": {
-        "message": "一个事件被触发时，如果此项被勾选，则取消相应操作；反之，则允许相应操作。 If this is checked then the tab must NOT be long pressed in order for this condition to be met, so it can be clicked on quickly or it can be dragged and dropped. (If the \"also register mouse up events\" checkbox is checked then \"clicked on quickly\" is no longer an option and so this means that a drag and drop operation must be started for the clicked tab in order for the condition to be met.)"
+        "message": "反向勾选。如果此项被勾选，那么为了满足此条件，标签页将不能被长按，从而使其能够被快速点击或拖放。（如果勾选了“并触发鼠标松开事件”复选框被，那么“快速点击” 将不再是一个操作，这意味着为了满足条件，被点击的标签页必须先进行拖放操作。）",
+        "hash": "a847a839e962d8a5c8f1cf09bcdd9183"
     },
     "options_onDrag_mouseUpTigger": {
         "message": "如果此项被勾选，那么鼠标松开事件会被当做长按事件来触发相应操作。目前 Tree Style Tab 不会在拖放操作后发送鼠标松开事件，所以如果一个鼠标松开事件被发送，那么拖放动作就不会生效。这意味着，此选项将事件检测从 \"长按标签页\" 更改成了 \"不进行拖放操作的任意点击\" （只要 Tree Style Tab 不会更改它本身与此相关的奇怪行为）。",
@@ -127,7 +144,8 @@
         "hash": "f6867e31cc7ca5d4984be9301a85c20f"
     },
     "options_onDrag_Modern": {
-        "message": "Tree Style Tab 的拖放 API 发生了更改，在 Tree Style Tab v2.7.8 及之后的版本中较之前的版本有轻微的差别。如果您正在使用 Tree Style Tab 一个相对较新的版本，请勾选此项。（相对较新的 API 拥有一个全新的事件类型，会在拖放操作开始于侧栏时被发送。所以，相较于在一个时限前等待 \"长按\" 事件，我们现在会等待一个时限长度然后取消 \"拖放\" 事件。） (This doesn't change the behavior of the settings above this one, instead it only decreases the risk of race conditions if the timeout is too low and allows delaying the start of a drag and drop operations for longer than the default 400ms.)"
+        "message": "Tree Style Tab 的拖放 API 发生了更改，在 Tree Style Tab v2.7.8 及之后的版本中较之前的版本有轻微的差别。如果您正在使用 Tree Style Tab 一个相对较新的版本，请勾选此项。（相对较新的 API 拥有一个全新的事件类型，会在拖放操作开始于侧栏时被发送。所以，相较于在一个时限前等待 \"长按\" 事件，我们现在会在一个时限前等待 \"拖放\" 事件。） （这不会改变此项上方设置项的行为，相反，其只会减少在时限过短时发生条件冲突的风险，并允许将拖放操作的开始时间延迟到比默认的 400ms 更长。）",
+        "hash": "5ec265d9fb6252896ed678ec74ffcbbf"
     },
     "options_onDrag_Modern_PreventDragAndDrop": {
         "message": "相对较新的拖放 API 不会自动切换到特殊的 \"长按\" 模式，相反，当我们想要这么做时，它需要我们给 Tree Style Tab 发送一个消息。勾选此设置，以在时限被超过后发送这样一个消息。这样将会模仿 Tree Style Tab 以前的工作方式，并防止拖放操作在一定时间（由该时限指定）后被触发。",
@@ -149,6 +167,14 @@
         "message": "休眠所选标签页：如果多个标签页被选中，则将其全部休眠。",
         "hash": "f718b86f450be7944ee9484698a1fd59"
     },
+    "options_unloadOthers_ignoreSelectedTabs": {
+        "message": "忽略所选标签页：如果有多个标签页被选中，那么它们都不会被休眠。如果此项未被勾选，那么除了当前标签页以外的所有标签页都会被休眠，即使有多个标签页被选中",
+        "hash": "dd383f59d7a5c65b4a8eb6ee7f35bf23"
+    },
+    "options_unloadOthers_ignorePinnedTabs": {
+        "message": "忽略固定标签页：不要休眠所有被固定的标签页。",
+        "hash": "3501fe7df09f0aff95c8bc6fe391596f"
+    },
     "options_fallbackToLastSelected": {
         "message": "选择上次聚焦：如果标签页为活动状态，则会选择上次聚焦的标签页。如果此项未被勾选，则最近的标签页会被选中。",
         "hash": "0587dd90d5a9004f57622904af2d861a"
@@ -168,6 +194,22 @@
     "options_applyToTstTree": {
         "message": "休眠标签树：如果需要被休眠的标签页拥有子标签，那么它们也会被一并休眠。",
         "hash": "bb44201f9a346d70849ac1ce0f03c45b"
+    },
+    "options_notRootTab": {
+        "message": "不要休眠根标签页，只休眠子标签页。",
+        "hash": "e387153678de9de298bfdc0645322cc2"
+    },
+    "options_notActiveTab": {
+        "message": "忽略活动标签页：永远不休眠当前处于活动状态的标签页。",
+        "hash": "7119823454d996efa8b42f48e27ea611"
+    },
+    "options_unloadTreeDescendants_unloadRootTabIf_NoDescendants": {
+        "message": "休眠根标签页，如果其没有后代项。",
+        "hash": "a61b0776c603012e0aca9a571e4c8afe"
+    },
+    "options_unloadTreeDescendants_unloadRootTabIf_UnloadedDescendants": {
+        "message": "休眠根标签页，如果其所有后代项已被休眠。",
+        "hash": "1a6be33d6e373742b001a663e9db2c85"
     },
     "options_contextMenuItems_Title": {
         "message": "上下文菜单项",
@@ -189,6 +231,14 @@
         "message": "休眠标签树",
         "hash": "56dd041b4aeb212f337be91d6e28112e"
     },
+    "options_unloadTreeDescendantsInTSTContextMenu_Title": {
+        "message": "休眠后代项",
+        "hash": "3f2f4d996a0d7601a441d06b73f3cf85"
+    },
+    "options_unloadOtherInTSTContextMenu_Title": {
+        "message": "休眠其它标签页",
+        "hash": "ebfe2576879e530d005a48e9f64b1cd4"
+    },
     "options_unloadInTSTContextMenu": {
         "message": "在 Tree Style Tab 的上下文菜单项中添加一项，用来休眠标签页。",
         "hash": "960200a6f31e2c0a19d98c5bd438f982"
@@ -196,6 +246,14 @@
     "options_unloadTreeInTSTContextMenu": {
         "message": "在 Tree Style Tab 的上下文菜单项中添加一项，用来休眠标签树。",
         "hash": "a40c58f90a72af71e03432df64928154"
+    },
+    "options_unloadTreeDescendantsInTSTContextMenu": {
+        "message": "在 Tree Style Tab 的上下文菜单项中添加一项，用来休眠标签页的后代项（也就是在 Tree Style Tab 的树状结构中嵌套在目标标签页之下的所有标签页）。",
+        "hash": "f2c41c416b28c8a5b8d0122d9fa0b02c"
+    },
+    "options_unloadOtherInTSTContextMenu": {
+        "message": "在 Tree Style Tab 的上下文菜单项中添加一项，用来休眠除了当前所选标签页以外的所有标签页。",
+        "hash": "a44100fd9bf19989d9a0c70b52db2473"
     },
     "options_contextMenu_customLabel": {
         "message": "自定义上下文菜单项标签（在字母之前放置一个 “&” 符号将会使该字母被用作该项的键盘快捷方式）（留空代表使用默认标签）：",
@@ -282,8 +340,8 @@
         "hash": "5ab8426310875d06063ea1726c9386f4"
     },
     "options_TabRestoreFix_permissionWarning": {
-        "message": "请注意： 这需要 “标签页” 权限。（如果已安装 Tree Style Tab ，则即使没有该权限，其也能部分工作。）",
-        "hash": "8d96a02f94f39f73f9cdaf47a83c2b6f"
+        "message": "请注意： 上方的功能需要 “标签页” 权限。（如果已安装 Tree Style Tab ，则即使没有该权限，其也能部分工作。）",
+        "hash": "9f9d92c980dbc655e9c570cfeab37bb9"
     },
     "options_TabRestoreFix_deprecatedWarning": {
         "message": "该小节是对一个 Firefox 的 bug 所作出的应急替代方案，其已于 Firefox 62 中被修复。",
@@ -319,7 +377,7 @@
     },
     "options_Commands_Info": {
         "message": "选择下方的一个文本输入框，然后按下一个键盘组合比如 “Alt+X” 来将其绑定为所选文本框的键盘快捷方式。如果您需要的话，也可以按下 “指定” 按钮并手动输入一个键盘快捷方式。（键盘快捷方式需要 Firefox 60 或更高版本）",
-        "hash": "d6711bc41af7a9731bc4b1d271f65d27"
+        "hash": "8461821c11e90806ad01e1579c9fe740"
     },
     "options_Commands_ResetButton": {
         "message": "重置",
@@ -340,6 +398,14 @@
     "options_Commands_UnloadTree": {
         "message": "休眠标签树",
         "hash": "56dd041b4aeb212f337be91d6e28112e"
+    },
+    "options_Commands_UnloadTreeDescendants": {
+        "message": "休眠标签树后代项",
+        "hash": "3dc2e2b70ad9bab41da4192028b74b70"
+    },
+    "options_Commands_UnloadOther": {
+        "message": "休眠其它标签页",
+        "hash": "ebfe2576879e530d005a48e9f64b1cd4"
     },
     "options_Commands_SelectPreviousTab": {
         "message": "选择上一个已加载标签页",
@@ -458,14 +524,24 @@
         "hash": "09dff10c732ccd97176160bcc9760370"
     },
     "contextMenu_unloadTab": {
-        "message": "休眠标签页(&A)",
+        "message": "休眠标签页",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut.",
-        "hash": "ece30802b4bf70b6fd9e3414c4ca1a15"
+        "hash": "b8b2ee801b866e1de21959530cb28fc2"
     },
     "contextMenu_unloadTree": {
         "message": "休眠标签树",
         "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut.",
-        "hash": "19897ed83ded86d5294cc214607f5b9e"
+        "hash": "19bbf217302646f2410eed151898bab7"
+    },
+    "contextMenu_unloadTreeDescendants": {
+        "message": "休眠后代项",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut.",
+        "hash": "e00e6dd6e94dcd0ad68432181c524e6c"
+    },
+    "contextMenu_unloadOther": {
+        "message": "休眠其它标签页",
+        "description": "The title of the Tree Style Tab context menu item. The '&' is placed before the character that will become the keyboard shortcut.",
+        "hash": "e76d74b081e546f1b9d67de7bcf1acee"
     },
     "contextMenu_rootItemTitle": {
         "message": "标签页休眠工具",
@@ -480,10 +556,12 @@
         "hash": "ccbcfd4478b2e97d6d7d4a8378227dc0"
     },
     "html-options_TabRestoreFix_unloadAgainAfterDelay": {
-        "message": "在休眠多个标签页时，间隔一个短暂延迟（以毫秒为单位）后再进行下一次休眠。该延迟大小为 (this fixes an issue where sometimes when unloading a tab it fails to be marked as unloaded, see <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/3#issuecomment-391998967\">issue 3</a> for more info) （-1 代表禁用）："
+        "message": "在休眠多个标签页时，间隔一个短暂延迟（以毫秒为单位）后再进行下一次休眠。该延迟大小为 (this fixes an issue where sometimes when unloading a tab it fails to be marked as unloaded, see <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/3#issuecomment-391998967\">issue 3</a> for more info) （-1 代表禁用）：",
+        "hash": "d823885e28ce930dd074f6d6305576dd"
     },
     "html-options_unloadViaAutoTabDiscard": {
-        "message": "通过<a href=\"https://addons.mozilla.org/firefox/addon/auto-tab-discard/\">Auto Tab Discard</a>扩展来休眠标签页 (This can allow for more advanced features such as dimming the favicon of unloaded tabs.) (See <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/13\">issue 13</a> on this extension's issue tracker for more info.)"
+        "message": "通过<a href=\"https://addons.mozilla.org/firefox/addon/auto-tab-discard/\">Auto Tab Discard</a>扩展来休眠标签页 (This can allow for more advanced features such as dimming the favicon of unloaded tabs.) (See <a href=\"https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/13\">issue 13</a> on this extension's issue tracker for more info.)",
+        "hash": "ed75b54bd70a59ae3d1cc6522a075de6"
     },
 
     "__WET_LOCALE__": { "message": "zh" }
