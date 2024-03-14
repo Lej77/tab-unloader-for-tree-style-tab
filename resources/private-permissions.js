@@ -6,6 +6,7 @@ import {
 
 import {
     createPrivacyPermissionArea,
+    createSectionAnimationInfo,
 } from '../ui/common.js';
 
 import {
@@ -24,7 +25,7 @@ async function initiatePage() {
         console.error('Failed to set tab title.\nError: ', error);
     }
 
-    const privacyArea = createPrivacyPermissionArea({ standardSectionAnimationInfo: { standard: true, bodyImmediately: false } });
+    const privacyArea = createPrivacyPermissionArea({ sectionAnimationInfo: createSectionAnimationInfo({ standard: true, bodyImmediately: false }) });
     privacyArea.section.setCollapsedWithoutAnimation(false);
     document.body.appendChild(privacyArea.area);
 

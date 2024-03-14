@@ -247,66 +247,7 @@ export const defaultValues = Object.freeze({
         };
     },
     get MouseClickCombo() {
-        return {
-            enabled: false,
-
-            /** If true then at least one of the selected keys must be pressed (but not all). If there are no selected keys then always unload tabs on click. */
-            anyKeyMode: true,
-            ctrl: false,
-            shift: false,
-            alt: false,
-            meta: false,
-
-            /** Maximum time between mouse-down and mouse-up events to trigger tab unload. Prevents unload operation if tab is long pressed or being dragged. */
-            maxTimeout: 500,
-            /** Minium time between mouse-down and mouse-up events to trigger tab unload. Allows for long pressing tabs to unload them. */
-            minTimeout: 0,
-
-            /** If true then special behavior will be implemented for double clicks. */
-            doubleClickEnabled: false,
-            /** If true then only double clicks will unload tabs; otherwise double clicks will cancel the unload operation from the first click. */
-            doubleClickOnly: true,
-            /** Maximum time between mouse-down events to be recognized as a double click. */
-            doubleClickTimeout: 500,
-
-            /** Wait for drag events before discarding tab. */
-            onDragEnabled: false,
-            /** If true then tab will not be unloaded if drag events occurred; otherwise tab will only be unloaded if drag events occurred. */
-            onDragCancel: false,
-            /** If true then if a mouse up event is registered before the timeout it counts as a drag event. */
-            onDragMouseUpTrigger: false,
-            /** Time in milliseconds to wait for drag events before unloading tab. */
-            onDragTimeout: 500,
-            /** The drag APIs changed in Tree Style Tab v2.7.8. If this is `true` then assume that we are using the more modern versions. Requires Tree Style Tab v2.7.8 and later. */
-            onDragModern: true,
-            /** The more modern drag APIs allows sending a message to prevent drag and drop of tabs, this setting ensures we send that message. Requires Tree Style Tab v2.7.8 and later. */
-            onDragModern_PreventDragAndDrop: false,
-
-            /** Don't prevent Tree Style Tab's default action while waiting to decide if the tab should be unloaded. */
-            dontPreventTSTAction: false,
-            /** Apply click on both loaded and unloaded tabs. */
-            applyToAllTabs: false,
-            /** Apply click on unloaded tabs instead of loaded tabs. */
-            applyToUnloadedTabs: false,
-
-            /** If the tab that should be unloaded is active then the selection of the tab that is activated instead is affected by this option. If true then the last selected tab is used, otherwise the closest tab is used. */
-            fallbackToLastSelected: false,
-            /** If the tab that should be unloaded is active then another tab will be selected. If this option is true then all hidden tabs will be ignored when looking for another tab. */
-            ignoreHiddenTabs: false,
-            /** When searching for the next tab that should be selected wrap around from the start to the end or from the end to the start of the tab list. */
-            wrapAround: false,
-
-            /** If this click applies an effect then that effect should be applied to the clicked Tree Style Tab tree instead of only the clicked tab. */
-            applyToTstTree: false,
-            /** If the click's effect applies to a tree and the active tab is in that tree then don't apply the effect to the active tab. */
-            applyToTstTree_notActiveTab: false,
-            /** If the click's effect applies to a tree then that effect shouldn't be applied to the tree's root tab (the top most parent tab). */
-            applyToTstTree_notRoot: false,
-            /** Unload the root tab if it doesn't have any child tabs at all. */
-            applyToTstTree_notRoot_unloadRootTabIf_NoDescendants: false,
-            /** Unload the root tab if all descendants are already unloaded. */
-            applyToTstTree_notRoot_unloadRootTabIf_UnloadedDescendants: false,
-        };
+        return MouseClickCombo.getDefaultValues();
     },
     get MouseClickComboCollection() {
         const standardMessages = {
@@ -508,7 +449,66 @@ export class MouseClickCombo {
     }
 
     static getDefaultValues() {
-        return defaultValues.MouseClickCombo;
+        return {
+            enabled: false,
+
+            /** If true then at least one of the selected keys must be pressed (but not all). If there are no selected keys then always unload tabs on click. */
+            anyKeyMode: true,
+            ctrl: false,
+            shift: false,
+            alt: false,
+            meta: false,
+
+            /** Maximum time between mouse-down and mouse-up events to trigger tab unload. Prevents unload operation if tab is long pressed or being dragged. */
+            maxTimeout: 500,
+            /** Minium time between mouse-down and mouse-up events to trigger tab unload. Allows for long pressing tabs to unload them. */
+            minTimeout: 0,
+
+            /** If true then special behavior will be implemented for double clicks. */
+            doubleClickEnabled: false,
+            /** If true then only double clicks will unload tabs; otherwise double clicks will cancel the unload operation from the first click. */
+            doubleClickOnly: true,
+            /** Maximum time between mouse-down events to be recognized as a double click. */
+            doubleClickTimeout: 500,
+
+            /** Wait for drag events before discarding tab. */
+            onDragEnabled: false,
+            /** If true then tab will not be unloaded if drag events occurred; otherwise tab will only be unloaded if drag events occurred. */
+            onDragCancel: false,
+            /** If true then if a mouse up event is registered before the timeout it counts as a drag event. */
+            onDragMouseUpTrigger: false,
+            /** Time in milliseconds to wait for drag events before unloading tab. */
+            onDragTimeout: 500,
+            /** The drag APIs changed in Tree Style Tab v2.7.8. If this is `true` then assume that we are using the more modern versions. Requires Tree Style Tab v2.7.8 and later. */
+            onDragModern: true,
+            /** The more modern drag APIs allows sending a message to prevent drag and drop of tabs, this setting ensures we send that message. Requires Tree Style Tab v2.7.8 and later. */
+            onDragModern_PreventDragAndDrop: false,
+
+            /** Don't prevent Tree Style Tab's default action while waiting to decide if the tab should be unloaded. */
+            dontPreventTSTAction: false,
+            /** Apply click on both loaded and unloaded tabs. */
+            applyToAllTabs: false,
+            /** Apply click on unloaded tabs instead of loaded tabs. */
+            applyToUnloadedTabs: false,
+
+            /** If the tab that should be unloaded is active then the selection of the tab that is activated instead is affected by this option. If true then the last selected tab is used, otherwise the closest tab is used. */
+            fallbackToLastSelected: false,
+            /** If the tab that should be unloaded is active then another tab will be selected. If this option is true then all hidden tabs will be ignored when looking for another tab. */
+            ignoreHiddenTabs: false,
+            /** When searching for the next tab that should be selected wrap around from the start to the end or from the end to the start of the tab list. */
+            wrapAround: false,
+
+            /** If this click applies an effect then that effect should be applied to the clicked Tree Style Tab tree instead of only the clicked tab. */
+            applyToTstTree: false,
+            /** If the click's effect applies to a tree and the active tab is in that tree then don't apply the effect to the active tab. */
+            applyToTstTree_notActiveTab: false,
+            /** If the click's effect applies to a tree then that effect shouldn't be applied to the tree's root tab (the top most parent tab). */
+            applyToTstTree_notRoot: false,
+            /** Unload the root tab if it doesn't have any child tabs at all. */
+            applyToTstTree_notRoot_unloadRootTabIf_NoDescendants: false,
+            /** Unload the root tab if all descendants are already unloaded. */
+            applyToTstTree_notRoot_unloadRootTabIf_UnloadedDescendants: false,
+        };
     }
 }
 

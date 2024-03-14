@@ -21,7 +21,13 @@ import {
 null;
 
 
-export async function delay(timeInMilliseconds) {
+/** Wait a certain number of milliseconds.
+ *
+ * @export
+ * @param {number} timeInMilliseconds Milliseconds to wait before promise is resolved.
+ * @return {Promise<void>} A promise that is resolved after the specified time.
+ */
+export function delay(timeInMilliseconds) {
     return new Promise((resolve, reject) => {
         try {
             timeInMilliseconds < 0 ? resolve() : setTimeout(resolve, timeInMilliseconds);

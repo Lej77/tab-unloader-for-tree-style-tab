@@ -1,0 +1,10 @@
+
+.privacyPermissionsArea > .privacyPermissionsStatusArea {
+    margin: 4px;
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+.privacyPermissionsArea > .privacyPermissionsStatusArea > * {
+    margin: 4px;
+}

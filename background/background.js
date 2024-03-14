@@ -14,7 +14,6 @@ import {
 } from '../common/events.js';
 
 import {
-    deepCopyCompare,
     defineProperty,
 } from '../common/utilities.js';
 
@@ -70,11 +69,18 @@ import {
     getTreeTabs
 } from '../tree-style-tab/utilities.js';
 
+import {
+    TSTPrivacyPermissionChecker
+} from '../tree-style-tab/check-privacy-permissions.js';
+
 
 /**
  * @typedef {import('../common/utilities').KeysWithSuffix<T, Suffix>} KeysWithSuffix
  * @template {{}} T
  * @template {string} Suffix
+ */
+/**
+ * @typedef {import('../common/utilities').BrowserTab} BrowserTab
  */
 
 
@@ -98,7 +104,93 @@ import {
  * https://github.com/rNeomy/auto-tab-discard/issues/248
  */
 const unloadsInProgress = {};
+/** Tracks tabs that are in the progress of being selected.
+ *
+ * Key is a tab id and the value is the time it was activated in ms.
+ * @type {{ [tabId: string]: number }}
+ */
+const activationsInProgress = {};
 
+/** Notify that we will soon activate a tab.
+ *
+ * @template T
+ * @param {number} tabId Id of the tab that will become active.
+ * @param {() => Promise<T>} fn Callback that will activate the tab.
+ * @returns {Promise<T>} The value from the callback.
+ */
+async function notifyTabActivation(tabId, fn) {
+    activationsInProgress[tabId] = Date.now() + 2000;
+    try {
+        return await fn();
+    } finally {
+        const completedTime = Date.now()
+        activationsInProgress[tabId] = completedTime;
+        delay(2000).then(() => {
+            if (activationsInProgress[tabId] === completedTime) {
+                delete activationsInProgress[tabId];
+            }
+        }).catch(err => {
+            console.error(`Failed to forget that tab with id ${tabId} was being selected: `, err);
+        });
+    }
+}
+/** Check if we are currently activating a specific tab.
+ *
+ * @param {number} tabId Id of a tab.
+ * @param {number} sinceTime Ignore tabs that were activated before this time.
+ * @return {boolean} `true` if the tab is becoming active.
+ */
+function isActivatingTabId(tabId, sinceTime) {
+    const value = activationsInProgress[tabId];
+    return Boolean(value) && value >= sinceTime;
+}
+
+/**
+ *
+ * @template T
+ * @param {() => Promise<T>} fn Preform the action that will unload the tabs.
+ * @param {Object} Options Extra options.
+ * @param {number[]} Options.tabIds Ids of tabs that are in the process of being unloaded.
+ * @param {number} [Options.unlockDelayInMs] Delay to wait before forgetting that we are unloading the tabs.
+ * @return {Promise<T>} The return value from the `fn` callback.
+ */
+async function withInProgressUnloads(fn, { tabIds, unlockDelayInMs = 1000 }) {
+    for (const tabId of tabIds) {
+        unloadsInProgress[tabId] = (unloadsInProgress[tabId] || 0) + 1;
+    }
+    try {
+        return await fn();
+    } finally {
+        // Wait a little while to ensure that the tabs has been marked as
+        // unloaded before we remove them from `unloadsInProgress`:
+        delay(unlockDelayInMs).then(() => {
+            for (const tabId of tabIds) {
+                const newValue = (unloadsInProgress[tabId] || 1) - 1;
+                if (newValue === 0) {
+                    // No unloads in progress for this tab, so we don't need to
+                    // keep track of it anymore:
+                    delete unloadsInProgress[tabId];
+                } else {
+                    unloadsInProgress[tabId] = newValue;
+                }
+            }
+        }).catch(err => {
+            console.error(`Failed to forget that tab was unloading: `, err);
+        });
+    }
+}
+
+/**
+ * Unload some tabs.
+ *
+ * @param {Object} Params Parameters
+ * @param {BrowserTab | BrowserTab[]} [Params.tabs] Tabs to unload.
+ * @param {Parameters<typeof ensureTabsArentActive>[1]} [Params.fallbackOptions] Options for what tab should be selected if the current tab is being unloaded.
+ * @param {number} [Params.discardAgainAfterDelay] Unload again after a delay to ensure the tab is properly unloaded.
+ * @param {null | import('../common/disposables.js').DisposableCollection<import('../common/disposables.js').IDisposable>} [Params.disposables] This collection should be disposed if timeout settings are invalidated.
+ * @param {boolean} [Params.useAutoTabDiscard] Unload tabs via Auto Tab Discard.
+ * @return {Promise<void>} Resolves when the tabs have been unloaded.
+ */
 async function unloadTabs({ tabs = [], fallbackOptions = {}, discardAgainAfterDelay = -1, disposables = null, useAutoTabDiscard = false } = {}) {
     try {
         tabs = await tabs;
@@ -108,18 +200,17 @@ async function unloadTabs({ tabs = [], fallbackOptions = {}, discardAgainAfterDe
         if (!Array.isArray(tabs)) {
             tabs = [tabs];
         }
-        // Get latest info:
-        tabs = await getLatestTabs(tabs);
+
+        const noticedActivationsBefore = Date.now() - 10;
+        tabs = await getLatestTabs(tabs); // Get latest info.
+        tabs = tabs.filter(t => !isActivatingTabId(t.id, noticedActivationsBefore)); // Can't unload while activating tab
         if (tabs.length === 0) {
             return;
         }
 
         const tabIds = tabs.map(tab => tab.id);
 
-        for (const tabId of tabIds) {
-            unloadsInProgress[tabId] = (unloadsInProgress[tabId] || 0) + 1;
-        }
-        try {
+        await withInProgressUnloads(async () => {
             // Select another tab if a tab is selected:
             await ensureTabsArentActive(tabs, fallbackOptions);
 
@@ -127,7 +218,8 @@ async function unloadTabs({ tabs = [], fallbackOptions = {}, discardAgainAfterDe
             const discard = async () => {
                 if (useAutoTabDiscard) {
                     try {
-                        await Promise.all(tabs.map(async (tab) => {
+                        await Promise.all((/**@type {BrowserTab[]}*/(tabs)).map(async (tab) => {
+                            if (isActivatingTabId(tab.id, noticedActivationsBefore)) return;
                             const discardedTabIds = await browser.runtime.sendMessage(kATD_ID, {
                                 method: 'discard',
                                 query: {
@@ -144,6 +236,7 @@ async function unloadTabs({ tabs = [], fallbackOptions = {}, discardAgainAfterDe
                                 // This will also happen if we try to unload a private tab when Auto Tab Discard doesn't
                                 // have access to private windows (since the query we send then returns no tabs).
                                 try {
+                                    if (isActivatingTabId(tab.id, noticedActivationsBefore)) return;
                                     await browser.tabs.discard(tab.id);
                                 } catch (error) {
                                     console.error('Failed to unload tab that the Auto Tab Discard extension choose not to unload. Tab info:', tab);
@@ -154,7 +247,7 @@ async function unloadTabs({ tabs = [], fallbackOptions = {}, discardAgainAfterDe
                         console.error('Failed to unload tab via Auto Tab Discard extension.\nError:', error);
                     }
                 } else {
-                    await browser.tabs.discard(tabIds);
+                    await browser.tabs.discard(tabIds.filter(id => !isActivatingTabId(id, noticedActivationsBefore)));
                 }
             };
             await discard();
@@ -163,22 +256,7 @@ async function unloadTabs({ tabs = [], fallbackOptions = {}, discardAgainAfterDe
                 await boundDelay(discardAgainAfterDelay, disposables);
                 await discard();
             }
-
-            // Wait a little while to ensure that the tabs has been marked as
-            // unloaded before we remove them from `unloadsInProgress`:
-            await delay(400);
-        } finally {
-            for (const tabId of tabIds) {
-                const newValue = (unloadsInProgress[tabId] || 1) - 1;
-                if (newValue === 0) {
-                    // No unloads in progress for this tab, so we don't need to
-                    // keep track of it anymore:
-                    delete unloadsInProgress[tabId];
-                } else {
-                    unloadsInProgress[tabId] = newValue;
-                }
-            }
-        }
+        }, { tabIds, });
     } catch (error) {
         console.error('Failed to unload tab' + (tabs && Array.isArray(tabs) && tabs.length > 1 ? '(s)' : '') + '!\n', error);
     }
@@ -186,10 +264,11 @@ async function unloadTabs({ tabs = [], fallbackOptions = {}, discardAgainAfterDe
 
 
 /**
- * Update tab object(s) information.
+ * Update tab object(s) information. (Gets latest information directly from
+ * browser to ensure we aren't using possibly corrupted data from TST.)
  *
- * @param {Object|Array} tabs Tab(s) to update.
- * @returns {Promise<Array>} Updated tab(s).
+ * @param {BrowserTab | BrowserTab[]} tabs Tab(s) to update.
+ * @returns {Promise<BrowserTab[]>} Updated tab(s).
  */
 async function getLatestTabs(tabs) {
     if (!tabs) {
@@ -219,14 +298,14 @@ async function getLatestTabs(tabs) {
 /**
  * Ensure that some tabs aren't active.
  *
- * @param {Object|Array} tabs The tabs that shouldn't be active.
+ * @param {BrowserTab | BrowserTab[]} tabs The tabs that shouldn't be active.
  * @param {Object} Params Configure what tab is selected instead.
  * @param {boolean} [Params.fallbackToLastSelectedTab] If a tab is active then this determines the preference to use when selecting another tab. If true then the tab with highest lastAccessed value will be selected. If false the closest tab to the active tab will be selected.
  * @param {boolean} [Params.ignoreHiddenTabs] If a tab is active then this determines the preference to use when selecting another tab. If true then all hidden tabs will be ignored when searching for another tab.
  * @param {boolean} [Params.checkBeforeActiveTab] Allowed to select a tab before (to the left of) the currently active tab.
  * @param {boolean} [Params.checkAfterActiveTab] Allowed to select a tab after (to the right of) the currently active tab.
  * @param {boolean} [Params.wrapAround] If `true` then after reaching the end of the tab list a cursor/scan will continue from the start of the tab list and the same would happen when scanning past the start of the tab list.
- * @returns {Promise<boolean>} Indicates if the operations was successful. If true then none of the provided tabs are selected.
+ * @returns {Promise<boolean>} Indicates if the operations was successful. If `true` then none of the provided tabs are selected.
  */
 async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, ignoreHiddenTabs = false, checkBeforeActiveTab = true, checkAfterActiveTab = true, wrapAround = false } = {}) {
     if (!tabs) {
@@ -240,7 +319,8 @@ async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, 
         return true;
     }
 
-    let closestTab;
+    /** @type {null | BrowserTab} */
+    let closestTab = null;
     const queryDetails = { windowId: activeTabs[0].windowId };
     if (ignoreHiddenTabs) {
         queryDetails.hidden = false;
@@ -254,9 +334,9 @@ async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, 
     }
 
     if (fallbackToLastSelectedTab) {
-        closestTab = await findLastFocusedLoadedTab(allTabs, ignoredTabIds);
+        closestTab = findLastFocusedLoadedTab(allTabs, ignoredTabIds);
     } else {
-        closestTab = await findClosestTab({
+        closestTab = findClosestTab({
             tab: activeTabs[0],
             searchTabs: allTabs,
             checkTab: t => !t.discarded && !ignoredTabIds.has(t.id),
@@ -266,7 +346,7 @@ async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, 
         });
         if (!closestTab) {
             // There are no loaded tabs that can be selected. So just select the closest tab that isn't being unloaded:
-            closestTab = await findClosestTab({
+            closestTab = findClosestTab({
                 tab: activeTabs[0],
                 searchTabs: allTabs,
                 checkTab: t => !ignoredTabIds.has(t.id),
@@ -277,14 +357,29 @@ async function ensureTabsArentActive(tabs, { fallbackToLastSelectedTab = false, 
         }
     }
     if (closestTab) {
-        await browser.tabs.update(closestTab.id, { active: true });
+        await notifyTabActivation(
+            closestTab.id,
+            () => browser.tabs.update(closestTab.id, { active: true })
+        );
         return true;
     }
     return false;
 }
 
 
-async function findClosestTab({ tab, searchTabs, checkTab, checkBeforeActiveTab = true, checkAfterActiveTab = true, wrapAround = false }) {
+/** Find the closest "allowed" tab to a specified starting tab. Prioritizes
+ * higher indexes if there are two allowed tabs at the same distance.
+ *
+ * @param {Object} Params
+ * @param {BrowserTab} Params.tab The tab to start the search at.
+ * @param {BrowserTab[]} Params.searchTabs The tabs to search through. Should include the starting tab.
+ * @param {(tab: BrowserTab) => boolean} Params.checkTab Check if a tab is allowed.
+ * @param {boolean} [Params.checkBeforeActiveTab] Search before the start tab.
+ * @param {boolean} [Params.checkAfterActiveTab] Search after the start tab.
+ * @param {boolean} [Params.wrapAround] If the end or start the `searchTabs` list is reached then continue from the other end of it (until we reach the start `tab` again).
+ * @return {null | BrowserTab} The closest "allowed" tab or `null` if no such tab was found.
+ */
+function findClosestTab({ tab, searchTabs, checkTab, checkBeforeActiveTab = true, checkAfterActiveTab = true, wrapAround = false }) {
     // (prioritize higher indexes)
     const tabs = searchTabs;
     if (tabs.length <= 1) {
@@ -295,7 +390,7 @@ async function findClosestTab({ tab, searchTabs, checkTab, checkBeforeActiveTab 
         indexActive = tab.index;
     }
 
-    const checkRange = (index) => {
+    const checkRange = (/** @type {number} */ index) => {
         return 0 <= index && index < tabs.length;
     };
 
@@ -324,7 +419,15 @@ async function findClosestTab({ tab, searchTabs, checkTab, checkBeforeActiveTab 
 }
 
 
-async function findLastFocusedLoadedTab(searchTabs, ignoredTabIds = new Set()) {
+/** Find the tab that was last focused. Prefers loaded tabs if there are any
+ * such tabs in the `searchTabs`.
+ *
+ * @param {BrowserTab[]} searchTabs Tabs to search through.
+ * @param {Set<number>} [ignoredTabIds=new Set()] Tab ids to ignore.
+ * @return {null | BrowserTab} The last focused tab or `null` if no
+ * such tab could be found.
+ */
+function findLastFocusedLoadedTab(searchTabs, ignoredTabIds = new Set()) {
     const tabs = searchTabs;
     if (tabs.length <= 1) {
         return null;
@@ -1263,140 +1366,35 @@ async function start() {
     onTSTStyleChanged.addListener(notifyStyle);
     notifyStyle('', wantedTSTStyle);
 
+    // #endregion Messaging
+
+
+    // #region Handle misconfigured privacy permissions
+
     const getPrivacyInfo = () => {
-        return {
-            hasPrivacyPermission: privatePermission.hasPermission,
-            tstNotifiedAboutPrivateWindow,
-            tstPermission: tstManager.trackedPermissions ?
-                /* Known for certain (boolean): */ tstManager.trackedPermissions.privateWindowAllowed :
-                (tstManager.isRegistered ?
-                    /* Legacy?: */ null :
-                    /* Unregistered: */ undefined
-                ),
-        };
+        return TSTPrivacyPermissionChecker.createInfo({ detector: privatePermission, tstNotifiedAboutPrivateWindow, tstManager, });
     };
-    let previousPrivacyInfo = getPrivacyInfo();
-    const notifyPrivacyInfo = () => {
-        const info = getPrivacyInfo();
-        if (deepCopyCompare(previousPrivacyInfo, info)) {
-            // No change.
-            return;
-        }
-        previousPrivacyInfo = info;
+
+    const tstPrivacyIssues = new TSTPrivacyPermissionChecker();
+    tstPrivacyIssues.onPrivacyInfoChanged.addListener((info) => {
         portManager.fireEvent(messageTypes.privacyPermissionChanged, [info]);
-        checkPrivacyPermissions();
+    });
+    tstPrivacyIssues.autoUpdatePopup = settings.warnAboutMisconfiguredPrivacySettings;
+
+    settingsTracker.onChange.addListener(changes => {
+        if (changes.warnAboutMisconfiguredPrivacySettings) {
+            tstPrivacyIssues.autoUpdatePopup = settings.warnAboutMisconfiguredPrivacySettings;
+        }
+    });
+
+    const notifyPrivacyInfo = () => {
+        tstPrivacyIssues.provideInfo(getPrivacyInfo());
     };
     privatePermission.promise.then(() => {
         notifyPrivacyInfo();
     });
     tstManager.onPermissionsChanged.addListener(() => {
         notifyPrivacyInfo();
-    });
-
-    // #endregion Messaging
-
-
-    // #region Handle misconfigured privacy permissions
-
-    /** @type { {close: () => void, } | null} The tab id for the popup that informs the user about misconfigured privacy settings. */
-    let privacyPopupInfo = null;
-    let haveWarnedAboutPrivacyPermissions = false;
-    let haveHadTstPrivacyPermission = false;
-
-    /** Try to warn the user when they don't grant access to private windows correctly (both to the extension and via Tree Style Tab). */
-    function checkPrivacyPermissions() {
-        let foundIssue = false;
-        if (settings.warnAboutMisconfiguredPrivacySettings) {
-            const info = getPrivacyInfo();
-            if (info.tstNotifiedAboutPrivateWindow && !info.hasPrivacyPermission) {
-                // Extension isn't granted permission to access private windows.
-                // We can only know this after a private window has been opened and the user tried to interact with it via Tree Style Tab.
-                foundIssue = true;
-            }
-            if (info.hasPrivacyPermission && info.tstPermission === false) {
-                // Extension is granted permission to private windows but Tree Style Tab won't send notifications about them.
-
-                if (haveHadTstPrivacyPermission) {
-                    // The user probably just removed the permission for Tree Style Tab to send notifications for private windows.
-                    // Don't warn about this since the user is obviously aware that Tree Style Tab has permissions.
-                } else {
-                    foundIssue = true;
-                }
-            }
-            if (info.tstPermission === true) {
-                // Don't warn if the user later removes this permission.
-                haveHadTstPrivacyPermission = true;
-            }
-        }
-
-        if (foundIssue) {
-            // Don't open the popup more than once.
-            if (haveWarnedAboutPrivacyPermissions) return;
-
-            (async () => {
-                const info = {
-                    window: null,
-                    _isClosed: false,
-                    async close() {
-                        try {
-                            if (this.window === null) {
-                                // Window is still being opened.
-                                return;
-                            }
-
-                            // Ensure we only try to close once:
-                            if (this._isClosed) return;
-                            this._isClosed = true;
-
-                            /** @type {any[]} */
-                            const query = await browser.tabs.query({ windowId: this.window.id });
-                            if (query.length <= 1) {
-                                // Close window
-                                await browser.windows.remove(this.window.id);
-                            } else {
-                                // Avoid closing user tabs => only close the tab with the warning message.
-                                const warningTab = this.window.tabs[0];
-                                await browser.tabs.remove(warningTab.id);
-                            }
-                        } catch (error) {
-                            console.warn('Failed to close misconfigured privacy permissions popup.\nError: ', error);
-                        }
-                    }
-                };
-                try {
-                    if (privacyPopupInfo != null) {
-                        // Already have a popup open.
-                        return;
-                    }
-                    privacyPopupInfo = info;
-                    haveWarnedAboutPrivacyPermissions = true;
-
-                    info.window = await browser.windows.create({
-                        type: 'popup',
-                        url: browser.runtime.getURL('resources/private-permissions.html'),
-                    });
-                } catch (error) {
-                    console.error('Failed to open popup to warn about misconfigured privacy permissions.\nError: ', error);
-                } finally {
-                    if (info !== privacyPopupInfo) {
-                        // A new popup has been opened or this one has already been closed.
-                        info.close();
-                    }
-                }
-            })();
-        } else if (settings.warnAboutMisconfiguredPrivacySettings) {
-            // No privacy configuration issues could be detected.
-            if (privacyPopupInfo != null) {
-                // Close the popup => the user probably fixed their issues.
-                privacyPopupInfo.close();
-                privacyPopupInfo = null;
-            }
-        }
-    }
-    settingsTracker.onChange.addListener(changes => {
-        if (changes.warnAboutMisconfiguredPrivacySettings) {
-            checkPrivacyPermissions();
-        }
     });
 
     // #endregion Handle misconfigured privacy permissions

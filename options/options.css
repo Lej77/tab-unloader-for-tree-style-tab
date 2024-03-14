@@ -5,6 +5,7 @@
 @import "../ui/utilities.css";
 @import "../ui/permissions.css";
 @import "../ui/list.css";
+@import "../ui/tst-privacy-permission.css";
 
 
 /* The parent page will expand to fit this page's content, but there is a delay so the scrollbar will flash on and off if we don't hide it: */
@@ -113,15 +114,4 @@ input[type="text"]:not(.notFullSize) {
 
 .resetSettingsButton {
     padding: 10px;
-}
-
-
-.privacyPermissionsArea > .privacyPermissionsStatusArea {
-    margin: 4px;
-    margin-top: 10px;
-    display: flex;
-    justify-content: space-between;
-}
-.privacyPermissionsArea > .privacyPermissionsStatusArea > * {
-    margin: 4px;
 }

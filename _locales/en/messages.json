@@ -392,7 +392,7 @@
         "message": " it is currently not possible to request optional permission from the options page. As a workaround request permissions from this page instead."
     },
     "privatePermissionPage_Title": {
-        "message": "Misconfigured Permissions for Private Windows - Tab Unloader for Tree Style Tabs"
+        "message": "Misconfigured Permissions for Private Windows - Tab Unloader for Tree Style Tab"
     },
     "privatePermissionPage_Info": {
         "message": "The addon \"Tab Unloader for Tree Style Tab\" detected that you might want to give it access to private windows but privacy permissions were not configured correctly. To do this correctly you need to grant the extension access to private windows and also change the options for \"Tree Style Tab\" so that it sends notifications for private windows."
