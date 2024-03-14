@@ -1,0 +1,137 @@
+# History
+
+- master/HEAD
+- 6.16 (2024-03-15)
+  - Update to `zh` locale by NightSharp. Thanks!
+  - Fix: don't try to unload a tab that is in the process of being activated since that can freeze the browser window. This could happen when using a keyboard shortcut multiple times in quick succession in order to unload many tabs. (BugFix in version 6.9 was similar to this one.)
+- 6.15 (2022-04-22)
+  - Update to `ru` locale by wvxwxvw. Thanks!
+- 6.14 (2022-04-17)
+  - Feature: options related to unloading "tree descendants" including a new keyboard shortcut and context menu item (all of which are disabled by default).
+  - BugFix: wait to prevent Tree Style Tab's default action until we have received all messages from Tree Style Tab that we are interested in for the current mouse click since they might not be sent after preventing the default action. This caused some issues in later versions of Firefox.
+- 6.13 (2022-03-12)
+  - Settings: improve layout of options page and clarify some things that were confusing.
+  - Change: change the default label for the context menu items to use "unload" instead of "suspend" so as to be more consistent with the rest of the extension.
+- 6.12 (2022-01-30)
+  - Performance: do less logging when unloading tabs via "Auto Tab Discard".
+- 6.11 (2022-01-27)
+  - BugFix: when using the "Auto Tab Discard" extension to unload tabs it is now possible to unload tabs that it chooses to not handle such as new tabs with the `about:newtab` URL.
+- 6.10 (2021-12-20)
+  - Performance: improve performance when searching for what tab should be selected when unloading the active tab, especially when unloading many tabs at the same time.
+- 6.9 (2021-12-18)
+  - BugFix: don't try to select a tab that is in the process of being unloaded since that can freeze the browser window. This could happen when using a keyboard shortcut multiple times in quick succession in order to unload many tabs.
+- 6.8 (2021-12-14)
+  - Update to `ru` locale by wvxwxvw. Thanks!
+- 6.7 (2021-12-12)
+  - Feature: "Unload other tabs" context menu item and keyboard shortcut.
+- 6.6 (2021-09-12)
+  - Update to `zh` locale by NightSharp. Thanks!
+- 6.5 (2020-12-14)
+  - Update to `ru` locale by wvxwxvw. Thanks!
+- 6.4 (2020-12-13)
+  - Feature: warn about misconfigured privacy permissions (need to grant permissions from Tree Style Tab's option page).
+- 6.3 (2020-12-08)
+  - Update to `ru` locale by wvxwxvw. Thanks!
+- 6.2 (2020-12-07)
+  - Feature: open options page in a separate tab.
+  - Settings: move the "Dim unloaded tabs in Tree Style Tab's sidebar" setting to the "Custom Tree Style Tab Style" section of the options page.
+  - Feature: support Tree Style Tab's `wait-for-shutdown` event to remove custom sidebar style when extension is disabled.
+- 6.1 (2020-09-07)
+  - Update to `ru` locale by wvxwxvw. Thanks!
+  - Feature: some extra settings (enabled by default) to support the Tree Style Tab drag notification in Tree Style Tab v2.7.8 and later. This event is sent when a tab is long pressed with the left mouse button without the tab being dragged using drag and drop.
+  - Feature: some changes to the option page's dark theme.
+  - BugFix: unload tree correctly even if the clicked tab is already unloaded.
+- 6.0 (2020-09-06)
+  - Update to `ru` locale by wvxwxvw. Thanks!
+  - Feature: keyboard shortcuts to select the first loaded tab to the left/right.
+  - New setting: wrap around the tab list when searching for the next tab that should be selected.
+  - New setting: unload tree if the clicked tab is a parent tab.
+  - Feature: options page has support for dark theme (can be disabled via the options page).
+  - Refactored code to use modules (increased minimum supported Firefox version from v58 to v60).
+- 5.18 (2020-03-27)
+  - Update to `zh` locale by NightSharp. Thanks!
+- 5.17 (2020-03-22)
+  - Update to `zh` locale by NightSharp. Thanks!
+- 5.16 (2020-03-21)
+  - New locale `zh` by NightSharp. Thanks!
+- 5.15 (2019-05-22)
+  - Settings: changed default context menu titles and hotkeys.
+  - Settings: default settings for context menu has changed to affect multi-selected tabs.
+  - Settings: default settings have been changed to disable restore tab workaround since the Firefox bug was fixed in Firefox 62.
+  - Settings: updated settings information to include more up to date information about Firefox.
+  - BugFix: detect if the extension has access to private windows and fail gracefully if it doesn't.
+  - BugFix: better description for keyboard shortcuts on Firefox's shortcut page.
+- 5.14 (2018-12-14)
+  - New setting: suppress special Tree Style Tab behavior regarding hidden tabs.
+  - BugFix: tab hiding sometimes doesn't work.
+- 5.13 (2018-11-21)
+  - New setting: unload selected tabs when multiple tabs are selected.
+  - New setting: show context menu items in Firefox's tab bar. (Needed to show Tree Style Tab context menu items in Firefox 64.)
+  - Feature: Better keyboard support in options menu. (Sections can now be opened and closed with keyboard.)
+- 5.12 (2018-09-06)
+  - Bug fix: keyboard shortcut can't be detected in Firefox 64.
+- 5.11 (2018-08-11)
+  - Bug fix: fix for failed tab restore can now fix "quick" unloaded tabs.
+  - New setting: reload "broken" tabs for private windows now has a separate checkbox.
+  - New setting: use of "quick" unload when using the reload "broken" tabs fix is now optional.
+- 5.10 (2018-06-06)
+  - Improvements for reload "broken" tabs.
+- 5.9 (2018-06-02)
+  - Locale update: RU, UK.
+- 5.8 (2018-06-02)
+  - New setting: fix for failed tab restore - reload "broken" tabs until they are fixed.
+- 5.7 (2018-05-30)
+  - Locale update: RU, UK.
+  - Tab hiding: optimization for onUpdated event. (requires Firefox 61 or later.)
+- 5.6 (2018-05-29)
+  - Bug fix: Before unloading tab that is incorrectly marked as loaded check so that it hasn't failed to load (only works with "tabs" permission).
+  - Optimization: don't wait for Keyboard shortcuts when loading options page.
+  - Messages: require Firefox 60 for Keyboard shortcuts.
+- 5.5 (2018-05-28)
+  - The fix for failed tab restore now works without the "tabs" permission if Tree Style Tab is installed.
+  - New setting: fix tabs that are marked as loaded when they are unloaded.
+- 5.4 (2018-05-27)
+  - New locale: uk.
+  - New locale: ru.
+- 5.3 (2018-05-26)
+  - New setting: fix so that the "Fix for failed tab restore" can work with tabs incorrectly marked as loaded.
+- 5.2 (2018-05-26)
+  - New setting: fix for failed tab restore.
+- 5.1 (2018-05-26)
+  - Bug fix: order of context menu items is reset when options page is loaded.
+- 5.0 (2018-05-26)
+  - New setting: customizable keyboard shortcut to unload tab/tree.
+  - New setting: use the "Auto Tab Discard" extension to unload tabs.
+  - New setting: use the unload method again after a delay (can fix some issues)
+  - New setting: custom context menu item label.
+  - New setting: Unload tree context menu item.
+- 4.0 (2018-05-03)
+  - Options page now has a "Reset Settings" button.
+  - Show style changes made to Tree Style Tab's sidebar in the options page.
+  - Fixed: double click triggered by clicks on different tabs.
+  - New setting: prevent tab close on middle click.
+  - New setting: disable extension. Allows disabling/enabling all extension functionality with one click. Before you had to manually disable several features before disabling the extension or restart Tree Style Tab after disabling the extension.
+  - New setting: delay context menu item registration to ensure that they are placed last in the context menu.
+  - New setting: show hidden tabs in Tree Style Tab's sidebar.
+  - New setting: hide unloaded tabs to make them harder to select by mistake.
+  - New optional permission: "tabHide".
+  - New setting: select last accessed tab instead of closest if a tab is active.
+  - New setting: ignore tabs hidden with browser.tabs.hide() when moving focus to another tab.
+  - Collapse settings sections.
+  - Changed messages and default settings to reflect that Tree Style Tab's API now allows preventing middle click's default action.
+- 3.1 (2018-03-11)
+  - Bug fixes.
+- 3.0 (2018-03-11)
+  - Support for Tree Style Tab drag notification. This is sent when a tab is long pressed with the left mouse button without the tab being dragged.
+  - Allow Tree Style Tab's default action while waiting to see if a tab should be unloaded.
+  - Block tab selection on left click when certain conditions are met. Can be used to make it harder to select unloaded tabs.
+- 2.0 (2018-03-09)
+  - Option to dim unloaded tabs in the Tree Style Tab Sidebar.
+  - Keyboard shortcut support for context menu item. Right click a tab in the Tree Style Tab Sidebar and then press the 's' key to unload it.
+  - Middle click a tab and drag to unload it.
+  - Double click a tab to unload tab or to cancel unload.
+  - Long-press a tab to unload it.
+  - Improved logic for modifier keys.
+  - Various bug fixes.
+- 1.0 (2018-03-09)
+  - Released.
