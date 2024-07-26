@@ -213,7 +213,7 @@
         "message": "Скрыть выгруженные вкладки с помощью API скрытия вкладок. Скрытые вкладки не отображаются на панеле и не могут быть выбраны сочетанием клавиш. После закрытия текущей вкладки, скрытые вкладки не будут выбраны, пока есть другие видимые вкладки. Закрепленные вкладки нельзя скрыть."
     },
     "options_TabHide_SuppressTSTHiddenClass": {
-        "message": "Игнорировать особое поведение TST для скрытых вкладок."
+        "message": "Игнорировать особое поведение TST для скрытых вкладок. (This can easily cause issues for Tree Style Tab so should probably be avoided if possible.)"
     },
     "options_TabHide_ShowHiddenTabsInTST": {
         "message": "Показывать скрытые вкладки на боковой панели TST."

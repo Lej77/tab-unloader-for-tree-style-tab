@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "Tab Unloader for Tree Style Tab",
-  "version": "6.16",
+  "name": "__MSG_extensionName__",
+  "version": "6.17",
   "default_locale": "en",
   "applications": {
     "gecko": {
@@ -45,6 +45,9 @@
     },
     "select-next-tab": {
       "description": "__MSG_options_Commands_SelectNextTab__"
+    },
+    "toggle-tab-hide-setting": {
+      "description": "__MSG_options_Commands_ToggleTabHideSetting__"
     }
   }
 }

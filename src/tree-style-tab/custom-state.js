@@ -3,37 +3,46 @@
 import {
     kTST_ID,
     getTabsFromTST,
+    getTstVersion,
 } from '../tree-style-tab/utilities.js';
 
 
 /**
- * Clear tab state(s) from all tabs in a Tree Style Tab's sidebar.
+ * Clear tab state(s) from all tabs in a Tree Style Tab's sidebar. (This doesn't
+ * work correctly on 3.0.12 and later since the states aren't exposed by TST API
+ * anymore. Does work on TST 4.0 and later since we can check the version in the
+ * API and special case it.)
  *
  * @export
  * @param {number} windowId Id for the affected window.
  * @param {string | string[]} state State string(s) that should be cleared.
- * @param {boolean} [value=false] `true` to add the state(s) to all tabs and `false` to remove the state(s) from all tabs.
- * @returns {Promise<boolean>} `true` if the tab states was successfully updated for all tabs; otherwise `false`.
+ * @param {boolean} [value=false] `true` to add the state(s) to all tabs and
+ * `false` to remove the state(s) from all tabs.
+ * @returns {Promise<boolean>} `true` if the tab states was successfully updated
+ * for all tabs; otherwise `false`.
  */
 export async function clearTabStateFromTST(windowId, state, value = false) {
     try {
-        const tstTabs = await getTabsFromTST(windowId, true);
+        let tstTabs = await getTabsFromTST(windowId, true);
         if (!tstTabs)
             return false; // TST not found/ready.
 
-        const affectedStates = Array.isArray(state) ? state : [state];
-        const affectedTabs = tstTabs.filter(tab => tab.states.some(tabState => {
-            const hasState = affectedStates.includes(tabState);
-            if (value) {
-                // Add state => Only need to update tab if the tab doesn't have a wanted state.
-                return !hasState;
-            } else {
-                // Remove state => Only need to update tab if it has an affected state.
-                return hasState;
-            }
-        }));
+        if (getTstVersion() === null) {
+            // Older than TST 4.0 so might support getting custom state
+            const affectedStates = Array.isArray(state) ? state : [state];
+            tstTabs = tstTabs.filter(tab => tab.states.some(tabState => {
+                const hasState = affectedStates.includes(tabState);
+                if (value) {
+                    // Add state => Only need to update tab if the tab doesn't have a wanted state.
+                    return !hasState;
+                } else {
+                    // Remove state => Only need to update tab if it has an affected state.
+                    return hasState;
+                }
+            }));
+        }
 
-        return await notifyTabStateToTST(affectedTabs.map(tab => tab.id), state, value);
+        return await notifyTabStateToTST(tstTabs.map(tab => tab.id), state, value);
     } catch (error) {
         console.error('Failed to clear tab state(s) from Tree Style Tab sidebar. \nAffected window id: ', windowId, '\nAffected state(s): ', state, '\nAdd instead of remove state(s): ', value, '\nError:\n', error);
     }

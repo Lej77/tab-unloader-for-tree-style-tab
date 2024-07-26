@@ -11,7 +11,30 @@ import {
   AnimationInfo
 } from '../ui/collapsable.js';
 
+/**
+ * @typedef {Object} SingleCommandInfo
+ * @property {() => Node} [createContent] Define a content area for the command. If this isn't defined then the command's section will always remain collapsed.
+ * @property {string} [description] i18n message name for the command section's header.
+ * @property {boolean} [isCollapsed] Determines if the shortcuts content area is collapsed or not initially.
+ */
 
+/**
+ * @typedef {Object} ShortcutAreaOptions
+ * @property {import('../ui/collapsable.js').AnimationDefinition | false | AnimationInfo} [sectionAnimation]
+ * @property {{ [commandName: string]: SingleCommandInfo }} commandInfos
+ * @property {string} headerMessage i18n message name for shortcut section header.
+ * @property {string} infoMessage i18n message name for information paragraph in the beginning of the shortcut section's content.
+ * @property {string} resetButtonMessage i18n message name for reset buttons.
+ * @property {string} promptButtonMessage i18n message name for prompt buttons.
+ * @property {string} [promptDialogMessage] i18n message name for dialogs opened by prompt button.
+ */
+
+
+/** Create shortcuts area.
+ *
+ * @export
+ * @param {ShortcutAreaOptions} options
+ */
 export function createShortcutsArea({
   sectionAnimation = {},
 
@@ -21,6 +44,7 @@ export function createShortcutsArea({
 
   resetButtonMessage,
   promptButtonMessage,
+  promptDialogMessage = 'options_Commands_PromptButton_Description',
 }) {
   sectionAnimation = AnimationInfo.asInfo(sectionAnimation);
   const callbacks = [];
@@ -115,13 +139,17 @@ export function createShortcutsArea({
     commandsArea.appendChild(commandSection.area);
 
     {
+      /** @type {null | Node} */
       let contentArea = null;
       if (commandInfo.createContent && typeof commandInfo.createContent === 'function')
         contentArea = commandInfo.createContent();
 
-      if (contentArea)
+      if (contentArea) {
         commandSection.content.appendChild(contentArea);
-      else {
+        if (commandInfo.isCollapsed === false) {
+          commandSection.isCollapsed = false;
+        }
+      } else {
         commandSection.title.classList.add('preventOpen');
         commandSection.isButton = false;
       }
@@ -185,7 +213,7 @@ export function createShortcutsArea({
     });
 
     promptButton.addEventListener('click', async (e) => {
-      const value = prompt(browser.i18n.getMessage('options_Commands_PromptButton_Description'), command.shortcut || '');
+      const value = prompt(browser.i18n.getMessage(promptDialogMessage), command.shortcut || '');
       if (value == null) {
         // Canceled
         return;

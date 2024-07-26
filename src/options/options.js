@@ -761,6 +761,16 @@ async function initiatePage() {
                         return area;
                     },
                 },
+
+                'toggle-tab-hide-setting': {
+                    description: 'options_Commands_ToggleTabHideSetting',
+                    createContent() {
+                        const info = document.createElement('p');
+                        const tabHideSectionHeader = browser.i18n.getMessage('options_TabHide_Header');
+                        info.textContent = browser.i18n.getMessage('options_Commands_ToggleTabHideSetting_Description', tabHideSectionHeader);
+                        return info;
+                    },
+                },
             },
 
             headerMessage: 'options_Commands_Title',
@@ -825,9 +835,16 @@ async function initiatePage() {
         section.content.appendChild(document.createElement('br'));
 
 
-        let showHiddenInTSTCheckbox = createCheckBox('tabHide_ShowHiddenTabsInTST', 'options_TabHide_ShowHiddenTabsInTST');
-        section.content.appendChild(showHiddenInTSTCheckbox.area);
+        const showHiddenInTSTArea = document.createElement('div');
+        showHiddenInTSTArea.classList.add('area');
+        section.content.appendChild(showHiddenInTSTArea);
 
+        let showHiddenInTSTCheckbox = createCheckBox('tabHide_ShowHiddenTabsInTST', 'options_TabHide_ShowHiddenTabsInTST');
+        showHiddenInTSTArea.appendChild(showHiddenInTSTCheckbox.area);
+
+        const showHiddenInTSTInfo = document.createElement('p');
+        showHiddenInTSTInfo.classList.add(messagePrefix + 'options_TabHide_ShowHiddenTabsInTST_MoreInfo');
+        showHiddenInTSTArea.appendChild(showHiddenInTSTInfo);
 
         starters.createDisposable(() => {
             let check = () => {
@@ -846,6 +863,12 @@ async function initiatePage() {
                         check();
                     }
                 }),
+                new EventListener(settingsTracker.onChange, (changes) => {
+                    if (changes.tabHide_HideUnloadedTabs) {
+                        // This option can be toggle using keyboard shortcuts, so we check changes from elsewhere:
+                        check();
+                    }
+                })
             ];
             check();
             return disposables;

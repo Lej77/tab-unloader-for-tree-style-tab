@@ -284,8 +284,7 @@
         "hash": "f389ef6ea005b497d7ce9d86eb4d4bad"
     },
     "options_TabHide_SuppressTSTHiddenClass": {
-        "message": "抑制 Tree Style Tab 中关于隐藏标签页的特殊行为。",
-        "hash": "e9d35c95cd2aded7ab841d040ae1f3af"
+        "message": "抑制 Tree Style Tab 中关于隐藏标签页的特殊行为。 (This can easily cause issues for Tree Style Tab so should probably be avoided if possible.)"
     },
     "options_TabHide_ShowHiddenTabsInTST": {
         "message": "在 Tree Style Tab 侧栏中显示隐藏标签页。",

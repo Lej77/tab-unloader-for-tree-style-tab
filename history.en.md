@@ -1,6 +1,10 @@
 # History
 
 - master/HEAD
+- 6.17 (2024-07-26)
+  - Change: rename extension from "Tab Unloader for Tree Style Tab" to "TST Tab Unloader" so that its easier to find in the addons page. ([Issue #42](https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/42)).
+  - Change: more information about showing hidden tabs in Tree Style Tab's sidebar ([Issue #45](https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/45)).
+  - Feature: keyboard shortcut to toggle hiding of unloaded tabs ([Issue #15 for Tree Style Tab in Separate Window](https://github.com/Lej77/tree-style-tab-in-separate-window/issues/15)).
 - 6.16 (2024-03-15)
   - Update to `zh` locale by NightSharp. Thanks!
   - Fix: don't try to unload a tab that is in the process of being activated since that can freeze the browser window. This could happen when using a keyboard shortcut multiple times in quick succession in order to unload many tabs. (BugFix in version 6.9 was similar to this one.)

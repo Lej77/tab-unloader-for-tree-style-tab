@@ -1,4 +1,7 @@
 {
+    "extensionName": {
+        "message": "TST Tab Unloader"
+    },
     "options_extensionToggle_DisableButton": {
         "message": "Disable extension"
     },
@@ -213,10 +216,13 @@
         "message": "Hide unloaded tabs with the tab hiding API. Hidden tabs will not be shown in the toolbar and can't be selected with keyboard shortcuts. When the current tab is closed hidden tabs will not be selected as long as there are other visible tabs. Pinned tabs can't be hidden."
     },
     "options_TabHide_SuppressTSTHiddenClass": {
-        "message": "Suppress special behavior in Tree Style Tab regarding hidden tabs."
+        "message": "Suppress special behavior in Tree Style Tab regarding hidden tabs. (This can easily cause issues for Tree Style Tab so should probably be avoided if possible.)"
     },
     "options_TabHide_ShowHiddenTabsInTST": {
         "message": "Show hidden tabs in Tree Style Tab's sidebar."
+    },
+    "options_TabHide_ShowHiddenTabsInTST_MoreInfo": {
+        "message": "This setting worked somewhat well for older Tree Style Tab versions but for more modern versions you need to check \"Unlock Expert Options\" in Tree Style Tab's option page and then check the \"Show hidden tabs which are hidden by other extensions\" option (which sets the \"renderHiddenTabs\" config) inside the \"Appearance\" section."
     },
     "options_TabHide_Info": {
         "message": "If this options is enabled then it makes sense to uncheck all the \"$ignoreHiddenTabsOption$\" checkboxes.\n\nTo still be able to select unloaded tabs you can use the \"$showHiddenTabsInTSTOption$\" option.\n\nNote: requires the \"tabHide\" permission. Also this feature is experimental and might not work correctly.",
@@ -315,6 +321,18 @@
     },
     "options_Commands_SelectNextTab": {
         "message": "Select next loaded tab"
+    },
+    "options_Commands_ToggleTabHideSetting": {
+        "message": "Toggle hiding of unloaded tabs"
+    },
+    "options_Commands_ToggleTabHideSetting_Description": {
+        "message": "Toggles the setting for the feature in the \"$tabHideHeader$\" section that hides unloaded tabs.",
+        "placeholders": {
+            "tabHideHeader": {
+                "content": "$1",
+                "example": "Tab Hiding"
+            }
+        }
     },
     "optionalPermissions_Request": {
         "message": "Request"

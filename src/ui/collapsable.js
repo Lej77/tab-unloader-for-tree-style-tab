@@ -224,12 +224,12 @@ export class AnimationInfo {
    * Return the object if it is an AnimationInfo. Otherwise create an AnimationInfo from it.
    *
    * @static
-   * @param {Object} [obj={}] Object to convert into AnimationInfo.
+   * @param {AnimationInfo | AnimationDefinition | false} [obj={}] Object to convert into AnimationInfo.
    * @returns {AnimationInfo} An AnimationInfo object.
    * @memberof AnimationInfo
    */
   static asInfo(obj = {}) {
-    if (obj && (obj instanceof AnimationInfo)) {
+    if (obj instanceof AnimationInfo) {
       return obj;
     } else {
       return new AnimationInfo(obj);

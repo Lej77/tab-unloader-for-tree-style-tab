@@ -73,6 +73,10 @@ import {
     TSTPrivacyPermissionChecker
 } from '../tree-style-tab/check-privacy-permissions.js';
 
+import {
+    SettingsTracker
+} from '../common/settings.js';
+
 
 /**
  * @typedef {import('../common/utilities').KeysWithSuffix<T, Suffix>} KeysWithSuffix
@@ -903,6 +907,10 @@ async function start() {
                     checkBeforeActiveTab: false,
                     wrapAround: settings.command_selectNextTab_wrapAround,
                 });
+            } break;
+
+            case 'toggle-tab-hide-setting': {
+                await SettingsTracker.set('tabHide_HideUnloadedTabs', !settings.tabHide_HideUnloadedTabs);
             } break;
         }
     });

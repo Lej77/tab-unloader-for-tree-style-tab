@@ -44,6 +44,19 @@ export async function pingTST() {
     return true;
 }
 
+/** Get the Tree Style Tab version. Only available for TST 4.0 and later. Otherwise returns `null`.
+ *
+ * @export
+ * @return {Promise<null | string>} The TST version if available.
+ */
+export async function getTstVersion() {
+    try {
+        return (await browser.runtime.sendMessage(kTST_ID, { type: 'get-version' })) || null;
+    } catch (error) {
+        return null;
+    }
+}
+
 // eslint-disable-next-line valid-jsdoc
 /**
  * Get tabs from Tree Style Tab. These tabs will include tree information.
