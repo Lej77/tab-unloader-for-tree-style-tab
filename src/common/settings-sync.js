@@ -6,13 +6,13 @@
  * and that any changes to `local` values are reflected in the `sync` namespace.
  */
 
-import { DisposableCollection } from "./disposables";
-import { EventListener } from "./events";
-import { deepCopyCompare } from "./utilities";
+import { DisposableCollection } from "./disposables.js";
+import { EventListener } from "./events.js";
+import { deepCopyCompare } from "./utilities.js";
 
 
-/** @import { Changes, SettingsTracker } from "./settings" */
-/** @import { IDisposable } from "./disposables" */
+/** @import { Changes, SettingsTracker } from "./settings.js" */
+/** @import { IDisposable } from "./disposables.js" */
 
 
 /**
@@ -45,7 +45,7 @@ export class SettingsSynchronizer {
      * @param {boolean} options.allowTargetChanges If `true` then changes
      * notified by the `target` tracker will be written to the source; otherwise
      * any changes to the target will be reverted to match the source.
-     * @param {'copy-source' | 'copy-target' | undefined} options.initialState Specify if the settings should be imported from the target before synchronizing or if they should be exported from the source.
+     * @param {'copy-source' | 'copy-target' | 'copy-source-and-merge' | 'copy-target-and-merge' | undefined} options.initialState Specify if the settings should be imported from the target before synchronizing or if they should be exported from the source.
      */
     constructor({ source, target, allowedProperties, allowTargetChanges, initialState }) {
         this.#source = source;
@@ -71,26 +71,40 @@ export class SettingsSynchronizer {
             let from;
             /** @type {SettingsTracker} */
             let to;
+            let merge = false;
             switch (this.#initialState) {
+                case 'copy-source-and-merge':
+                    merge = true;
                 case 'copy-source': {
                     from = this.#source;
                     to = this.#target;
                 } break;
+
+                case 'copy-target-and-merge':
+                    merge = true;
                 case 'copy-target': {
                     from = this.#target;
                     to = this.#source;
                 } break;
+
                 default: {
                     /** @type {never} */
                     const _exhaustive = this.#initialState;
                 } break;
             }
+
             const toApply = {};
+            const fromApply = {};
             for (const key of Object.keys(to.settings)) {
-                toApply[key] = undefined;
+                if (merge && !(key in from.settings)) {
+                    fromApply[key] = to.settings[key]; // Merge: copy undefined settings to the source
+                } else {
+                    toApply[key] = undefined; // delete existing item
+                }
             }
             for (const key of Object.keys(from.settings)) {
-                toApply[key] = from.settings[key];
+                toApply[key] = from.settings[key]; // known setting -> overwrite in destination
+                delete fromApply[key]; // don't change existing items in the source.
             }
             for (const key of Object.keys(toApply)) {
                 if (
@@ -104,8 +118,24 @@ export class SettingsSynchronizer {
                     delete toApply[key];
                 }
             }
+            for (const key of Object.keys(fromApply)) {
+                if (
+                    // Has allowlist and not in it:
+                    (this.#allowedProperties && !this.#allowedProperties.includes(key)) ||
+                    // Has blocklist and is in it:
+                    (this.#disallowedProperties && this.#disallowedProperties.includes(key)) ||
+                    // No change:
+                    deepCopyCompare(fromApply[key], from.settings[key])
+                ) {
+                    delete fromApply[key];
+                }
+            }
+
             // TODO: don't treat undefined and removed key-value pairs the same.
             await to.set(toApply, { applyImmediatelyOnSuccess: true, removeWhenUndefined: true });
+            if (merge) {
+                await from.set(fromApply, { applyImmediatelyOnSuccess: true, removeWhenUndefined: true });
+            }
         }
 
         if (this.isDisposed) return;

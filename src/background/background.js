@@ -657,6 +657,7 @@ async function start() {
 
     /** @type {null | SettingsSynchronizer<Settings>} */
     let settingsSync = null;
+    let failedToTrackSync = false;
     const configureSync = () => {
         let enabledSync = false;
         switch (settings.sync_enabled) {
@@ -668,6 +669,9 @@ async function start() {
                 /** @type {never} */
                 const _exhaustive = settings.sync_enabled;
             } break;
+        }
+        if (failedToTrackSync) {
+            enabledSync = false;
         }
 
         if (!enabledSync) {
@@ -682,12 +686,12 @@ async function start() {
                 // sync everything...
                 allowedProperties: null,
                 // except don't sync one setting key so that we can locally disable synchronization:
-                disallowedProperties: /** @type {(keyof Settings)[]} */ (['sync_enabled']),
+                disallowedProperties: /** @type {(keyof Settings)[]} */ (['sync_enabled', 'sync_auto_enabled']),
 
                 // we do allow changes to the local storage which should then be mirrored in the sync data:
                 allowTargetChanges: true,
-                 // it is more important to not accidentally modify the synchronized data, so start out by ensuring local storage mirrors the synchronized data:
-                initialState: 'copy-source',
+                // it is more important to not accidentally modify the synchronized data, so start out by ensuring local storage mirrors the synchronized data:
+                initialState: 'copy-source-and-merge',
             });
         }
     }
@@ -695,7 +699,8 @@ async function start() {
     try {
         await syncTracker.start;
     } catch (error) {
-        console.error(`Failed to start tracking "sync" settings storage:\n`, error)
+        console.error(`Failed to start tracking "sync" settings storage:\n`, error);
+        failedToTrackSync = true;
     }
     await settingsTracker.start;
     settingsTracker.onChange.addListener((changes, storageArea) => {
@@ -715,6 +720,22 @@ async function start() {
     });
     updateClickCombos(settings);
     configureSync();
+    if (!failedToTrackSync) {
+        new SettingsSynchronizer({
+            // copy synchronized data into local storage:
+            source: syncTracker,
+            target: settingsTracker,
+
+            // the always on sync should only sync the auto enable global sync checkbox:
+            allowedProperties: /** @type {(keyof Settings)[]} */ (['sync_auto_enabled']),
+            disallowedProperties: null,
+
+            // we do allow changes to the local storage which should then be mirrored in the sync data:
+            allowTargetChanges: true,
+            // it is more important to not accidentally modify the synchronized data, so start out by ensuring local storage mirrors the synchronized data:
+            initialState: 'copy-source-and-merge',
+        });
+    }
 
     const getUnloadInfo = () => {
         return {

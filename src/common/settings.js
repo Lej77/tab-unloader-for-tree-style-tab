@@ -407,12 +407,27 @@ export class SettingsTracker {
             if (applyImmediatelyOnSuccess) {
                 /** @type {Changes<any>} */
                 const changes = {};
+
+                let defaultSettings;
                 for (const key of toRemove) {
                     if (!(key in this.settings)) {
                         continue;
                     }
                     changes[key] = { oldValue: this.settings[key] };
-                    delete this.settings[key];
+                    if (this.fallbackToDefault && !defaultSettings) {
+                        defaultSettings = typeof this._defaultValues === 'function' ? this._defaultValues() : this._defaultValues;
+                    }
+                    if (this.fallbackToDefault && (key in defaultSettings)) {
+                        const defaultValue = defaultSettings[key];
+                        if (!deepCopyCompare(this.settings[key], defaultValue)) {
+                            this.settings[key] = defaultValue;
+                            changes[key].newValue = defaultValue;
+                        } else {
+                            delete changes[key];
+                        }
+                    } else {
+                        delete this.settings[key];
+                    }
                 }
                 if (Object.keys(changes).length) {
                     this._onChange.fire(changes, this.storageArea);

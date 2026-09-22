@@ -1,6 +1,8 @@
 # History
 
 - master/HEAD
+- 6.19 (2026-09-22)
+  - BugFix: new synchronization code caused extension to not load.
 - 6.18 (2026-09-22)
   - Feature: export/import extension settings to/from a file.
   - Feature: synchronize extension settings using Firefox Sync.

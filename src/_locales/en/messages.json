@@ -293,7 +293,7 @@
         "message": "Export settings to file"
     },
     "options_SyncGroup": {
-        "message": "Synchronize Browser Settings"
+        "message": "Synchronize Settings (Experimental)"
     },
     "options_sync_enabled": {
         "message": "This browser should: "
