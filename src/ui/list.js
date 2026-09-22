@@ -1,5 +1,3 @@
-'use strict';
-
 import {
   defineProperty
 } from '../common/utilities.js';
@@ -30,9 +28,7 @@ import {
 } from '../ui/collapsable.js';
 
 
-/** @typedef {import('../ui/collapsable.js').AnimationDefinition} AnimationDefinition */
-/** @typedef {import('../ui/collapsable.js').AnimationInfo} AnimationInfo */
-null;
+/** @import { AnimationDefinition, AnimationInfo } from '../ui/collapsable.js' */
 
 
 let gListInfo;

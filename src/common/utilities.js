@@ -1,5 +1,3 @@
-'use strict';
-
 
 /**
  * A tab object returned by the WebExtension API.

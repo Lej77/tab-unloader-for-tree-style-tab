@@ -1,5 +1,3 @@
-'use strict';
-
 import {
   toggleClass,
 } from '../ui/utilities.js';

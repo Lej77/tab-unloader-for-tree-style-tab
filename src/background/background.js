@@ -76,16 +76,11 @@ import {
 import {
     SettingsTracker
 } from '../common/settings.js';
+import { SettingsSynchronizer } from '../common/settings-sync.js';
 
 
-/**
- * @typedef {import('../common/utilities').KeysWithSuffix<T, Suffix>} KeysWithSuffix
- * @template {{}} T
- * @template {string} Suffix
- */
-/**
- * @typedef {import('../common/utilities').BrowserTab} BrowserTab
- */
+/** @import { Settings } from '../common/common' */
+/** @import { BrowserTab, KeysWithSuffix } from '../common/utilities' */
 
 
 // #region Tab Operations
@@ -629,6 +624,8 @@ class MouseButtonManager {
 }
 
 
+/** @type {SettingsTracker<Settings>} */
+export const syncTracker = new SettingsTracker({ storageArea: 'sync', fallbackToDefault: false });
 
 async function start() {
     /** @type {EventManager<[{origins?: string[], permissions?: string[]}, boolean]>} */
@@ -658,6 +655,48 @@ async function start() {
         mouseClickCombos.update(changes, settings);
     };
 
+    /** @type {null | SettingsSynchronizer<Settings>} */
+    let settingsSync = null;
+    const configureSync = () => {
+        let enabledSync = false;
+        switch (settings.sync_enabled) {
+            case 'enabled': enabledSync = true; break;
+            case 'disabled': enabledSync = false; break;
+            case 'auto': enabledSync = settings.sync_auto_enabled; break;
+            default: {
+                console.error(`Unknown values for "sync_enabled" setting: ${settings.sync_enabled}`);
+                /** @type {never} */
+                const _exhaustive = settings.sync_enabled;
+            } break;
+        }
+
+        if (!enabledSync) {
+            settingsSync?.dispose();
+            settingsSync = null;
+        } else if (!settingsSync || settingsSync.isDisposed) {
+            settingsSync = new SettingsSynchronizer({
+                // copy synchronized data into local storage:
+                source: syncTracker,
+                target: settingsTracker,
+
+                // sync everything...
+                allowedProperties: null,
+                // except don't sync one setting key so that we can locally disable synchronization:
+                disallowedProperties: /** @type {(keyof Settings)[]} */ (['sync_enabled']),
+
+                // we do allow changes to the local storage which should then be mirrored in the sync data:
+                allowTargetChanges: true,
+                 // it is more important to not accidentally modify the synchronized data, so start out by ensuring local storage mirrors the synchronized data:
+                initialState: 'copy-source',
+            });
+        }
+    }
+
+    try {
+        await syncTracker.start;
+    } catch (error) {
+        console.error(`Failed to start tracking "sync" settings storage:\n`, error)
+    }
     await settingsTracker.start;
     settingsTracker.onChange.addListener((changes, storageArea) => {
         updateClickCombos(changes);
@@ -669,8 +708,13 @@ async function start() {
         ) {
             timeDisposables.stop();
         }
+
+        if (changes.sync_auto_enabled || changes.sync_enabled) {
+            configureSync();
+        }
     });
     updateClickCombos(settings);
+    configureSync();
 
     const getUnloadInfo = () => {
         return {

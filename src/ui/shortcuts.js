@@ -1,5 +1,3 @@
-'use strict';
-
 import {
   messagePrefix,
   setTextMessages,
@@ -141,8 +139,9 @@ export function createShortcutsArea({
     {
       /** @type {null | Node} */
       let contentArea = null;
-      if (commandInfo.createContent && typeof commandInfo.createContent === 'function')
+      if (commandInfo.createContent && typeof commandInfo.createContent === 'function') {
         contentArea = commandInfo.createContent();
+      }
 
       if (contentArea) {
         commandSection.content.appendChild(contentArea);
@@ -179,10 +178,11 @@ export function createShortcutsArea({
     inputsArea.appendChild(inputField);
 
     const description = document.createElement('label');
-    if (commandInfo.description)
+    if (commandInfo.description) {
       description.classList.add(messagePrefix + commandInfo.description);
-    else
-      description.textContent = command.name;
+    } else {
+      description.textContent = command.description || command.name;
+    }
     area.appendChild(description);
 
 

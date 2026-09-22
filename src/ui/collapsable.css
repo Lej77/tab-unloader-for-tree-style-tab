@@ -61,6 +61,7 @@
 
 .section > .headerArea > .hoverIndicator {
     pointer-events: auto !important;
+    align-self: stretch !important;
 
     z-index: 100;
 }

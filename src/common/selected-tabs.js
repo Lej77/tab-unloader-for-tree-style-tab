@@ -1,14 +1,10 @@
-'use strict';
-
 import {
     getSelection,
 } from '../multiple-tab-handler/utilities.js';
 
 
-/**
- * @typedef {import('../common/utilities.js').BrowserTab} BrowserTab
- */
-null;
+/** @import { BrowserTab } from '../common/utilities.js' */
+
 
 /**
  * Get the selected tabs in a specific window. If no window id is provided the current window will be used.

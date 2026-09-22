@@ -1,9 +1,3 @@
-'use strict';
-
-import {
-    defineProperty
-} from '../common/utilities.js';
-
 import {
     EventManager
 } from '../common/events.js';
@@ -13,12 +7,7 @@ import {
 } from '../common/disposables.js';
 
 
-/**
- * @typedef {import('../common/events.js').EventSubscriber<T, R>} EventSubscriber
- * @template T
- * @template R
- */
-null;
+/** @import { EventSubscriber } from '../common/events.js' */
 
 
 /** Wait a certain number of milliseconds.

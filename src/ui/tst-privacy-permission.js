@@ -1,5 +1,3 @@
-
-
 import {
     EventManager,
 } from '../common/events.js';
@@ -22,15 +20,8 @@ import {
 } from '../ui/basic-components.js';
 
 
-/**
- * @typedef {import('../ui/collapsable.js').AnimationInfo} AnimationInfo
- */
-null;
-
-/**
- * @typedef {import('../tree-style-tab/check-privacy-permissions.js').TSTPrivacyInfo} TSTPrivacyInfo
- */
-null;
+/** @import { AnimationInfo } from '../ui/collapsable.js' */
+/** @import { TSTPrivacyInfo } from '../tree-style-tab/check-privacy-permissions.js' */
 
 
 // eslint-disable-next-line valid-jsdoc

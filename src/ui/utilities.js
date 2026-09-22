@@ -1,8 +1,9 @@
-'use strict';
-
-
 export let messagePrefix = 'message_';
 
+/** Update the CSS class prefix used for i18n messages. The class name after the prefix should match a i18n message id.
+ *
+ * @param {string} value The new prefix.
+ */
 export function setMessagePrefix(value) {
   messagePrefix = value;
 }
@@ -55,6 +56,12 @@ export function setTextMessages(elementsToText = null, { asHTML = false, special
   }
 }
 
+/** Enable or disable a CSS class.
+ *
+ * @param {Element} element The DOM element which should have it class list modified.
+ * @param {string} className The CSS class to add/remove.
+ * @param {boolean} enabled `true` if the class should be added.
+ */
 export function toggleClass(element, className, enabled) {
   if (enabled) {
     element.classList.add(className);

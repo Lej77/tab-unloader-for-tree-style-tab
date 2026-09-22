@@ -1,5 +1,3 @@
-'use strict';
-
 
 /**
  * Detects if this extension has access to private windows.

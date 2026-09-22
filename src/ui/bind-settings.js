@@ -1,19 +1,11 @@
-'use strict';
-
 import {
     EventListener
 } from '../common/events.js';
 
 
-/**
- * @typedef {import('../common/events.js').EventSubscriber<T>} EventSubscriber<T>
- * @template T
- */
-/**
- * @typedef {import('../common/settings.js').Changes<T>} Changes<T>
- * @template T
- */
-null;
+/** @import { EventSubscriber } from '../common/events.js' */
+/** @import { Changes } from '../common/settings.js' */
+
 
 /**
  * An event object for an input value update of a settings bound element.
@@ -88,6 +80,7 @@ export function bindElementIdsToSettings(settings, {
     let isDisposed = false;
 
     const setElementValue = onSettingsChanged ? {} : null;
+    /** @type {EventListener<any[], any, any, any>[]} */
     const listeners = [];
     for (const key of Object.keys(settings)) {
 

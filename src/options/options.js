@@ -1228,13 +1228,14 @@ async function initiatePage() {
     // #endregion Other Options
 
 
-    // #region Reset Button
+    // #region Reset Button & Browser Synchronization
 
     {
-        let area = document.createElement('div');
+        const area = document.createElement('div');
+        area.classList.add('settings-data-area');
         document.body.appendChild(area);
 
-        let resetButton = document.createElement('button');
+        const resetButton = document.createElement('button');
         resetButton.classList.add('resetSettingsButton');
         resetButton.classList.add(messagePrefix + 'options_ResetSettings_Button');
         area.appendChild(resetButton);
@@ -1259,9 +1260,127 @@ async function initiatePage() {
             starters.stop();
             starters.start();
         });
+
+
+        const syncArea = document.createElement('fieldset');
+        syncArea.classList.add('settings-sync-area');
+        area.appendChild(syncArea);
+
+        const syncLegend = document.createElement('legend');
+        syncLegend.classList.add(messagePrefix + 'options_SyncGroup')
+        syncArea.append(syncLegend);
+
+        const syncLabel = document.createElement('label');
+        syncLabel.classList.add(messagePrefix + 'options_sync_enabled')
+        syncLabel.htmlFor = 'sync_enabled';
+        syncArea.appendChild(syncLabel);
+
+        const syncEnable = document.createElement('select');
+        syncEnable.id = 'sync_enabled';
+        syncArea.appendChild(syncEnable);
+
+        for (const value of ['enabled', 'disabled', 'auto']) {
+            const syncOption = document.createElement('option');
+            syncOption.classList.add(messagePrefix + 'options_sync_enabled=' + value);
+            syncOption.value = value;
+            syncEnable.appendChild(syncOption);
+        }
+
+        syncArea.appendChild(document.createElement('br'));
+        syncArea.appendChild(document.createElement('br'));
+
+        const syncGlobalCheckbox = createCheckBox('sync_auto_enabled', 'options_sync_auto_enabled');
+        syncArea.appendChild(syncGlobalCheckbox.area);
+
+
+        const exportArea = document.createElement('div');
+        exportArea.classList.add('export-area');
+        area.appendChild(exportArea);
+
+        const exportButton = document.createElement('button');
+        exportButton.classList.add('exportButton');
+        exportButton.classList.add(messagePrefix + 'options_ExportSettings_Button');
+        exportArea.appendChild(exportButton);
+
+        const importButton = document.createElement('button');
+        importButton.classList.add('importButton');
+        importButton.classList.add(messagePrefix + 'options_ImportSettings_Button');
+        exportArea.appendChild(importButton);
+
+        exportButton.addEventListener('click', () => {
+            // Convert the object to a formatted JSON string (2-space indentation)
+            const jsonString = JSON.stringify({
+                ...settings,
+                version: browser.runtime.getManifest().version,
+            }, null, 2);
+
+            // Create a Blob containing the JSON data
+            const blob = new Blob([jsonString], { type: 'application/json' });
+
+            // Create a temporary object URL pointing to the Blob
+            const url = URL.createObjectURL(blob);
+            try {
+                // Create a temporary hidden anchor element to trigger the download
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'tst-tab-unloader-settings.json';
+
+                // Append to document, trigger click, and clean up
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } finally {
+                URL.revokeObjectURL(url);
+            }
+        });
+        importButton.addEventListener('click', () => {
+            // Create a temporary hidden file input element
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json,application/json';
+
+            // Listen for when the user selects a file
+            fileInput.addEventListener('change', (event) => {
+                const file = fileInput.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+
+                // Triggered when the file is finished loading
+                reader.onload = (e) => {
+                    if (typeof e.target.result !== 'string') {
+                        return;
+                    }
+                    try {
+                        // Parse JSON string into an object
+                        const importedSettings = JSON.parse(e.target.result);
+                        if (!importedSettings || typeof importedSettings !== 'object') {
+                            return;
+                        }
+                        console.log('Settings imported successfully:', settings);
+
+                        for (const key of Object.keys(importedSettings)) {
+                            if (!(key in settings)) {
+                                delete importedSettings[key];
+                            }
+                        }
+                        browser.storage.local.set(importedSettings);
+                    } catch (error) {
+                        alert('Failed to import JSON settings file:\n\n' + error);
+                        console.error('Failed to import JSON settings file\n:', error);
+                    }
+                };
+
+                // Read the file as plain text
+                reader.readAsText(file);
+            });
+
+            // Programmatically open the file chooser dialog
+            fileInput.click();
+        });
     }
 
-    // #endregion Reset Button
+    // #endregion Reset Button & Browser Synchronization
 
 
     setTextMessages(null, { specialHtmlClass: messageAsHtml, });

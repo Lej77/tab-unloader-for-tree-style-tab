@@ -1,4 +1,3 @@
-
 import {
     accessDataObjectWithProperties,
 } from '../common/events.js';

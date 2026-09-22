@@ -1,15 +1,11 @@
-'use strict';
-
 import {
   EventListener,
   EventManager
 } from '../common/events.js';
 
-/**
- * @typedef {import('../common/events.js').EventSubscriber<T>} EventSubscriber<T>
- * @template T
- */
-null;
+
+/** @import { EventSubscriber } from '../common/events.js' */
+
 
 /**
  * An interface for disposable objects.

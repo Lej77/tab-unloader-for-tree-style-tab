@@ -1,10 +1,15 @@
-'use strict';
-
 import {
   messagePrefix,
 } from '../ui/utilities.js';
 
 
+/**
+ * Create a checkbox with a label.
+ *
+ * @param {undefined | null | string} [id] The id to use for the created check box.
+ * @param {undefined | null | string} [message] The i18n message that will be suffixed to the global "messagePrefix" and used as a CSS class.
+ * @returns An object with references to the created checkbox and the controls around it.
+ */
 export function createCheckBox(id, message) {
   const ele = document.createElement('label');
 

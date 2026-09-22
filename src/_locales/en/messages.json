@@ -286,6 +286,30 @@
     "options_ResetSettings_Button": {
         "message": "Reset Settings"
     },
+    "options_ImportSettings_Button": {
+        "message": "Import settings from file"
+    },
+    "options_ExportSettings_Button": {
+        "message": "Export settings to file"
+    },
+    "options_SyncGroup": {
+        "message": "Synchronize Browser Settings"
+    },
+    "options_sync_enabled": {
+        "message": "This browser should: "
+    },
+    "options_sync_enabled=enabled": {
+        "message": "Always sync"
+    },
+    "options_sync_enabled=disabled": {
+        "message": "Never sync"
+    },
+    "options_sync_enabled=auto": {
+        "message": "Follow global option"
+    },
+    "options_sync_auto_enabled": {
+        "message": "Enable settings synchronization globally"
+    },
     "options_ResetSettings_Prompt": {
         "message": "Do you want to reset all settings to default values?"
     },

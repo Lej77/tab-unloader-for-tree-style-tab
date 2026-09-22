@@ -112,6 +112,30 @@ input[type="text"]:not(.notFullSize) {
     width: 100%;
 }
 
+.settings-data-area {
+    display: flex;
+}
 .resetSettingsButton {
     padding: 10px;
+    text-align: center;
+}
+.settings-sync-area {
+    margin: 10px;
+    margin-top: 0;
+    margin-left: 20px;
+    flex: 1 1 auto;
+}
+
+.settings-data-area > .export-area {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-evenly;
+}
+.settings-data-area > .export-area > button {
+    margin: 4px;
+    padding: 0 4px;
+    flex: 1 0 auto;
+    text-align: center;
 }

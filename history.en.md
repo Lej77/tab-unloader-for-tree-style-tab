@@ -1,6 +1,10 @@
 # History
 
 - master/HEAD
+- 6.18 (2026-09-22)
+  - Feature: export/import extension settings to/from a file.
+  - Feature: synchronize extension settings using Firefox Sync.
+  - Bug fix: style issue on hover of section headers on options page.
 - 6.17 (2024-07-26)
   - Change: rename extension from "Tab Unloader for Tree Style Tab" to "TST Tab Unloader" so that its easier to find in the addons page. ([Issue #42](https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/42)).
   - Change: more information about showing hidden tabs in Tree Style Tab's sidebar ([Issue #45](https://github.com/Lej77/tab-unloader-for-tree-style-tab/issues/45)).

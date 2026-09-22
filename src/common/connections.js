@@ -1,5 +1,3 @@
-'use strict';
-
 import {
   EventListener,
   EventManager,
@@ -16,6 +14,7 @@ export class PortManager {
     this._isDisposed = false;
     this._onDisposed = new EventManager();
 
+    /** @type {EventManager<[any, any, DisposableCollection, PortManager], any, never>} */
     this._onMessage = new EventManager();
 
     this._disposables = new DisposableCollection();

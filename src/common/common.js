@@ -244,6 +244,18 @@ export const defaultValues = Object.freeze({
 
             disableOptionsPageAnimations: false,
             disableOptionsPageDarkTheme: false,
+
+            /** Determines if the browser should synchronize the extension's settings.
+             *
+             *  @type {'enabled' | 'disabled' | 'auto'}
+             * - `enabled` to always enable
+             * - `disabled` to always disable
+             * - `auto` to select based on `sync_auto_enabled`.
+             *
+             * Note: this is the only key that won't be synchronized.
+             */
+            sync_enabled: 'auto',
+            sync_auto_enabled: false,
         };
     },
     get MouseClickCombo() {
@@ -521,13 +533,15 @@ export class MouseClickCombo {
 export const settingsTracker = new SettingsTracker({ defaultValues: () => defaultValues.Settings });
 export const settings = settingsTracker.settings;
 
+/** @typedef {typeof defaultValues.Settings} Settings */
+
 // eslint-disable-next-line valid-jsdoc
 /**
  * Load a specific setting as fast as possible.
  *
- * @template {keyof typeof defaultValues.Settings} K
+ * @template {keyof Settings} K
  * @param {K} key The key of the setting that should be loaded.
- * @returns {Promise<((typeof defaultValues.Settings)[K])>} The value for the loaded setting.
+ * @returns {Promise<(Settings[K])>} The value for the loaded setting.
  */
 export function quickLoadSetting(key) {
     // @ts-ignore

@@ -33,12 +33,8 @@ import {
 import { delay } from '../common/delays.js';
 
 
-/** @typedef {import('../ui/collapsable.js').AnimationDefinition} AnimationDefinition */
-/** @typedef {import('../ui/collapsable.js').AnimationInfo} AnimationInfo */
-/**
- * @template T
- * @typedef {import('../common/events.js').EventSubscriber<T>} EventSubscriber
- */
+/** @import { AnimationDefinition, AnimationInfo } from '../ui/collapsable.js' */
+/** @import { EventSubscriber } from '../common/events.js' */
 
 
 /**
