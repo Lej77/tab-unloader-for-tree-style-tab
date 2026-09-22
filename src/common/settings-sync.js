@@ -47,10 +47,11 @@ export class SettingsSynchronizer {
      * any changes to the target will be reverted to match the source.
      * @param {'copy-source' | 'copy-target' | 'copy-source-and-merge' | 'copy-target-and-merge' | undefined} options.initialState Specify if the settings should be imported from the target before synchronizing or if they should be exported from the source.
      */
-    constructor({ source, target, allowedProperties, allowTargetChanges, initialState }) {
+    constructor({ source, target, allowedProperties, disallowedProperties, allowTargetChanges, initialState }) {
         this.#source = source;
         this.#target = target;
         this.#allowedProperties = allowedProperties;
+        this.#disallowedProperties = disallowedProperties;
         this.#allowTargetChanges = allowTargetChanges;
         this.#initialState = initialState;
 

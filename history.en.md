@@ -1,6 +1,8 @@
 # History
 
 - master/HEAD
+- 6.20 (2026-09-22)
+  - BugFix: was accidentally synchronizing the option to disable sync for this browser.
 - 6.19 (2026-09-22)
   - BugFix: new synchronization code caused extension to not load.
 - 6.18 (2026-09-22)
